@@ -479,6 +479,52 @@ insert into teste.var select 't2', id from nova $x$;
   execute $x$ select teste.erro('select public.rpc_configurar(1, null, null, null, null, 25)', '42501', 'comercial não altera a amostra mínima') $x$;
   execute $x$ reset role $x$;
   execute $x$ do $$ begin raise notice 'OK  fim da bateria de conformidade v0.2'; end $$ $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ insert into teste.var values ('crm', (select min(id) from public.oportunidades where ies_id = 1 and curso_id = 1 and etapa = 'novo')) $x$;
+  execute $x$ select teste.ok((public.rpc_registrar_interacao((select v from teste.var where k='crm'), 'ligacao', 'Conversa sobre horários do curso')->>'id') is not null, 'interação registrada') $x$;
+  execute $x$ select teste.ok((select ultima_interacao_em is not null from public.oportunidades where id = (select v from teste.var where k='crm')), 'última interação atualizada') $x$;
+  execute $x$ select teste.erro('select public.rpc_registrar_interacao((select v from teste.var where k=''crm''), ''telepatia'', ''x x x'')', '22023', 'tipo de interação inválido recusado') $x$;
+  execute $x$ select teste.erro('select public.rpc_registrar_interacao(9, ''ligacao'', ''tentativa cruzada'')', 'P0002', 'interação em oportunidade de outra IES: não encontrado') $x$;
+  execute $x$ insert into teste.var values ('obj', (public.rpc_registrar_objecao((select v from teste.var where k='crm'), 'preco', 'Mensalidade acima do orçamento da família')->>'id')::bigint) $x$;
+  execute $x$ select teste.ok((public.rpc_detalhe((select v from teste.var where k='crm'))->'objecoes'->0->>'status') = 'aberta', 'objeção registrada em aberto') $x$;
+  execute $x$ select teste.erro('select public.rpc_tratar_objecao((select v from teste.var where k=''obj''), ''superada'', '''')', '22023', 'tratamento sem descrição recusado') $x$;
+  execute $x$ select teste.ok(public.rpc_tratar_objecao((select v from teste.var where k='obj'), 'superada', 'Apresentada bolsa dentro do limite do curso')->>'status' = 'superada', 'objeção tratada') $x$;
+  execute $x$ select teste.ok((public.rpc_agendar((select v from teste.var where k='crm'), now() + interval '2 days', 'Retorno com a família', 'telefone')->>'id') is not null, 'agendamento criado') $x$;
+  execute $x$ select teste.ok(jsonb_array_length(public.rpc_agenda(1, now(), now() + interval '7 days')) >= 1, 'agenda lista o compromisso') $x$;
+  execute $x$ select teste.erro('select public.rpc_agendar((select v from teste.var where k=''crm''), now() - interval ''2 days'', ''no passado'')', '22023', 'agendamento no passado recusado') $x$;
+  execute $x$ select teste.erro('select public.rpc_agenda(1, now(), now() + interval ''200 days'')', '22023', 'intervalo de agenda excessivo recusado') $x$;
+  execute $x$ select teste.ok((select (s->>'score')::int between 0 and 100 and s->>'versao' = 'score-v1' and jsonb_array_length(s->'razoes') > 0
+                        and s->>'aviso' like '%não é usado para decidir ingresso%'
+                 from (select public.rpc_detalhe((select v from teste.var where k='crm'))->'score' s) x), 'score versionado, explicado e com a trava de não decidir ingresso') $x$;
+  execute $x$ select teste.ok((public.rpc_listar_oportunidades(1, null, null, 1, 100)->'itens'->0) ? 'score', 'score presente no cartão') $x$;
+  execute $x$ select teste.ok((public.rpc_listar_oportunidades(1, null, null, 1, 100, null, 'cand 2')->>'total')::int >= 1, 'busca por nome, sem acento e sem caixa') $x$;
+  execute $x$ select teste.ok((public.rpc_listar_oportunidades(1, null, null, 1, 100, null, 'a2@exemplo')->>'total')::int = 1, 'comercial busca por e-mail') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('coord_dir_a')::text, false) $x$;
+  execute $x$ select teste.ok((public.rpc_listar_oportunidades(1, null, null, 1, 100, null, 'a2@exemplo')->>'total')::int = 0, 'coordenação NÃO consegue buscar por e-mail (minimização)') $x$;
+  execute $x$ select teste.ok(jsonb_array_length(public.rpc_detalhe((select v from teste.var where k='crm'))->'interacoes') = 0, 'coordenação não lê o conteúdo das interações') $x$;
+  execute $x$ select teste.ok((public.rpc_detalhe((select v from teste.var where k='crm'))->'score') = 'null'::jsonb, 'coordenação não vê score comercial') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.ok((select bool_and((x->>'forma_ingresso') = 'enem') from jsonb_array_elements(public.rpc_listar_oportunidades(1, null, null, 1, 100, null, null, 'enem')->'itens') x), 'filtro por forma de ingresso') $x$;
+  execute $x$ select teste.ok((select bool_and((x->>'sla_atrasado')::boolean) from jsonb_array_elements(public.rpc_listar_oportunidades(1, null, null, 1, 100, null, null, null, false, true)->'itens') x) is not false, 'filtro de SLA atrasado') $x$;
+  execute $x$ select teste.erro('select public.rpc_reatribuir((select v from teste.var where k=''crm''), teste.id(''com_dir_a''), ''troca'')', '42501', 'comercial não reatribui') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_reatribuir((select v from teste.var where k=''crm''), teste.id(''secretaria_a''), ''troca'')', '22023', 'não reatribui para quem não é comercial') $x$;
+  execute $x$ select teste.erro('select public.rpc_reatribuir((select v from teste.var where k=''crm''), teste.id(''comercial_b''), ''troca'')', '22023', 'não reatribui para atendente de outra IES') $x$;
+  execute $x$ select teste.ok((public.rpc_reatribuir((select v from teste.var where k='crm'),
+  (select case when responsavel_id = teste.id('com_dir_a') then teste.id('comercial_a') else teste.id('com_dir_a') end from public.oportunidades where id = (select v from teste.var where k='crm')),
+  'Rebalanceamento de carteira')->>'tarefas_transferidas')::int >= 1, 'gestor reatribui e as tarefas acompanham') $x$;
+  execute $x$ select teste.erro('select public.rpc_reatribuir((select v from teste.var where k=''crm''), (select responsavel_id from public.oportunidades where id = (select v from teste.var where k=''crm'')), ''de novo'')', '22023', 'reatribuir ao responsável atual é recusado') $x$;
+  execute $x$ select teste.ok((select count(*) from public.auditoria where acao = 'oportunidade.reatribuir' and entidade_id = (select v::text from teste.var where k='crm')) = 1, 'histórico de responsáveis auditado') $x$;
+  execute $x$ select teste.ok(jsonb_array_length(public.rpc_atendentes(1, 1)) >= 2, 'lista de atendentes elegíveis do curso') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ insert into public.pessoas(ies_id, nome, email, base_legal, origem)
+  select 1, upper((select nome from public.pessoas where id = (select pessoa_id from public.oportunidades where id = (select v from teste.var where k='crm')))), 'homonimo@exemplo.invalid', 'consentimento', 'teste' $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select teste.ok(jsonb_array_length(public.rpc_detalhe((select v from teste.var where k='crm'))->'possiveis_duplicidades') = 1, 'homônimo sinalizado como possível duplicidade (sem fusão)') $x$;
+  execute $x$ select teste.ok((public.rpc_detalhe((select v from teste.var where k='crm'))->'possiveis_duplicidades'->0->>'email') like '%***@%', 'possível duplicidade exibida com contato mascarado') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ do $$ begin raise notice 'OK  fim da bateria do CRM'; end $$ $x$;
   execute $x$ reset role $x$;
   select count(*) into n from teste.resultado;
   raise exception 'RESULTADO: % verificações aprovadas, 0 falhas (tudo desfeito; nada ficou gravado)', n;
