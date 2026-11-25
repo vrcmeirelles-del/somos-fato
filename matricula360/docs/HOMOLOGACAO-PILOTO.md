@@ -8,6 +8,7 @@
 |---|---|---|
 | Unitários, domínio e API (HTTP real) | `npm test` | **42/42 aprovados** (`evidencias/saida-testes.txt`) |
 | Navegador, desktop 1366×860 e iPhone 13 | `npm run homologar` | **83/83 verificações** (`evidencias/resultado.json`) |
+| Bateria de RLS no **Supabase real** (projeto de homologação) | SQL Editor: `supabase/TESTAR-NO-SQL-EDITOR.sql` | **107/107**, tudo desfeito ao final |
 | Migrações Supabase em **Postgres 16 real** (RLS, RPCs, gatilhos) | `npm run testar:postgres` | **107/107 verificações de RLS e regras + corrida real entre 2 sessões + lint (RLS em 100% das tabelas, search_path fixo em 100% das funções)** |
 
 A verificação no navegador cobre seis perfis: público, gestor, comercial, secretaria, coordenação e Master. Em cada tela checa:
@@ -29,7 +30,28 @@ O usuário aplicou `supabase/APLICAR-NO-SQL-EDITOR.sql` pelo SQL Editor. A confe
 | POST `rpc/rpc_bi` | 401, `42501 permission denied for function` | RPCs existem; `anon` não executa |
 | POST `rpc/auditar` (auxiliar interno) | `PGRST202` não encontrada | Schema `privado` não exposto pela API |
 
-**Pendente no remoto:** os testes como usuário autenticado (isolamento entre IES e cursos, mapeamento 403/404/409 para `authenticated`) exigem criar usuários sintéticos no Supabase Auth. Também falta rodar os advisors do painel (Advisors → Security e Performance).
+**Bateria de isolamento no banco real (25/11/2026):** o usuário executou `supabase/TESTAR-NO-SQL-EDITOR.sql` no SQL Editor do projeto. A bateria troca de papel entre `anon` e `authenticated` e simula o JWT de cada perfil. Resultado devolvido pelo Supabase:
+
+```
+ERROR: P0001: RESULTADO: 107 verificações aprovadas, 0 falhas (tudo desfeito; nada ficou gravado)
+```
+
+O "erro" é proposital: a exceção final desfaz a semente e os testes. As 107 verificações cobrem:
+- isolamento entre IES e entre cursos;
+- Master sem acesso a candidatos;
+- revogação de usuário e de escopo;
+- escrita direta bloqueada;
+- segregação de funções;
+- versão otimista;
+- idempotência;
+- LGPD;
+- BI com N/D;
+- MAIM;
+- anonimização.
+
+**Pendente no remoto:**
+- rodar os advisors do painel (Advisors → Security e Performance);
+- mapear os códigos HTTP para usuário autenticado via login real no Supabase Auth: 401/42501 para `anon` já foi confirmado; para `authenticated` são esperados 403/404/409.
 
 ## Critérios de aceite da Bíblia-Mestra
 
