@@ -14,7 +14,15 @@ export function Login({ aoEntrar }: { aoEntrar: () => Promise<void> }) {
     setErro(''); setEnviando(true);
     try {
       await api.entrar(email, senha);
-      const eu = await api.eu();
+      let eu;
+      try {
+        eu = await api.eu();
+      } catch (e) {
+        // Credenciais válidas no Supabase Auth, mas sem perfil/escopo no sistema (ou revogado).
+        await api.sair();
+        if ((e as { status?: number }).status === 403) throw new Error('Login aceito, mas sua conta ainda não tem acesso liberado ao sistema. Peça ao Master a concessão de escopo.');
+        throw e;
+      }
       await aoEntrar();
       const primeira = eu.escopos[0];
       navegar(primeira ? `/ies/${primeira.ies_id}/dashboard` : eu.usuario.master ? '/master' : '/sem-acesso');
