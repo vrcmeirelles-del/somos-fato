@@ -60,7 +60,7 @@ O "erro" é proposital: a exceção final desfaz a semente e os testes. As 107 v
 - **Performance Advisor (25/11/2026):** 0 erros, 0 avisos e 14 sugestões.
   - **9 *Unindexed foreign keys*:** corrigidas na migração 4 (`20261125000004_indices_fk.sql`), que inclui ainda mais 3 FKs cobertas só por índices parciais. Verificação local: nenhuma FK fica sem índice; a migração é idempotente; os 107 testes continuam verdes.
   - **5 *Unused Index*:** não se aplicam por ora, porque o banco está vazio e sem uso. Reavaliar após uso real.
-- **pendente:** aplicar `supabase/APLICAR-004-NO-SQL-EDITOR.sql` no projeto e rodar de novo o Performance Advisor.
+- **Migração 4 aplicada no projeto em 25/11/2026**, segundo o usuário. Não houve conferência independente por esta sessão, porque os índices não são visíveis pela API com a chave publicável. Confirmar no próximo Performance Advisor: devem restar só os avisos de *Unused Index*.
 - mapear os códigos HTTP para usuário autenticado via login real no Supabase Auth: 401/42501 para `anon` já foi confirmado; para `authenticated` são esperados 403/404/409.
 
 ## Critérios de aceite da Bíblia-Mestra
