@@ -50,7 +50,13 @@ O "erro" é proposital: a exceção final desfaz a semente e os testes. As 107 v
 - anonimização.
 
 **Pendente no remoto:**
-- rodar os advisors do painel (Advisors → Security e Performance);
+- **Security Advisor (25/11/2026):** 0 erros, 24 avisos e 1 sugestão (a sugestão ainda não foi conferida).
+  - Os 24 avisos são todos do tipo *"Signed-In Users Can Execute SECURITY DEFINER Function"*, um para cada uma das 24 RPCs `public.rpc_*`.
+  - **Risco aceito, por desenho:** o cliente não tem permissão de escrita nas tabelas, e as RPCs são a única via de escrita. Cada RPC valida `auth.uid()`, o escopo (IES e curso) e o papel antes de gravar, usa `search_path` vazio e grava a auditoria na mesma transação.
+  - Mitigações comprovadas pela bateria de 107 verificações no banco real.
+  - Os auxiliares `SECURITY DEFINER` ficam no schema `privado`, não exposto, e por isso não entram no aviso.
+  - **Reavaliar se:** alguma RPC passar a aceitar SQL dinâmico vindo do cliente, ou alguma deixar de chamar `privado.exigir_usuario()`/`carregar_op()`.
+- pendente: Performance Advisor e o item "Info" do Security Advisor;
 - mapear os códigos HTTP para usuário autenticado via login real no Supabase Auth: 401/42501 para `anon` já foi confirmado; para `authenticated` são esperados 403/404/409.
 
 ## Critérios de aceite da Bíblia-Mestra
