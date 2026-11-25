@@ -25,7 +25,7 @@ export function Login({ aoEntrar }: { aoEntrar: () => Promise<void> }) {
       }
       await aoEntrar();
       const primeira = eu.escopos[0];
-      navegar(primeira ? `/ies/${primeira.ies_id}/dashboard` : eu.usuario.master ? '/master' : '/sem-acesso');
+      navegar(primeira ? `/ies/${primeira.ies_id}/inteligencia` : eu.usuario.master ? '/master' : '/sem-acesso');
     } catch (e) {
       setErro((e as Error).message);
     } finally {

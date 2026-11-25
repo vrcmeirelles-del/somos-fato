@@ -112,7 +112,7 @@ export function criarApp(servico, { cookieSeguro = false, supabase = null, ui = 
   rota('POST', '/api/tarefas/:id/disparar', [], ({ u, p }) => S.dispararTarefa(u, p.id));
 
   // Páginas da aplicação: guarda no SERVIDOR (sem sessão => /login; sem escopo => 404).
-  const PAGINAS_APP = [/^\/master$/, /^\/ies\/[^/]+\/(dashboard|crm)$/, /^\/(campanhas|matriculas|propostas|academia|configuracoes)$/];
+  const PAGINAS_APP = [/^\/master$/, /^\/ies\/[^/]+\/[\w-]+$/, /^\/(campanhas|matriculas|propostas|academia|configuracoes)$/];
   const ESTATICOS = { '/': 'index.html', '/demo': 'demo.html', '/login': 'login.html', '/style.css': 'style.css', '/app.css': 'app.css', '/demo.mjs': 'demo.mjs', '/app.mjs': 'app.mjs', '/login.mjs': 'login.mjs', '/api.mjs': 'api.mjs', '/supabase.mjs': 'supabase.mjs' };
 
   function json(res, status, corpo) {

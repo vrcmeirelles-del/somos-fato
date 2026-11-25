@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Campo, Detalhes, Estado, Mensagem } from '../components/ui';
+import { Campo, Detalhes, Estado, Mensagem, Titulo } from '../components/ui';
 import { api } from '../lib/api';
 import { centavos, rotulo } from '../lib/formato';
 import { useAcao, useCarregar } from '../lib/hooks';
@@ -15,7 +15,7 @@ export function Master() {
 
   return (
     <>
-      <h1 className="mb-3 text-2xl font-bold sm:text-3xl">Painel Master</h1>
+      <Titulo titulo="Painel Master" subtitulo="Provisionamento de instituições e concessão de escopos. Sem acesso a candidatos." />
       <p className="nota mb-3">O Master provisiona instituições e concede escopos. Não acessa dados de candidatos sem escopo explícito.</p>
       <Mensagem m={acao.mensagem} />
       <Detalhes titulo="Provisionar instituição">

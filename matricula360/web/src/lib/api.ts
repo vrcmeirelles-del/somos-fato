@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -33,6 +33,9 @@ export const api = {
   sair: () => c().sair(),
   eu: () => c().rpc<Eu>('rpc_me'),
   estrutura: (ies: number) => c().rpc<Estrutura>('rpc_estrutura', { p_ies: ies }),
+  central: (ies: number, coorte: string, filtros: Record<string, string>) =>
+    c().rpc<Central>('rpc_central', { p_ies: ies, p_coorte: coorte, p_filtros: Object.fromEntries(Object.entries(filtros).filter(([, v]) => v)) }),
+  metas: (ies: number, coorte: string) => c().rpc<{ curso_id: number; meta: number }[]>('rpc_metas', { p_ies: ies, p_coorte: coorte }),
   bi: (ies: number, coorte: string, agrupar = 'curso') => c().rpc<Bi>('rpc_bi', { p_ies: ies, p_coorte: coorte, p_agrupar: agrupar }),
   fila: (ies: number) => c().rpc<Fila>('rpc_fila', { p_ies: ies }),
   cicloMaim: (ies: number) => c().rpc<ResultadoMaim>('rpc_ciclo_maim', { p_ies: ies }),

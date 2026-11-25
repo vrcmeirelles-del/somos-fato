@@ -16,7 +16,8 @@ const ROTULOS: Record<string, string> = {
   documental: 'Documental', financeira: 'Financeira', academica: 'Acadêmica', valida: 'Válida', invalida: 'Inválida', isencao_formal: 'Isenção formal',
   primeiro_contato: 'Primeiro contato', follow_up: 'Follow-up', pendencia_validacao: 'Pendência de validação', recuperacao: 'Recuperação',
   gestor: 'Gestor', reitoria: 'Reitoria', coordenador: 'Coordenação', comercial: 'Comercial', secretaria: 'Secretaria', financeiro: 'Financeiro',
-  pendente_aprovacao: 'Pendente de aprovação', aprovada: 'Aprovada', rejeitada: 'Rejeitada', aceita: 'Aceita', expirada: 'Expirada',
+  pendente_aprovacao: 'Pendente de aprovação', aprovada: 'Aprovada', rejeitada: 'Rejeitada', aceita: 'Aceita', expirada: 'Expirada', substituida: 'Substituída',
+  presencial: 'Presencial', semipresencial: 'Semipresencial', ead: 'EAD', noturno: 'Noturno', matutino: 'Matutino', vespertino: 'Vespertino', integral: 'Integral',
   curso: 'Curso', turno: 'Turno', modalidade: 'Modalidade', forma_ingresso: 'Forma de ingresso', atendente: 'Atendente',
 };
 export const rotulo = (k: string | null | undefined) => (k == null ? '' : ROTULOS[k] ?? k);

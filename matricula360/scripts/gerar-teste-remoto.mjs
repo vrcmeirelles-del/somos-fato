@@ -26,7 +26,7 @@ function dividir(sql) {
 
 const ler = (f) => readFileSync(new URL(`../supabase/teste-local/${f}`, import.meta.url), 'utf8');
 const semente = dividir(ler('10_semente.sql')).filter((s) => !/^insert into auth\.users/i.test(s));
-const testes = [...dividir(ler('20_testes_rls.sql')), ...dividir(ler('30_testes_complementares.sql')), ...dividir(ler('40_testes_leitura.sql')), ...dividir(ler('50_testes_fase2.sql'))];
+const testes = [...dividir(ler('20_testes_rls.sql')), ...dividir(ler('30_testes_complementares.sql')), ...dividir(ler('40_testes_leitura.sql')), ...dividir(ler('50_testes_fase2.sql')), ...dividir(ler('60_testes_central.sql'))];
 
 const protecao = `  if exists (select 1 from public.ies) or exists (select 1 from public.usuarios) then
     raise exception 'ABORTADO: o banco já tem dados; este teste só roda em banco vazio.';

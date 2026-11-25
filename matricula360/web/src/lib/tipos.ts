@@ -3,7 +3,7 @@ export type Papel = 'gestor' | 'reitoria' | 'coordenador' | 'comercial' | 'secre
 export type Etapa = 'novo' | 'contato' | 'inscrito' | 'pre_matricula' | 'matricula_comercial' | 'confirmado' | 'perdido' | 'cancelado';
 export type Dimensao = 'documental' | 'financeira' | 'academica';
 export type Canal = 'email' | 'whatsapp' | 'telefone';
-export type StatusProposta = 'pendente_aprovacao' | 'aprovada' | 'rejeitada' | 'aceita' | 'expirada';
+export type StatusProposta = 'pendente_aprovacao' | 'aprovada' | 'rejeitada' | 'aceita' | 'expirada' | 'substituida';
 
 export interface Escopo { id: number; ies_id: number; ies_nome: string; curso_id: number | null; curso_nome: string | null; papel: Papel }
 export interface Eu { usuario: { id: string; nome: string; master: boolean; email?: string }; escopos: Escopo[] }
@@ -64,3 +64,22 @@ export interface AcessosIes {
 }
 export interface ResultadoMaim { follow_ups: number; suprimidos_optout: number; limite_atingido: number; pendencias_validacao: number;
   sem_responsavel_redistribuidas: number; atrasadas: number }
+
+export interface CentralTotais {
+  oportunidades: number; matriculas_comerciais: number; ingressantes: number; perdidos: number; cancelamentos: number; oportunidades_abertas: number;
+  conversao_geral: number | null; taxa_conversao_decididas: number | null; meta: number | null; atingimento: number | null;
+  ingressos_esperados_pipeline: number | null; projecao_ingressos: number | null; lacuna_meta: number | null; novas_oportunidades_necessarias: number | null;
+  receita_mensal_ingressantes_centavos: number; receita_mensal_potencial_pipeline_centavos: number | null;
+  custo_por_lead_centavos: number | null; custo_por_matricula_centavos: number | null; custo_motivo: string;
+  metodos: Record<'taxa' | 'projecao' | 'novas' | 'receita' | 'funil', string>;
+}
+export interface Grupo { chave: string; oportunidades: number; ingressantes: number; matriculas_comerciais?: number; conversao?: number | null; meta?: number | null; atingimento?: number | null; curso_id?: number }
+export interface Alerta { tipo: string; prioridade: number; titulo: string; quantidade: number; acao: string }
+export interface Central {
+  coorte: string; cobertura: 'ies' | 'recorte'; totais: CentralTotais;
+  funil: { etapa: string; quantidade: number; conversao_da_anterior: number | null }[];
+  evolucao: { semana: string; oportunidades: number; matriculas_comerciais: number; ingressantes: number }[];
+  por_origem: Grupo[]; por_curso: Grupo[]; por_turno: Grupo[]; por_modalidade: Grupo[]; por_atendente: Grupo[];
+  alertas: Alerta[] | null;
+  filtros_disponiveis: { campi: { id: number; nome: string }[]; turnos: string[]; modalidades: string[] };
+}

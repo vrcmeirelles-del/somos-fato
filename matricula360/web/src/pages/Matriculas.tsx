@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSessao } from '../components/Layout';
-import { Chip, Estado, Mensagem } from '../components/ui';
+import { Chip, Estado, Mensagem, Titulo } from '../components/ui';
 import { api } from '../lib/api';
 import { dataHora, rotulo } from '../lib/formato';
 import { useAcao, useCarregar } from '../lib/hooks';
@@ -14,7 +14,7 @@ export function Matriculas({ abrirDetalhe }: { abrirDetalhe: (id: number) => voi
   const acao = useAcao();
   return (
     <>
-      <h1 className="mb-3 text-2xl font-bold sm:text-3xl">Matrículas</h1>
+      <Titulo titulo="Conversão e Matrículas" subtitulo="Matrícula comercial, validações por dimensão e ingresso efetivo." />
       <p className="nota mb-3">Matrícula comercial, validações documental/financeira/acadêmica e ingresso efetivo são etapas separadas. Secretaria valida documental e acadêmica;
         financeiro valida financeira (inclui isenção formal); comercial não valida. A confirmação só ocorre com as três dimensões válidas.</p>
       <Mensagem m={acao.mensagem} />

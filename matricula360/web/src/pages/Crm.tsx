@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSessao } from '../components/Layout';
-import { Campo, Detalhes, Estado, Mensagem } from '../components/ui';
+import { Campo, Detalhes, Estado, Mensagem, Titulo } from '../components/ui';
 import { api } from '../lib/api';
 import { linhaImportacao, rotulo } from '../lib/formato';
 import { useAcao, useCarregar } from '../lib/hooks';
@@ -20,7 +20,7 @@ export function Crm({ abrirDetalhe, versao }: { abrirDetalhe: (id: number) => vo
 
   return (
     <>
-      <h1 className="mb-3 text-2xl font-bold sm:text-3xl">CRM educacional</h1>
+      <Titulo titulo="Pipeline (CRM)" subtitulo="Oportunidades por etapa do funil. Transições validadas no servidor." />
       {tem('comercial', 'gestor') && <><NovaOportunidade aoCriar={recarregar} /><Importar aoImportar={recarregar} /></>}
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <label className="text-sm">Coorte{' '}
