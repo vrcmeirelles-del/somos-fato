@@ -8,7 +8,7 @@
 |---|---|---|
 | Unitários, domínio e API (HTTP real) | `npm test` | **42/42 aprovados** (`evidencias/saida-testes.txt`) |
 | Navegador, desktop 1366×860 e iPhone 13 | `npm run homologar` | **83/83 verificações** (`evidencias/resultado.json`) |
-| Bateria de RLS no **Supabase real** (projeto de homologação) | SQL Editor: `supabase/TESTAR-NO-SQL-EDITOR.sql` | **107/107**, tudo desfeito ao final |
+| Bateria de RLS no **Supabase real** (projeto de homologação) | SQL Editor: `supabase/TESTAR-NO-SQL-EDITOR.sql` | **138/138** com as migrações 1 a 5 (rodada anterior: 107/107 com as migrações 1 a 4); tudo desfeito ao final |
 | Migrações Supabase em **Postgres 16 real** (RLS, RPCs, gatilhos) | `npm run testar:postgres` | **107/107 verificações de RLS e regras + corrida real entre 2 sessões + lint (RLS em 100% das tabelas, search_path fixo em 100% das funções)** |
 
 A verificação no navegador cobre seis perfis: público, gestor, comercial, secretaria, coordenação e Master. Em cada tela checa:
@@ -60,6 +60,7 @@ O "erro" é proposital: a exceção final desfaz a semente e os testes. As 107 v
 - **Performance Advisor (25/11/2026):** 0 erros, 0 avisos e 14 sugestões.
   - **9 *Unindexed foreign keys*:** corrigidas na migração 4 (`20261125000004_indices_fk.sql`), que inclui ainda mais 3 FKs cobertas só por índices parciais. Verificação local: nenhuma FK fica sem índice; a migração é idempotente; os 107 testes continuam verdes.
   - **5 *Unused Index*:** não se aplicam por ora, porque o banco está vazio e sem uso. Reavaliar após uso real.
+- **Migração 5 (RPCs de leitura) aplicada em 25/11/2026.** Na sequência, a bateria completa rodou no banco real: `RESULTADO: 138 verificações aprovadas, 0 falhas`.
 - **Migração 4 aplicada no projeto em 25/11/2026**, segundo o usuário. Não houve conferência independente por esta sessão, porque os índices não são visíveis pela API com a chave publicável. Confirmar no próximo Performance Advisor: devem restar só os avisos de *Unused Index*.
 - mapear os códigos HTTP para usuário autenticado via login real no Supabase Auth: 401/42501 para `anon` já foi confirmado; para `authenticated` são esperados 403/404/409.
 

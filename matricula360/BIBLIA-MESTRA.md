@@ -58,7 +58,7 @@ Homologar em navegador móvel e desktop e registrar evidências e riscos. **Situ
 
 ## Estado da entrega
 - **v0.2, piloto local:** Node 22 sem dependências externas, SQLite (`node:sqlite`), 42 testes e 83 verificações no navegador. Escuta só em `127.0.0.1`.
-- **Supabase (aplicado em homologação em 25/11/2026, projeto `jbimijcvvekomovodfze`; bloqueio de `anon` conferido externamente; 107/107 verificações de isolamento aprovadas no banco real):** `supabase/migrations/` com RLS em todas as tabelas, escrita apenas por RPC com auditoria transacional, 24 RPCs com paridade funcional com o piloto e 107 verificações de isolamento e regras aprovadas em Postgres 16 real. Projeto remoto autorizado em 25/11/2026, em org própria gratuita "Matricula360" (decisão: independência da Vértice e custo zero); projeto criado pelo usuário e migração aplicada via SQL Editor.
+- **Supabase (aplicado em homologação em 25/11/2026, projeto `jbimijcvvekomovodfze`; bloqueio de `anon` conferido externamente; 138/138 verificações de isolamento aprovadas no banco real (migrações 1 a 5)):** `supabase/migrations/` com RLS em todas as tabelas, escrita apenas por RPC com auditoria transacional, 24 RPCs com paridade funcional com o piloto e 107 verificações de isolamento e regras aprovadas em Postgres 16 real. Projeto remoto autorizado em 25/11/2026, em org própria gratuita "Matricula360" (decisão: independência da Vértice e custo zero); projeto criado pelo usuário e migração aplicada via SQL Editor.
 - **Ainda não é:** produção, Supabase/RLS, React/TypeScript/Tailwind, implantação no Render nem integração externa.
 - **Próxima entrega, que depende de autorização de infraestrutura:**
   1. projeto Supabase de homologação e migrações via CLI a partir de `src/schema.sql`;
