@@ -16,6 +16,7 @@ const arquivos = [
   'supabase/teste-local/00_simulacao_supabase.sql',
   'supabase/migrations/20261125000001_esquema_rls.sql',
   'supabase/migrations/20261125000002_rpcs.sql',
+  'supabase/migrations/20261125000003_rpcs_complementares.sql',
   'supabase/teste-local/10_semente.sql',
 ];
 for (const f of arquivos) {
@@ -24,7 +25,7 @@ for (const f of arquivos) {
 }
 
 let falhou = false;
-const rt = spawnSync('psql', [urlTeste, '-X', '-tAq', '-o', '/dev/null', '-f', 'supabase/teste-local/20_testes_rls.sql'], { encoding: 'utf8' });
+const rt = spawnSync('psql', [urlTeste, '-X', '-tAq', '-v', 'ON_ERROR_STOP=1', '-o', '/dev/null', '-f', 'supabase/teste-local/20_testes_rls.sql', '-f', 'supabase/teste-local/30_testes_complementares.sql'], { encoding: 'utf8' });
 const linhas = (rt.stderr || '').split('\n').map((l) => l.replace(/^psql:[^ ]+ (NOTICE|ERROR):\s+/, (_, t) => (t === 'ERROR' ? 'ERRO: ' : ''))).filter(Boolean);
 for (const l of linhas) console.log(l);
 const okRls = linhas.filter((l) => l.startsWith('OK ')).length;
