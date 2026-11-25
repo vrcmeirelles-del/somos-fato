@@ -9,8 +9,8 @@ const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=
 const COOKIE = 'm360_sessao';
 const LIMITE_CORPO = 1024 * 1024;
 
+const csp = (extraConnect = '') => `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'${extraConnect ? ' ' + extraConnect : ''}; frame-ancestors 'none'; base-uri 'none'; form-action 'self'`;
 const CABECALHOS = {
-  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'no-referrer',
@@ -46,7 +46,13 @@ function somente(d, permitidos) {
   return d;
 }
 
-export function criarApp(servico, { cookieSeguro = false } = {}) {
+// supabase = { url, chave } liga o modo homologação: as telas falam direto com o Supabase
+// (Auth + RPCs com RLS) e a API local fica desativada. Nenhum dado passa por este servidor.
+export function criarApp(servico, { cookieSeguro = false, supabase = null } = {}) {
+  const cabecalhos = { ...CABECALHOS, 'Content-Security-Policy': csp(supabase ? supabase.url : '') };
+  const configPublica = supabase
+    ? { modo: 'supabase', supabase_url: supabase.url, supabase_chave_publicavel: supabase.chave }
+    : { modo: 'local' };
   const rotas = [];
   const rota = (metodo, padrao, campos, fn, { publica = false } = {}) => {
     const nomes = [];
@@ -103,7 +109,7 @@ export function criarApp(servico, { cookieSeguro = false } = {}) {
 
   // Páginas da aplicação: guarda no SERVIDOR (sem sessão => /login; sem escopo => 404).
   const PAGINAS_APP = [/^\/master$/, /^\/ies\/[^/]+\/(dashboard|crm)$/, /^\/(campanhas|matriculas|propostas|academia|configuracoes)$/];
-  const ESTATICOS = { '/': 'index.html', '/demo': 'demo.html', '/login': 'login.html', '/style.css': 'style.css', '/app.css': 'app.css', '/demo.mjs': 'demo.mjs', '/app.mjs': 'app.mjs', '/login.mjs': 'login.mjs' };
+  const ESTATICOS = { '/': 'index.html', '/demo': 'demo.html', '/login': 'login.html', '/style.css': 'style.css', '/app.css': 'app.css', '/demo.mjs': 'demo.mjs', '/app.mjs': 'app.mjs', '/login.mjs': 'login.mjs', '/api.mjs': 'api.mjs', '/supabase.mjs': 'supabase.mjs' };
 
   function json(res, status, corpo) {
     res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -116,10 +122,13 @@ export function criarApp(servico, { cookieSeguro = false } = {}) {
   }
 
   return async function manipular(req, res) {
-    for (const [k, v] of Object.entries(CABECALHOS)) res.setHeader(k, v);
+    for (const [k, v] of Object.entries(cabecalhos)) res.setHeader(k, v);
     const url = new URL(req.url, 'http://local');
     const caminho = url.pathname;
     try {
+      if (caminho === '/config.json' && req.method === 'GET') return json(res, 200, configPublica);
+      if (supabase && caminho.startsWith('/api/')) throw new ErroApp(404, 'API local desativada no modo Supabase');
+      if (supabase && PAGINAS_APP.some((re) => re.test(caminho))) return arquivo(res, join(PUBLICO, 'app.html'));
       if (caminho.startsWith('/api/')) {
         const r = rotas.find((x) => x.metodo === req.method && x.re.test(caminho));
         if (!r) {

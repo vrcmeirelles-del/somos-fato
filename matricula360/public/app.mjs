@@ -14,20 +14,8 @@ function h(tag, attrs = {}, ...filhos) {
   return e;
 }
 
-const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
-
-async function api(metodo, url, corpo) {
-  const opts = { method: metodo, credentials: 'same-origin', headers: {} };
-  if (metodo !== 'GET') {
-    opts.headers = { 'content-type': 'application/json', 'x-m360': '1', 'idempotency-key': uuid() };
-    opts.body = JSON.stringify(corpo ?? {});
-  }
-  const r = await fetch(url, opts);
-  const d = await r.json().catch(() => ({}));
-  if (r.status === 401) { location.href = '/login'; throw new Error('Sessão expirada'); }
-  if (!r.ok) throw Object.assign(new Error(d.erro || `Erro ${r.status}`), { status: r.status });
-  return d;
-}
+// Destino das chamadas (API local do piloto ou Supabase de homologação) decidido em api.mjs.
+import { api, modo } from './api.mjs';
 
 const moeda = (c) => (c / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const pct = (x) => (x == null ? h('span', { class: 'nd', title: 'Indisponível: sem denominador ou sem meta' }, 'N/D') : `${(x * 100).toFixed(1)}%`);
@@ -461,6 +449,7 @@ async function paginaMaster(main) {
 
 // ---------------- roteamento ----------------
 async function iniciar() {
+  if ((await modo()) === 'supabase') document.querySelector('.faixa').textContent = 'Homologação Supabase · Dados sintéticos · IA desativada · Envio externo desativado';
   ME = await api('GET', '/api/me');
   IES = iesAtual();
   if (IES && !ME.escopos.some((e) => e.ies_id === IES)) IES = ME.escopos[0]?.ies_id ?? null;

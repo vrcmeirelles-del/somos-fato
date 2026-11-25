@@ -17,17 +17,30 @@ if (process.env.M360_ENVIO_EXTERNO && process.env.M360_ENVIO_EXTERNO !== 'desati
   process.exit(1);
 }
 
-if (BANCO !== ':memory:') mkdirSync(dirname(BANCO), { recursive: true });
-const novo = BANCO === ':memory:' || !existsSync(BANCO);
-const db = abrirBanco(BANCO);
-const servico = criarServico(db);
-if (novo) {
-  const senha = process.env.M360_SENHA_PILOTO || SENHA_PADRAO_PILOTO;
-  semear(db, servico, { senha });
-  console.log(`Banco piloto criado com dados sintéticos em ${BANCO}.`);
+// Modo homologação Supabase: só a URL do projeto e a chave PUBLICÁVEL (nunca a secreta).
+const SB_URL = process.env.M360_SUPABASE_URL;
+const SB_CHAVE = process.env.M360_SUPABASE_CHAVE_PUBLICAVEL;
+let supabase = null;
+if (SB_URL || SB_CHAVE) {
+  if (!/^https:\/\/[a-z0-9]+\.supabase\.co$/.test(SB_URL || '')) { console.error('M360_SUPABASE_URL inválida (esperado https://<ref>.supabase.co).'); process.exit(1); }
+  if (!/^sb_publishable_/.test(SB_CHAVE || '')) { console.error('M360_SUPABASE_CHAVE_PUBLICAVEL deve ser a chave publicável (sb_publishable_...). Nunca use a chave secreta.'); process.exit(1); }
+  supabase = { url: SB_URL, chave: SB_CHAVE };
 }
 
-createServer(criarApp(servico)).listen(PORTA, HOST, () => {
-  console.log(`Matrícula 360° (piloto) em http://${HOST}:${PORTA}`);
+let servico = null;
+if (!supabase) {
+  if (BANCO !== ':memory:') mkdirSync(dirname(BANCO), { recursive: true });
+  const novo = BANCO === ':memory:' || !existsSync(BANCO);
+  const db = abrirBanco(BANCO);
+  servico = criarServico(db);
+  if (novo) {
+    const senha = process.env.M360_SENHA_PILOTO || SENHA_PADRAO_PILOTO;
+    semear(db, servico, { senha });
+    console.log(`Banco piloto criado com dados sintéticos em ${BANCO}.`);
+  }
+}
+
+createServer(criarApp(servico, { supabase })).listen(PORTA, HOST, () => {
+  console.log(`Matrícula 360° (${supabase ? 'homologação Supabase: ' + supabase.url : 'piloto local'}) em http://${HOST}:${PORTA}`);
   console.log('Somente dados sintéticos. IA e envio externo desativados.');
 });
