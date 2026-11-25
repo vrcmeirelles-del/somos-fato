@@ -27,9 +27,10 @@ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false)
 insert into teste.var values ('op3', (select id from public.oportunidades where ies_id = 1 and etapa = 'novo' and curso_id = 1 order by id limit 1));
 select public.rpc_mover_etapa((select v from teste.var where k='op3'), 'contato', (select versao from public.oportunidades where id = (select v from teste.var where k='op3')));
 select public.rpc_mover_etapa((select v from teste.var where k='op3'), 'inscrito', (select versao from public.oportunidades where id = (select v from teste.var where k='op3')));
-insert into teste.var values ('p_ok', (public.rpc_criar_proposta((select v from teste.var where k='op3'), 10)->>'id')::bigint);
+-- (migração 7) nova proposta substitui a anterior ativa: a ordem do teste reflete essa regra
 insert into teste.var values ('p_pend', (public.rpc_criar_proposta((select v from teste.var where k='op3'), 60)->>'id')::bigint);
 select teste.erro('select public.rpc_aceitar_proposta((select v from teste.var where k=''p_pend''))', '22023', 'proposta pendente não pode ser aceita');
+insert into teste.var values ('p_ok', (public.rpc_criar_proposta((select v from teste.var where k='op3'), 10)->>'id')::bigint);
 select teste.ok(public.rpc_aceitar_proposta((select v from teste.var where k='p_ok'))->>'status' = 'aceita', 'proposta aprovada é aceita');
 reset role;
 update public.propostas set status = 'aprovada', validade = now() - interval '1 day' where id = (select v from teste.var where k='p_pend');
@@ -88,7 +89,7 @@ set role authenticated;
 reset role;
 with nova as (
   insert into public.tarefas(ies_id, oportunidade_id, tipo, canal, responsavel_id, vence_em)
-  select 1, o.id, 'follow_up', 'telefone', teste.id('comercial_a'), now() + interval '1 day'
+  select 1, o.id, 'primeiro_contato', 'telefone', teste.id('comercial_a'), now() + interval '1 day'
     from public.oportunidades o where o.ies_id = 1 and o.curso_id = 1 and o.etapa = 'novo' order by o.id limit 1
   returning id)
 insert into teste.var select 't2', id from nova;
