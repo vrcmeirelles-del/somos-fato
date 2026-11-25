@@ -10,7 +10,11 @@ let configuracao: Config | null = null;
 
 export async function iniciar(): Promise<Config> {
   if (configuracao) return configuracao;
-  const cfg = await fetch('/config.json').then((r) => r.json() as Promise<Config>);
+  const r = await fetch('/config.json');
+  const cfg = (r.ok && (r.headers.get('content-type') || '').includes('json')
+    ? await r.json().catch(() => null)
+    : null) as Config | null;
+  if (!cfg) throw new ErroApi('Configuração do sistema ausente (config.json). Verifique a publicação.', 500);
   if (cfg.modo !== 'supabase' || !cfg.supabase_url || !cfg.supabase_chave_publicavel) {
     throw new ErroApi('Esta interface exige o modo Supabase (M360_SUPABASE_URL e M360_SUPABASE_CHAVE_PUBLICAVEL).', 500);
   }

@@ -14,10 +14,13 @@ const senhas = JSON.parse(readFileSync('dados/contas-homologacao.json', 'utf8'))
 const conta = (p) => `m360.${p}@example.com`;
 const PORTA = 4198;
 const BASE = `http://127.0.0.1:${PORTA}`;
-const OUT = process.env.M360_UI === 'legado' ? 'docs/evidencias/supabase-legado' : 'docs/evidencias/supabase';
+const ESTATICO = process.env.M360_ESTATICO === '1';
+const OUT = ESTATICO ? 'docs/evidencias/render-simulado' : process.env.M360_UI === 'legado' ? 'docs/evidencias/supabase-legado' : 'docs/evidencias/supabase';
 mkdirSync(OUT, { recursive: true });
 
-const srv = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server.mjs'], {
+const srv = ESTATICO
+  ? spawn(process.execPath, ['scripts/servir-estatico.mjs'], { env: { ...process.env, PORT: String(PORTA), M360_SUPABASE_URL: SB_URL }, stdio: ['ignore', 'pipe', 'inherit'] })
+  : spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server.mjs'], {
   env: { ...process.env, PORT: String(PORTA), M360_SUPABASE_URL: SB_URL, M360_SUPABASE_CHAVE_PUBLICAVEL: SB_CHAVE, M360_UI: process.env.M360_UI || 'react' }, stdio: ['ignore', 'pipe', 'inherit'] });
 await new Promise((ok, falha) => { srv.stdout.on('data', (b) => { if (String(b).includes('http://')) ok(); }); setTimeout(() => falha(new Error('servidor não subiu')), 15000); });
 
@@ -45,11 +48,15 @@ async function checar(page, perfil, disp, nome, erros) {
   registrar(perfil, disp, `${nome}: sem erros de console/CSP`, erros.length === 0, erros.join(' | ').slice(0, 300));
   await page.screenshot({ path: `${OUT}/${disp}-${perfil}-${nome}.png`, fullPage: disp === 'desktop' });
 }
-// Chama a ponte das telas direto no navegador (simula adulteração feita pelo usuário no próprio cliente).
-const chamar = (page, metodo, url, corpo) => page.evaluate(async ([m, u, c]) => {
-  const { api } = await import('/api.mjs');
-  try { return { ok: true, d: await api(m, u, c) }; } catch (e) { return { ok: false, status: e.status, msg: e.message }; }
-}, [metodo, url, corpo]);
+// Simula adulteração feita no próprio navegador: chama a RPC direto no Supabase com a sessão do usuário.
+const chamar = (page, rpc, args) => page.evaluate(async ([nome, a]) => {
+  const cfg = await (await fetch('/config.json')).json();
+  const s = JSON.parse(sessionStorage.getItem('m360_sb_sessao') || 'null');
+  const r = await fetch(`${cfg.supabase_url}/rest/v1/rpc/${nome}`, { method: 'POST',
+    headers: { apikey: cfg.supabase_chave_publicavel, authorization: `Bearer ${s?.access}`, 'content-type': 'application/json' }, body: JSON.stringify(a) });
+  const d = await r.json().catch(() => ({}));
+  return { ok: r.ok, status: r.status, msg: d.message };
+}, [rpc, args]);
 
 try {
   for (const disp of ['desktop', 'celular']) {
@@ -64,7 +71,7 @@ try {
       await page.selectOption('#agrupar', 'turno');
       await page.waitForTimeout(800);
       registrar('gestor', disp, 'BI agrupado por turno', (await page.textContent('main table')).includes('noturno'));
-      const beta = await chamar(page, 'GET', '/api/ies/2/bi?coorte=2027.1');
+      const beta = await chamar(page, 'rpc_bi', { p_ies: 2, p_coorte: '2027.1' });
       registrar('gestor', disp, 'IDOR: BI da IES Beta recusado pelo banco', !beta.ok && beta.status === 404, `status ${beta.status}`);
       if (disp === 'desktop') {
         await page.click('nav >> text=CRM');
@@ -126,7 +133,7 @@ try {
         registrar('comercial', disp, 'proposta do comercial acima do limite fica pendente', true);
         await page.click('#det-corpo button[aria-label="Fechar"]');
       }
-      const val = await chamar(page, 'POST', '/api/oportunidades/1/validacoes', { dimensao: 'documental', resultado: 'valida', evidencia: 'tentativa indevida', versao_esperada: 1 });
+      const val = await chamar(page, 'rpc_validar', { p_op: 1, p_dimensao: 'documental', p_resultado: 'valida', p_evidencia: 'tentativa indevida', p_versao: 1 });
       registrar('comercial', disp, 'comercial não valida (403 do banco)', !val.ok && [403, 422].includes(val.status), `${val.status} ${val.msg}`);
       await checar(page, 'comercial', disp, 'crm', erros);
       await ctx.close();
@@ -182,7 +189,7 @@ try {
       await page.waitForSelector('.kpi');
       const kpis = await page.textContent('.kpis');
       registrar('gestor-beta', disp, 'vê só a Beta (8 oportunidades)', /Oportunidades\s*8/.test(kpis), kpis.replace(/\s+/g, ' ').slice(0, 80));
-      const alfa = await chamar(page, 'GET', '/api/ies/1/estrutura');
+      const alfa = await chamar(page, 'rpc_estrutura', { p_ies: 1 });
       registrar('gestor-beta', disp, 'IDOR: estrutura da Alfa recusada', !alfa.ok && alfa.status === 404, `status ${alfa.status}`);
       await checar(page, 'gestor-beta', disp, 'painel', erros);
       await ctx.close();
@@ -193,7 +200,7 @@ try {
       registrar('master', disp, 'Master cai no painel Master', page.url().endsWith('/master'));
       await page.waitForSelector('main table tbody tr', { timeout: 15000 });
       registrar('master', disp, 'lista as 2 IES', (await page.locator('main table tbody tr').count()) === 2);
-      const cand = await chamar(page, 'GET', '/api/oportunidades/1');
+      const cand = await chamar(page, 'rpc_detalhe', { p_op: 1 });
       registrar('master', disp, 'Master sem escopo não lê candidato', !cand.ok && cand.status === 404, `status ${cand.status}`);
       await page.locator('button:text("Acessos")').first().click();
       await page.waitForSelector('text=Conceder escopo');
