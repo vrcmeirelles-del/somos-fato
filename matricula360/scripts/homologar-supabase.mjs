@@ -13,21 +13,23 @@ if (!SB_CHAVE) { console.error('Defina M360_SUPABASE_CHAVE_PUBLICAVEL (sb_publis
 const senhas = JSON.parse(readFileSync('dados/contas-homologacao.json', 'utf8'));
 const conta = (p) => `m360.${p}@example.com`;
 const PORTA = 4198;
-const BASE = `http://127.0.0.1:${PORTA}`;
+const EXTERNA = process.env.M360_BASE_EXTERNA; // ex.: https://matricula360-homologacao.onrender.com
+const BASE = EXTERNA || `http://127.0.0.1:${PORTA}`;
 const ESTATICO = process.env.M360_ESTATICO === '1';
-const OUT = ESTATICO ? 'docs/evidencias/render-simulado' : process.env.M360_UI === 'legado' ? 'docs/evidencias/supabase-legado' : 'docs/evidencias/supabase';
+const OUT = EXTERNA ? 'docs/evidencias/publicado' : ESTATICO ? 'docs/evidencias/render-simulado' : process.env.M360_UI === 'legado' ? 'docs/evidencias/supabase-legado' : 'docs/evidencias/supabase';
 mkdirSync(OUT, { recursive: true });
 
-const srv = ESTATICO
+const srv = EXTERNA ? null : ESTATICO
   ? spawn(process.execPath, ['scripts/servir-estatico.mjs'], { env: { ...process.env, PORT: String(PORTA), M360_SUPABASE_URL: SB_URL }, stdio: ['ignore', 'pipe', 'inherit'] })
   : spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server.mjs'], {
   env: { ...process.env, PORT: String(PORTA), M360_SUPABASE_URL: SB_URL, M360_SUPABASE_CHAVE_PUBLICAVEL: SB_CHAVE, M360_UI: process.env.M360_UI || 'react' }, stdio: ['ignore', 'pipe', 'inherit'] });
-await new Promise((ok, falha) => { srv.stdout.on('data', (b) => { if (String(b).includes('http://')) ok(); }); setTimeout(() => falha(new Error('servidor não subiu')), 15000); });
+if (srv) await new Promise((ok, falha) => { srv.stdout.on('data', (b) => { if (String(b).includes('http://')) ok(); }); setTimeout(() => falha(new Error('servidor não subiu')), 15000); });
 
 const resultados = [];
 const registrar = (perfil, disp, passo, ok, detalhe = '') => { resultados.push({ perfil, dispositivo: disp, passo, ok, detalhe }); console.log(`${ok ? 'OK ' : 'FALHA'} [${disp}] ${perfil} · ${passo}${detalhe ? ' — ' + detalhe : ''}`); };
 const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
 const navegador = await chromium.launch(proxy ? { proxy: { server: proxy, bypass: '127.0.0.1,localhost' } } : {});
+if (EXTERNA) console.log(`Homologando o site publicado: ${EXTERNA}`);
 
 async function sessao(disp, perfil) {
   const ctx = await navegador.newContext(disp === 'celular' ? { ...devices['iPhone 13'] } : { viewport: { width: 1366, height: 860 } });
@@ -212,7 +214,7 @@ try {
   registrar('execucao', '-', 'erro inesperado', false, e.message.split('\n')[0]);
 } finally {
   await navegador.close();
-  srv.kill();
+  srv?.kill();
 }
 const falhas = resultados.filter((r) => !r.ok);
 writeFileSync(`${OUT}/resultado.json`, JSON.stringify({ em: new Date().toISOString(), projeto: SB_URL, total: resultados.length, falhas: falhas.length, resultados }, null, 2));

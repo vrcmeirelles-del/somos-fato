@@ -11,6 +11,7 @@
 | Bateria de RLS no **Supabase real** (projeto de homologação) | SQL Editor: `supabase/TESTAR-NO-SQL-EDITOR.sql` | **138/138** com as migrações 1 a 5 (rodada anterior: 107/107 com as migrações 1 a 4); tudo desfeito ao final |
 | **Telas ligadas ao Supabase real**, desktop e iPhone 13, 7 perfis | `npm run` → `scripts/homologar-supabase.mjs` | **63/63** (`evidencias/supabase/resultado.json`) |
 | **Interface React/TypeScript/Tailwind** ligada ao Supabase real (desktop + iPhone 13) | `npm run homologar:supabase` | **66/66** (`evidencias/supabase/resultado.json`); telas legadas no mesmo roteiro: 66/66 |
+| **Site publicado no Render** (`matricula360-homologacao.onrender.com`), desktop + iPhone 13 | `M360_BASE_EXTERNA=… npm run homologar:supabase` | **66/66** (`evidencias/publicado/resultado.json`) |
 | Unitários da interface React (Vitest) | `npm run web:test` | **12/12** |
 | Migrações Supabase em **Postgres 16 real** (RLS, RPCs, gatilhos) | `npm run testar:postgres` | **107/107 verificações de RLS e regras + corrida real entre 2 sessões + lint (RLS em 100% das tabelas, search_path fixo em 100% das funções)** |
 
@@ -125,6 +126,21 @@ A primeira rodada deu 56/63. As 7 falhas foram 1 contagem do próprio teste e 6 
 - auditoria de acessibilidade com axe;
 - divisão do pacote por rota (217 KB, 69 KB comprimido, hoje em um único arquivo);
 - remoção das telas legadas após aceite.
+
+## Publicação de homologação no Render (25/11/2026, autorizada pelo usuário)
+
+- Static Site `matricula360-homologacao`, separado do site institucional, a partir da branch do PR #1.
+- `config.json` publicado contém só a URL do projeto e a chave **publicável**.
+- `noindex` na página e no cabeçalho.
+- **Conferido no ar:** os seis cabeçalhos de segurança (CSP com `connect-src` restrito ao Supabase do projeto, `X-Frame-Options DENY`, entre outros), mais `Strict-Transport-Security` do Render.
+- Rotas internas servem a aplicação (200); arquivo inexistente dá 404.
+
+**Ajustes durante a configuração:**
+1. **Faltava a regra de rewrite:** rotas internas davam 404.
+2. **Destino da regra sem a barra inicial:** rotas internas respondiam 200 vazio.
+3. **Cabeçalhos preenchidos na coluna errada:** corrigido no painel.
+
+**Domínio `matricula360.somosfato.com.br`:** CNAME criado no Registro.br (→ `matricula360-homologacao.onrender.com`), aguardando propagação do DNS no momento deste registro.
 
 ## Critérios de aceite da Bíblia-Mestra
 

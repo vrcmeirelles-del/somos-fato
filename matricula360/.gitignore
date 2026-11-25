@@ -18,3 +18,4 @@ web/dist/
 docs/evidencias/supabase-legado/
 !docs/evidencias/supabase/desktop-gestor-painel.png
 docs/evidencias/render-simulado/
+docs/evidencias/publicado/*.png
