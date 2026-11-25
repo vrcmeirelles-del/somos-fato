@@ -26,6 +26,16 @@ function c(): Cliente {
   if (!cliente) throw new ErroApi('Cliente não iniciado', 500);
   return cliente;
 }
+// O banco tem a migração 10 (CRM avançado)? Sonda barata, memorizada por IES. Sem ela, a interface usa o modo básico.
+const sondas = new Map<number, Promise<boolean>>();
+export function temCrmAvancado(ies: number): Promise<boolean> {
+  if (!sondas.has(ies)) {
+    sondas.set(ies, c().rpc('rpc_listar_oportunidades', { p_ies: ies, p_pagina: 1, p_por_pagina: 1, p_busca: 'sonda' })
+      .then(() => true)
+      .catch((e: ErroApi) => { if (e.codigo === 'PGRST202' || e.status === 404) return false; sondas.delete(ies); throw e; }));
+  }
+  return sondas.get(ies)!;
+}
 const chave = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 export const api = {

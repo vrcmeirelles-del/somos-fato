@@ -37,6 +37,11 @@ export function descreverEvento(e: Pick<EventoAuditoria, 'acao' | 'dados' | 'ent
     case 'escopo.conceder': return `Escopo de ${rotulo(s('papel')).toLowerCase()} concedido${s('curso_id') ? ` no curso #${s('curso_id')}` : ''}.`;
     case 'escopo.revogar': return `Escopo #${e.entidade_id} revogado.`;
     case 'usuario.convidar': return 'Perfil de usuário criado.';
+    case 'interacao.registrar': return `Interação registrada (${rotulo(s('tipo')).toLowerCase()}).`;
+    case 'objecao.registrar': return `Objeção registrada: ${rotulo(s('categoria')).toLowerCase()}.`;
+    case 'objecao.tratar': return `Objeção #${s('objecao_id')} marcada como ${rotulo(s('status')).toLowerCase()}.`;
+    case 'agenda.criar': return `Agendamento criado para ${s('quando') ? new Date(s('quando')).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—'}.`;
+    case 'oportunidade.reatribuir': return `Responsável alterado — motivo: ${s('motivo')} (${s('tarefas')} tarefa(s) transferida(s)).`;
     default: return `${e.acao} (${e.entidade} ${e.entidade_id ?? ''})`;
   }
 }

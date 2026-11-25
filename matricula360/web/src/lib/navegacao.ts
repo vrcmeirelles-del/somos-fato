@@ -1,7 +1,7 @@
 // Mapa dos dez ambientes. Itens "planejado" aparecem desabilitados com a fase prevista:
 // não há página de lista fingindo módulo pronto (critério de aceite da Fase 2).
 import {
-  Activity, BarChart3, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HeartHandshake, KanbanSquare,
+  Activity, BarChart3, CalendarClock, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HeartHandshake, KanbanSquare,
   LayoutDashboard, Megaphone, RefreshCcw, ScrollText, Settings, ShieldCheck, Target, Users, Workflow, type LucideIcon,
 } from 'lucide-react';
 import type { Papel } from './tipos';
@@ -23,6 +23,7 @@ export const AMBIENTES: Ambiente[] = [
   ] },
   { id: 'crm', rotulo: 'CRM Educacional', icone: Users, itens: [
     { rotulo: 'Pipeline (CRM)', rota: (i) => `/ies/${i}/crm`, icone: KanbanSquare },
+    { rotulo: 'Agenda comercial', rota: (i) => `/ies/${i}/agenda`, icone: CalendarClock, papeis: ['gestor', 'comercial'] },
   ] },
   { id: 'funis', rotulo: 'Funis Comerciais', icone: Workflow, itens: [
     { rotulo: 'Funis configuráveis', icone: Workflow, fase: 'P1' },

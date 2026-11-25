@@ -6,6 +6,7 @@ import { Carregando, Titulo, Vazio } from './components/ui';
 import { api, iniciar } from './lib/api';
 import { lerSessao } from './lib/supabase';
 import type { Eu } from './lib/tipos';
+import { Agenda } from './pages/Agenda';
 import { Auditoria } from './pages/Auditoria';
 import { Central } from './pages/Central';
 import { Configuracoes } from './pages/Configuracoes';
@@ -70,6 +71,7 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
       <Route path="/ies/:ies/inteligencia" element={<ExigeIes><Central /></ExigeIes>} />
       <Route path="/ies/:ies/intervencoes" element={<ExigeIes><Intervencoes abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/crm" element={<ExigeIes><Crm abrirDetalhe={abrir} versao={versao} /></ExigeIes>} />
+      <Route path="/ies/:ies/agenda" element={<ExigeIes><Agenda abrirDetalhe={abrir} versao={versao} /></ExigeIes>} />
       <Route path="/ies/:ies/matriculas" element={<ExigeIes><Matriculas abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/propostas" element={<ExigeIes><Propostas /></ExigeIes>} />
       <Route path="/ies/:ies/configuracoes" element={<ExigeIes><Configuracoes /></ExigeIes>} />

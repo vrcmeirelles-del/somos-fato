@@ -47,7 +47,7 @@ export interface Detalhe {
     optout: Record<Canal, boolean>; anonimizada: boolean };
   transicoes: Etapa[];
   validacoes: { id: number; dimensao: Dimensao; resultado: string; evidencia: string; em: string; por: string | null }[];
-  propostas: { id: number; desconto_pct: number; mensalidade_centavos: number; valor_final_centavos: number; validade: string; status: StatusProposta }[];
+  propostas: { id: number; desconto_pct: number; mensalidade_centavos: number; valor_final_centavos: number; validade: string; status: StatusProposta; criado_em?: string; criado_por?: string | null }[];
   tarefas: { id: number; tipo: string; canal: Canal | null; status: string; vence_em: string; resultado: string | null; descricao?: string | null; atrasada?: boolean }[];
   historico: { id: number; acao: string; dados: Record<string, unknown>; em: string; por: string | null }[];
   score?: Score | null;

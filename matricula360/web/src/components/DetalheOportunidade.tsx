@@ -4,6 +4,7 @@ import { dataHora, moeda, rotulo } from '../lib/formato';
 import { useAcao, useCarregar } from '../lib/hooks';
 import type { Canal, Dimensao } from '../lib/tipos';
 import { useSessao } from './Layout';
+import { AlertaDuplicidade, LinhaDoTempo, PainelScore, Reatribuir, Relacionamento } from './FichaCrm';
 import { Campo, Chip, Estado, Mensagem } from './ui';
 
 const CANAIS: Canal[] = ['email', 'whatsapp', 'telefone'];
@@ -28,10 +29,11 @@ export function DetalheOportunidade({ id, aoFechar, aoMudar }: { id: number; aoF
   const fechar = () => { dlg.current?.close(); aoFechar(); };
   const o = d.dados?.oportunidade; const p = d.dados?.pessoa; const curso = d.dados?.curso;
   const podeFunil = tem('comercial', 'gestor');
+  const m10 = d.dados != null && 'objecoes' in d.dados;
 
   return (
     <dialog ref={dlg} aria-labelledby="det-titulo" onCancel={(e) => { e.preventDefault(); fechar(); }}
-      className="max-h-[92vh] w-[min(760px,calc(100vw-24px))] rounded-2xl p-0 backdrop:bg-marinho/45">
+      className="max-h-[92vh] w-[min(920px,calc(100vw-24px))] rounded-2xl p-0 backdrop:bg-marinho/45">
       <div id="det-corpo" className="p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -45,6 +47,8 @@ export function DetalheOportunidade({ id, aoFechar, aoMudar }: { id: number; aoF
           <>
             <p className="my-2"><Chip>{rotulo(o.etapa)}</Chip><Chip>{rotulo(o.forma_ingresso)}</Chip><Chip>versão {o.versao}</Chip><Chip>responsável: {o.responsavel ?? '—'}</Chip></p>
             <Mensagem m={acao.mensagem} />
+            {m10 && <AlertaDuplicidade d={d.dados} />}
+            {m10 && d.dados.score && <div className="mb-4"><PainelScore d={d.dados} /></div>}
             <div className="grid gap-4 sm:grid-cols-2">
               <section>
                 <h3 className="font-semibold">Contato e LGPD</h3>
@@ -91,6 +95,8 @@ export function DetalheOportunidade({ id, aoFechar, aoMudar }: { id: number; aoF
                 <ul className="mt-1 text-sm">{d.dados.validacoes.map((v) => <li key={v.id} className="border-l-[3px] border-linha pl-2.5">{rotulo(v.dimensao)} · {rotulo(v.resultado)} · {v.por} · {dataHora(v.em)} — {v.evidencia}</li>)}</ul>
               </section>
             </div>
+            {m10 && <div className="mt-4 border-t border-linha pt-4"><Relacionamento d={d.dados} fazer={fazer} enviando={acao.enviando} podeEditar={podeFunil && !p.anonimizada} /></div>}
+            {m10 && tem('gestor') && <Reatribuir d={d.dados} fazer={fazer} enviando={acao.enviando} />}
             <section className="mt-4">
               <h3 className="font-semibold">Propostas</h3>
               {podeFunil && ['inscrito', 'pre_matricula', 'matricula_comercial'].includes(o.etapa) && (
@@ -106,9 +112,9 @@ export function DetalheOportunidade({ id, aoFechar, aoMudar }: { id: number; aoF
               )}
               {d.dados.propostas.length ? (
                 <div className="tabela"><table>
-                  <thead><tr>{['#', 'Desconto', 'Valor final', 'Validade', 'Status', ''].map((c) => <th key={c}>{c}</th>)}</tr></thead>
+                  <thead><tr>{['#', 'Desconto', 'Valor final', 'Validade', 'Status', 'Emitida', ''].map((c) => <th key={c}>{c}</th>)}</tr></thead>
                   <tbody>{d.dados.propostas.map((pr) => (
-                    <tr key={pr.id}><td>{pr.id}</td><td>{pr.desconto_pct}%</td><td>{moeda(pr.valor_final_centavos)}</td><td>{dataHora(pr.validade)}</td><td>{rotulo(pr.status)}</td>
+                    <tr key={pr.id}><td>{pr.id}</td><td>{pr.desconto_pct}%</td><td>{moeda(pr.valor_final_centavos)}</td><td>{dataHora(pr.validade)}</td><td>{rotulo(pr.status)}</td><td className="text-xs">{pr.criado_em ? `${dataHora(pr.criado_em)} · ${pr.criado_por ?? ''}` : '—'}</td>
                       <td>{pr.status === 'aprovada' && podeFunil && <button className="btn btn-peq" disabled={acao.enviando} onClick={() => void fazer(async () => {
                         const r = await api.aceitarProposta(pr.id); return `Proposta ${rotulo(r.status)}.`;
                       })}>Registrar aceite</button>}</td></tr>
@@ -116,6 +122,7 @@ export function DetalheOportunidade({ id, aoFechar, aoMudar }: { id: number; aoF
                 </table></div>
               ) : <p className="nota">Nenhuma proposta.</p>}
             </section>
+            {m10 ? <LinhaDoTempo d={d.dados} /> : (
             <section className="mt-4">
               <h3 className="font-semibold">Histórico (auditoria)</h3>
               <ul className="text-sm">{d.dados.historico.map((h) => (
@@ -126,6 +133,7 @@ export function DetalheOportunidade({ id, aoFechar, aoMudar }: { id: number; aoF
                 </li>
               ))}</ul>
             </section>
+            )}
           </>
         )}
       </div>

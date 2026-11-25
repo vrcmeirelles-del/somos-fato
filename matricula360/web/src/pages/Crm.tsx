@@ -1,56 +1,152 @@
-import { useState } from 'react';
+import { AlarmClock, GripVertical, Search } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useSessao } from '../components/Layout';
-import { Campo, Detalhes, Estado, Mensagem, Titulo } from '../components/ui';
-import { api } from '../lib/api';
+import { Campo, Chip, Detalhes, Estado, Mensagem, Titulo, Vazio } from '../components/ui';
+import { api, temCrmAvancado } from '../lib/api';
+import { ETAPAS_ARRASTAVEIS, faixaScore, relativo } from '../lib/crm';
 import { linhaImportacao, rotulo } from '../lib/formato';
 import { useAcao, useCarregar } from '../lib/hooks';
 import type { Etapa, ItemOportunidade, Pagina } from '../lib/tipos';
+
+interface Arrasto { id: number; versao: number; de: Etapa; nome: string }
 
 export function Crm({ abrirDetalhe, versao }: { abrirDetalhe: (id: number) => void; versao: number }) {
   const { ies, estrutura, tem } = useSessao();
   const [coorte, setCoorte] = useState('');
   const [curso, setCurso] = useState('');
+  const [forma, setForma] = useState('');
+  const [busca, setBusca] = useState('');
+  const [termo, setTermo] = useState('');
+  const [meus, setMeus] = useState(false);
+  const [sla, setSla] = useState(false);
   const [recarga, setRecarga] = useState(0);
+  const avancado = useCarregar(() => (ies ? temCrmAvancado(ies) : Promise.resolve(false)), [ies]);
+  const m10 = avancado.dados === true;
   const colunas = useCarregar(async () => {
     const etapas = estrutura?.etapas ?? [];
-    const r = await Promise.all(etapas.map((e) => api.oportunidades(ies!, { etapa: e, coorte: coorte || undefined, curso: curso ? Number(curso) : undefined, porPagina: 50 })));
+    const f = { coorte: coorte || undefined, curso: curso ? Number(curso) : undefined, porPagina: 50,
+      ...(m10 ? { busca: termo || undefined, forma: forma || undefined, somenteMeus: meus, slaAtrasado: sla } : {}) };
+    const r = await Promise.all(etapas.map((e) => api.oportunidades(ies!, { ...f, etapa: e })));
     return etapas.map((e, i) => [e, r[i]!] as [Etapa, Pagina<ItemOportunidade>]);
-  }, [ies, estrutura, coorte, curso, recarga, versao]);
+  }, [ies, estrutura, coorte, curso, forma, termo, meus, sla, m10, recarga, versao]);
   const recarregar = () => setRecarga((n) => n + 1);
+  const podeMover = tem('comercial', 'gestor');
+  const acao = useAcao();
+  const [arrasto, setArrasto] = useState<Arrasto | null>(null);
+  const [alvo, setAlvo] = useState<Etapa | null>(null);
+  const [perda, setPerda] = useState<Arrasto | null>(null);
+
+  const mover = (a: Arrasto, para: Etapa, motivo?: string) => acao.executar(async () => {
+    const r = await api.moverEtapa(a.id, para, a.versao, motivo);
+    recarregar();
+    return `${a.nome}: ${rotulo(a.de)} → ${rotulo(r.etapa)}.`;
+  });
+  const soltar = (para: Etapa) => {
+    const a = arrasto; setArrasto(null); setAlvo(null);
+    if (!a || a.de === para) return;
+    if (para === 'perdido') { setPerda(a); return; }
+    void mover(a, para);
+  };
+  const filtrosAtivos = Boolean(termo || forma || meus || sla || coorte || curso);
 
   return (
     <>
-      <Titulo titulo="Pipeline (CRM)" subtitulo="Oportunidades por etapa do funil. Transições validadas no servidor." />
-      {tem('comercial', 'gestor') && <><NovaOportunidade aoCriar={recarregar} /><Importar aoImportar={recarregar} /></>}
-      <div className="mb-4 flex flex-wrap items-end gap-3">
-        <label className="text-sm">Coorte{' '}
+      <Titulo titulo="Pipeline (CRM)" subtitulo={podeMover ? 'Arraste o cartão entre etapas ou abra a ficha. Toda transição é validada no servidor.' : 'Oportunidades por etapa do funil.'} />
+      {podeMover && <><NovaOportunidade aoCriar={recarregar} /><Importar aoImportar={recarregar} /></>}
+      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-linha bg-white p-3 shadow-cartao" role="group" aria-label="Busca e filtros do CRM">
+        {m10 && (
+          <form className="flex items-end gap-1.5" role="search" onSubmit={(e) => { e.preventDefault(); setTermo(busca.trim()); }}>
+            <Campo rotulo="Buscar"><input className="campo w-56" type="search" aria-label="Buscar por nome, e-mail ou telefone" placeholder="Nome, e-mail ou telefone"
+              value={busca} onChange={(e) => { setBusca(e.target.value); if (!e.target.value) setTermo(''); }} /></Campo>
+            <button className="btn btn-sec" type="submit" aria-label="Buscar"><Search className="h-4 w-4" aria-hidden /></button>
+          </form>
+        )}
+        <label className="flex flex-col gap-1 text-xs font-medium text-suave">Coorte
           <select className="campo" aria-label="Coorte" value={coorte} onChange={(e) => setCoorte(e.target.value)}>
             <option value="">Todas as coortes</option>{estrutura?.coortes.map((c) => <option key={c}>{c}</option>)}
           </select>
         </label>
-        <label className="text-sm">Curso{' '}
+        <label className="flex flex-col gap-1 text-xs font-medium text-suave">Curso
           <select className="campo" aria-label="Curso" value={curso} onChange={(e) => setCurso(e.target.value)}>
             <option value="">Todos os cursos</option>{estrutura?.cursos.map((c) => <option key={c.id} value={c.id}>{c.nome} · {c.turno}</option>)}
           </select>
         </label>
+        {m10 && <>
+          <label className="flex flex-col gap-1 text-xs font-medium text-suave">Forma de ingresso
+            <select className="campo" aria-label="Forma de ingresso" value={forma} onChange={(e) => setForma(e.target.value)}>
+              <option value="">Todas</option>{estrutura?.formas_ingresso.map((x) => <option key={x} value={x}>{rotulo(x)}</option>)}
+            </select>
+          </label>
+          <label className="flex items-center gap-1.5 pb-2 text-sm"><input type="checkbox" checked={meus} onChange={(e) => setMeus(e.target.checked)} />Somente meus</label>
+          <label className="flex items-center gap-1.5 pb-2 text-sm"><input type="checkbox" checked={sla} onChange={(e) => setSla(e.target.checked)} />SLA vencido</label>
+        </>}
+        {filtrosAtivos && <button className="btn btn-fantasma btn-peq mb-1" onClick={() => { setTermo(''); setBusca(''); setForma(''); setMeus(false); setSla(false); setCoorte(''); setCurso(''); }}>Limpar filtros</button>}
+        {avancado.dados === false && <p className="nota basis-full">Busca, SLA, score e filtros avançados ficam disponíveis após a migração 10 do banco.</p>}
       </div>
+      <Mensagem m={acao.mensagem} />
       <Estado carregando={colunas.carregando && !colunas.dados} erro={colunas.erro} />
-      <div role="list" className="grid auto-cols-[minmax(220px,1fr)] grid-flow-col gap-2.5 overflow-x-auto pb-2">
-        {colunas.dados?.map(([etapa, pag]) => (
-          <section key={etapa} role="listitem" aria-label={rotulo(etapa)} className="coluna min-h-[120px] rounded-xl bg-[#e8eef5] p-2.5">
-            <h2 className="mb-2 flex justify-between text-sm font-semibold"><span>{rotulo(etapa)}</span><span>{pag.total}</span></h2>
-            {pag.itens.map((o) => (
-              <button key={o.id} className="cartao mb-2 block w-full rounded-lg border border-linha bg-white p-2 text-left text-sm" onClick={() => abrirDetalhe(o.id)}>
-                <strong>{o.nome}</strong>
-                <small className="block text-suave">{o.curso} · {o.turno} · {o.coorte}</small>
-                <small className="block text-suave">{rotulo(o.forma_ingresso)} · {o.responsavel ?? 'sem responsável'}</small>
-              </button>
-            ))}
-            {pag.total > pag.itens.length && <p className="nota">Exibindo {pag.itens.length} de {pag.total}. Use os filtros para refinar.</p>}
-          </section>
-        ))}
+      {colunas.dados && filtrosAtivos && colunas.dados.every(([, p]) => p.total === 0) && <Vazio texto="Nenhuma oportunidade com estes filtros." detalhe="Ajuste a busca ou limpe os filtros." />}
+      <div role="list" className="grid auto-cols-[minmax(230px,1fr)] grid-flow-col gap-2.5 overflow-x-auto pb-2">
+        {colunas.dados?.map(([etapa, pag]) => {
+          const aceita = podeMover && arrasto != null && arrasto.de !== etapa && ETAPAS_ARRASTAVEIS.includes(etapa);
+          return (
+            <section key={etapa} role="listitem" aria-label={rotulo(etapa)}
+              className={`coluna min-h-[120px] rounded-xl p-2.5 transition ${alvo === etapa && aceita ? 'bg-tec-100 ring-2 ring-tec-400' : 'bg-[#e8eef5]'}`}
+              onDragOver={(e) => { if (aceita) { e.preventDefault(); setAlvo(etapa); } }}
+              onDragLeave={() => setAlvo((x) => (x === etapa ? null : x))}
+              onDrop={(e) => { e.preventDefault(); soltar(etapa); }}>
+              <h2 className="mb-2 flex justify-between text-sm font-semibold"><span>{rotulo(etapa)}</span><span>{pag.total}</span></h2>
+              {pag.itens.map((o) => <CartaoOportunidade key={o.id} o={o} arrastavel={podeMover && !acao.enviando}
+                aoAbrir={() => abrirDetalhe(o.id)} aoIniciar={() => setArrasto({ id: o.id, versao: o.versao, de: o.etapa, nome: o.nome })}
+                aoTerminar={() => { setArrasto(null); setAlvo(null); }} />)}
+              {pag.total > pag.itens.length && <p className="nota">Exibindo {pag.itens.length} de {pag.total}. Use os filtros para refinar.</p>}
+            </section>
+          );
+        })}
       </div>
+      {perda && <MotivoPerda nome={perda.nome} aoCancelar={() => setPerda(null)} aoConfirmar={(m) => { const a = perda; setPerda(null); void mover(a, 'perdido', m); }} />}
     </>
+  );
+}
+
+function CartaoOportunidade({ o, arrastavel, aoAbrir, aoIniciar, aoTerminar }: { o: ItemOportunidade; arrastavel: boolean; aoAbrir: () => void; aoIniciar: () => void; aoTerminar: () => void }) {
+  return (
+    <div role="button" tabIndex={0} className="cartao group mb-2 block w-full cursor-pointer rounded-lg border border-linha bg-white p-2 text-left text-sm hover:border-tec-400 focus:outline-none focus:ring-2 focus:ring-tec-100"
+      onClick={aoAbrir} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); aoAbrir(); } }}
+      draggable={arrastavel} onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(o.id)); aoIniciar(); }} onDragEnd={aoTerminar}>
+      <span className="flex items-start justify-between gap-1">
+        <strong>{o.nome}</strong>
+        {arrastavel && <GripVertical className="h-4 w-4 shrink-0 text-suave opacity-0 group-hover:opacity-100" aria-hidden />}
+      </span>
+      <small className="block text-suave">{o.curso} · {o.turno} · {o.coorte}</small>
+      <small className="block text-suave">{rotulo(o.forma_ingresso)} · {o.responsavel ?? 'sem responsável'}</small>
+      {'sla_atrasado' in o && (
+        <span className="mt-1 flex flex-wrap gap-y-1">
+          {o.score != null && <Chip tipo={faixaScore(o.score)}><span title="Score de priorização (score-v1). Não decide ingresso.">score {o.score}</span></Chip>}
+          {o.sla_atrasado && <Chip tipo="erro"><AlarmClock className="h-3 w-3" aria-hidden />SLA vencido</Chip>}
+          <Chip>contato {relativo(o.ultima_interacao_em)}</Chip>
+        </span>
+      )}
+    </div>
+  );
+}
+
+function MotivoPerda({ nome, aoCancelar, aoConfirmar }: { nome: string; aoCancelar: () => void; aoConfirmar: (m: string) => void }) {
+  const dlg = useRef<HTMLDialogElement>(null);
+  const [m, setM] = useState('');
+  useEffect(() => { const el = dlg.current; if (el && !el.open) el.showModal(); }, []);
+  return (
+    <dialog ref={dlg} aria-labelledby="perda-titulo" onCancel={(e) => { e.preventDefault(); aoCancelar(); }} className="w-[min(440px,calc(100vw-24px))] rounded-2xl p-5 backdrop:bg-marinho/45">
+      <form onSubmit={(e) => { e.preventDefault(); if (m.trim().length >= 3) aoConfirmar(m.trim()); }}>
+        <h2 id="perda-titulo" className="text-lg font-semibold text-marinho">Registrar perda</h2>
+        <p className="nota mb-3">{nome}. O motivo é obrigatório e fica na auditoria.</p>
+        <Campo rotulo="Motivo da perda"><input className="campo" autoFocus required minLength={3} maxLength={200} value={m} onChange={(e) => setM(e.target.value)} /></Campo>
+        <div className="mt-4 flex justify-end gap-2">
+          <button type="button" className="btn btn-sec" onClick={aoCancelar}>Cancelar</button>
+          <button type="submit" className="btn btn-perigo">Registrar perda</button>
+        </div>
+      </form>
+    </dialog>
   );
 }
 

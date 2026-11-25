@@ -157,7 +157,42 @@ try {
         await page.click('text=Gerar proposta');
         await page.waitForSelector('#det-corpo >> text=Pendente de aprovação', { timeout: 15000 });
         registrar('comercial', disp, 'proposta do comercial acima do limite fica pendente', true);
-        await page.click('#det-corpo button[aria-label="Fechar"]');
+        // CRM avançado (migração 10): só verificado quando o banco já tem a migração.
+        if (await page.locator('#det-corpo h3:has-text("Linha do tempo")').count()) {
+          const marca = `contato E2E ${Date.now()}`;
+          await page.fill('#det-corpo label:has-text("Resumo do contato") textarea', marca);
+          await page.click('#det-corpo button:text("Registrar interação")');
+          await page.waitForSelector(`#det-corpo li:has-text("${marca}")`, { timeout: 15000 });
+          registrar('comercial', disp, 'CRM: interação registrada aparece na linha do tempo', true);
+          await page.fill('#det-corpo label:has-text("Objeção") input', 'achou a mensalidade alta (E2E)');
+          await page.click('#det-corpo button:text("Registrar objeção")');
+          await page.waitForSelector('#det-corpo li:has-text("achou a mensalidade alta (E2E)") >> text=Aberta', { timeout: 15000 });
+          registrar('comercial', disp, 'CRM: objeção registrada como aberta', true);
+          await page.fill('#det-corpo label:has-text("O que fazer") input', 'retornar sobre a proposta (E2E)');
+          await page.click('#det-corpo button:text("Agendar")');
+          await page.waitForSelector('#det-corpo li:has-text("retornar sobre a proposta (E2E)")', { timeout: 15000 });
+          registrar('comercial', disp, 'CRM: agendamento aparece na agenda da ficha', true);
+          const ficha = await page.textContent('#det-corpo');
+          registrar('comercial', disp, 'CRM: score explicável com aviso de não decisão', ficha.includes('Score de priorização') && ficha.includes('não é usado para decidir ingresso'));
+          await page.click('#det-corpo button[aria-label="Fechar"]');
+          await page.fill('input[aria-label="Buscar por nome, e-mail ou telefone"]', 'Teste automatizado');
+          await page.click('button[aria-label="Buscar"]');
+          await page.waitForTimeout(2000);
+          const nomes = await page.locator('.cartao strong').allTextContents();
+          registrar('comercial', disp, 'CRM: busca por nome filtra o quadro', nomes.length > 0 && nomes.every((n) => n.includes('Teste automatizado')), `${nomes.length} cartões`);
+          const cartao = page.locator('.coluna[aria-label="Inscrito"] .cartao:has-text("Teste automatizado E2E")').first();
+          await cartao.dragTo(page.locator('.coluna[aria-label="Novo"]'));
+          await page.waitForSelector('main [role=alert]', { timeout: 15000 }).catch(() => null);
+          registrar('comercial', disp, 'CRM: arrastar para transição inválida é recusado pelo servidor',
+            (await page.locator('main [role=alert]').count()) > 0 && (await page.locator('.coluna[aria-label="Inscrito"] .cartao:has-text("Teste automatizado E2E")').count()) > 0);
+          await ir(page, 'Agenda comercial');
+          await page.waitForSelector('text=retornar sobre a proposta (E2E)', { timeout: 15000 }).catch(() => null);
+          registrar('comercial', disp, 'CRM: agenda comercial lista o agendamento', (await page.textContent('main')).includes('retornar sobre a proposta (E2E)'));
+          await ir(page, 'Pipeline (CRM)');
+        } else {
+          console.log('AVISO CRM avançado não verificado: banco sem a migração 10.');
+          await page.click('#det-corpo button[aria-label="Fechar"]');
+        }
       }
       const val = await chamar(page, 'rpc_validar', { p_op: 1, p_dimensao: 'documental', p_resultado: 'valida', p_evidencia: 'tentativa indevida', p_versao: 1 });
       registrar('comercial', disp, 'comercial não valida (403 do banco)', !val.ok && [403, 422].includes(val.status), `${val.status} ${val.msg}`);
