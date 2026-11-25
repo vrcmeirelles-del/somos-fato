@@ -18,6 +18,19 @@ A verificação no navegador cobre seis perfis: público, gestor, comercial, sec
 
 Também cobre os fluxos: cadastro com base legal, proposta acima do limite indo para aprovação, validação com evidência, ciclo MAIM, mascaramento de dados para a coordenação e bloqueio do Master sem escopo.
 
+## Supabase remoto — projeto de homologação `jbimijcvvekomovodfze` (25/11/2026)
+
+O usuário aplicou `supabase/APLICAR-NO-SQL-EDITOR.sql` pelo SQL Editor. A conferência externa foi feita pela API REST, com a chave publicável (papel `anon`):
+
+| Verificação | Resposta obtida | Conclusão |
+|---|---|---|
+| GET `ies`, `oportunidades`, `pessoas`, `auditoria` | 401, `42501 permission denied for table` | Tabelas existem; `anon` sem acesso |
+| GET tabela inexistente (controle) | 404, `PGRST205` | Distingue "existe e bloqueado" de "não existe" |
+| POST `rpc/rpc_bi` | 401, `42501 permission denied for function` | RPCs existem; `anon` não executa |
+| POST `rpc/auditar` (auxiliar interno) | `PGRST202` não encontrada | Schema `privado` não exposto pela API |
+
+**Pendente no remoto:** os testes como usuário autenticado (isolamento entre IES e cursos, mapeamento 403/404/409 para `authenticated`) exigem criar usuários sintéticos no Supabase Auth. Também falta rodar os advisors do painel (Advisors → Security e Performance).
+
 ## Critérios de aceite da Bíblia-Mestra
 
 | Critério | Onde está provado |
@@ -41,7 +54,7 @@ Também cobre os fluxos: cadastro com base legal, proposta acima do limite indo 
 ## Riscos e limitações conhecidas
 
 1. **Peças do pacote v0.1 não chegaram.** Faltavam `server.mjs`, `src/motor.mjs`, os 16 testes, `db/schema-proposto.sql` e `docs/REFERENCIA-COMERCIAL360.md`. O motor foi reconstruído a partir do contrato que a demo usa; o esquema SQL foi feito do zero. Antes de qualquer atribuição específica a esses originais, é preciso conferi-los.
-2. **Migrações Supabase prontas e testadas em Postgres local, ainda não aplicadas no Supabase.** `supabase/migrations/` traz o esquema com RLS, sem escrita direta do cliente, e 24 RPCs. O que falta só pode ser verificado no projeto remoto: a criação do projeto (bloqueada porque o conector ainda não enxerga a org Matricula360), o mapeamento HTTP dos códigos de erro pelo PostgREST, os advisors do Supabase e o login pelo Supabase Auth. As 24 RPCs cobrem todas as operações do piloto: funil, validações, propostas, MAIM, LGPD, metas, configurações e funções do Master.
+2. **Migrações Supabase aplicadas no projeto de homologação `jbimijcvvekomovodfze`** (ver seção acima). `supabase/migrations/` traz o esquema com RLS, sem escrita direta do cliente, e 24 RPCs. O que falta só pode ser verificado no projeto remoto: a criação do projeto (bloqueada porque o conector ainda não enxerga a org Matricula360), o mapeamento HTTP dos códigos de erro pelo PostgREST, os advisors do Supabase e o login pelo Supabase Auth. As 24 RPCs cobrem todas as operações do piloto: funil, validações, propostas, MAIM, LGPD, metas, configurações e funções do Master.
 2b. **O piloto rodável continua em SQLite local.** Isolamento e permissões estão no serviço e em gatilhos do banco, sem RLS. A migração para Postgres com RLS e testes de isolamento no banco depende de autorização de infraestrutura.
 3. **Stack:** JavaScript sem build, sem React, TypeScript ou Tailwind. Foi escolha deliberada para manter zero dependências no piloto. A migração está na próxima entrega.
 4. **`node:sqlite` é experimental no Node 22.** Serve para o piloto, não para produção.
