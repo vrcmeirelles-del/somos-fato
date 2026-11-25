@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Entrar · Matrícula 360°</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header><strong>MATRÍCULA 360° | PILOTO</strong><a href="/">Página pública</a></header>
+<main class="login">
+  <h1>Entrar</h1>
+  <p class="aviso">Ambiente piloto local com dados <strong>sintéticos</strong>. Não insira dados reais de candidatos.</p>
+  <form id="form" class="card" novalidate>
+    <label>E-mail <input id="email" name="email" type="email" autocomplete="username" required></label>
+    <label>Senha <input id="senha" name="senha" type="password" autocomplete="current-password" required minlength="10"></label>
+    <button type="submit">Entrar</button>
+    <p id="erro" role="alert" class="erro"></p>
+  </form>
+</main>
+<script type="module" src="/login.mjs"></script>
+</body>
+</html>

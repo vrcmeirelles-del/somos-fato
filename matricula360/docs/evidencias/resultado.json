@@ -1,0 +1,588 @@
+{
+  "em": "2026-11-25T15:14:59.747Z",
+  "total": 83,
+  "falhas": 0,
+  "resultados": [
+    {
+      "perfil": "publico",
+      "dispositivo": "desktop",
+      "passo": "inicio: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "desktop",
+      "passo": "inicio: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "desktop",
+      "passo": "inicio: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "desktop",
+      "passo": "demo: simulação",
+      "ok": true,
+      "detalhe": "953 leads estimados"
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "desktop",
+      "passo": "demo: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "desktop",
+      "passo": "demo: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "desktop",
+      "passo": "demo: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "painel: indicadores carregados",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "painel: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "painel: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "painel: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "painel: coorte sem meta exibe N/D",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "MAIM: ciclo executado",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "crm: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "crm: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "crm: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "proposta acima do limite fica pendente",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "propostas: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "propostas: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "propostas: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "configuracoes: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "configuracoes: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "configuracoes: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "cadastro de oportunidade com base legal",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "crm: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "crm: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "crm: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "secretaria",
+      "dispositivo": "desktop",
+      "passo": "matriculas: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "secretaria",
+      "dispositivo": "desktop",
+      "passo": "matriculas: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "secretaria",
+      "dispositivo": "desktop",
+      "passo": "matriculas: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "secretaria",
+      "dispositivo": "desktop",
+      "passo": "validação com evidência",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "desktop",
+      "passo": "painel restrito a cursos autorizados",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "desktop",
+      "passo": "CRM sem cursos não autorizados",
+      "ok": true,
+      "detalhe": "0 cartões de outro curso"
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "desktop",
+      "passo": "dados pessoais mascarados",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "desktop",
+      "passo": "crm: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "desktop",
+      "passo": "crm: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "desktop",
+      "passo": "crm: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "desktop",
+      "passo": "master cai no painel Master",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "desktop",
+      "passo": "master: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "desktop",
+      "passo": "master: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "desktop",
+      "passo": "master: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "desktop",
+      "passo": "master sem escopo não lê candidatos",
+      "ok": true,
+      "detalhe": "status 404"
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "inicio: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "inicio: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "inicio: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "demo: simulação",
+      "ok": true,
+      "detalhe": "953 leads estimados"
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "demo: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "demo: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "demo: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "painel: indicadores carregados",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "painel: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "painel: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "painel: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "painel: coorte sem meta exibe N/D",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "crm: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "crm: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "crm: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "proposta acima do limite fica pendente",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "propostas: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "propostas: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "propostas: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "configuracoes: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "configuracoes: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "configuracoes: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "celular",
+      "passo": "cadastro de oportunidade com base legal",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "celular",
+      "passo": "crm: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "celular",
+      "passo": "crm: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "celular",
+      "passo": "crm: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "secretaria",
+      "dispositivo": "celular",
+      "passo": "matriculas: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "secretaria",
+      "dispositivo": "celular",
+      "passo": "matriculas: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "secretaria",
+      "dispositivo": "celular",
+      "passo": "matriculas: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "secretaria",
+      "dispositivo": "celular",
+      "passo": "validação com evidência",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "celular",
+      "passo": "painel restrito a cursos autorizados",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "celular",
+      "passo": "CRM sem cursos não autorizados",
+      "ok": true,
+      "detalhe": "0 cartões de outro curso"
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "celular",
+      "passo": "dados pessoais mascarados",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "celular",
+      "passo": "crm: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "celular",
+      "passo": "crm: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "celular",
+      "passo": "crm: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "celular",
+      "passo": "master cai no painel Master",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "celular",
+      "passo": "master: sem rolagem horizontal da página",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "celular",
+      "passo": "master: campos visíveis com rótulo acessível",
+      "ok": true,
+      "detalhe": "0 sem rótulo"
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "celular",
+      "passo": "master: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "celular",
+      "passo": "master sem escopo não lê candidatos",
+      "ok": true,
+      "detalhe": "status 404"
+    }
+  ]
+}

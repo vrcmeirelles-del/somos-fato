@@ -1,0 +1,11 @@
+node_modules/
+dados/
+# Evidências: versiona só uma seleção; o restante é regenerado por "npm run homologar".
+docs/evidencias/*.png
+!docs/evidencias/desktop-gestor-painel.png
+!docs/evidencias/desktop-gestor-detalhe.png
+!docs/evidencias/desktop-secretaria-matriculas.png
+!docs/evidencias/desktop-coordenador-crm.png
+!docs/evidencias/desktop-master-master.png
+!docs/evidencias/celular-gestor-crm.png
+!docs/evidencias/celular-gestor-detalhe.png

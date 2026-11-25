@@ -1,0 +1,16 @@
+{
+  "name": "matricula360",
+  "version": "0.2.0-piloto",
+  "private": true,
+  "type": "module",
+  "description": "Matrícula 360° — piloto local independente (dados sintéticos, sem infraestrutura paga)",
+  "scripts": {
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.mjs",
+    "start": "node --disable-warning=ExperimentalWarning server.mjs",
+    "piloto:reset": "node --disable-warning=ExperimentalWarning scripts/reset.mjs",
+    "homologar": "node --disable-warning=ExperimentalWarning scripts/homologar.mjs"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}
