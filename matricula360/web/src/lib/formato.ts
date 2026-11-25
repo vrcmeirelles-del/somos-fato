@@ -18,6 +18,9 @@ const ROTULOS: Record<string, string> = {
   gestor: 'Gestor', reitoria: 'Reitoria', coordenador: 'Coordenação', comercial: 'Comercial', secretaria: 'Secretaria', financeiro: 'Financeiro',
   pendente_aprovacao: 'Pendente de aprovação', aprovada: 'Aprovada', rejeitada: 'Rejeitada', aceita: 'Aceita', expirada: 'Expirada', substituida: 'Substituída',
   presencial: 'Presencial', semipresencial: 'Semipresencial', ead: 'EAD', noturno: 'Noturno', matutino: 'Matutino', vespertino: 'Vespertino', integral: 'Integral',
+  agendamento: 'Agendamento', ligacao: 'Ligação', whatsapp_manual: 'WhatsApp (manual)', email_manual: 'E-mail (manual)', visita: 'Visita', reuniao: 'Reunião', anotacao: 'Anotação',
+  preco: 'Preço', horario: 'Horário', distancia: 'Distância', documentacao: 'Documentação', concorrencia: 'Concorrência', credibilidade: 'Credibilidade', tempo: 'Tempo', familia: 'Família', outra: 'Outra',
+  aberta: 'Aberta', superada: 'Superada', nao_superada: 'Não superada',
   curso: 'Curso', turno: 'Turno', modalidade: 'Modalidade', forma_ingresso: 'Forma de ingresso', atendente: 'Atendente',
 };
 export const rotulo = (k: string | null | undefined) => (k == null ? '' : ROTULOS[k] ?? k);

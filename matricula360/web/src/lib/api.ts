@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -41,9 +41,13 @@ export const api = {
   cicloMaim: (ies: number) => c().rpc<ResultadoMaim>('rpc_ciclo_maim', { p_ies: ies }),
   concluirTarefa: (tarefa: number, resultado: string) => c().rpc<{ id: number; status: string; motivo: string | null }>('rpc_concluir_tarefa', { p_tarefa: tarefa, p_resultado: resultado }),
   dispararTarefa: (tarefa: number) => c().rpc<{ enviado: false; motivo: string; elegivel: boolean }>('rpc_disparar_tarefa', { p_tarefa: tarefa }),
-  oportunidades: (ies: number, f: { etapa?: Etapa; coorte?: string; curso?: number; pagina?: number; porPagina?: number }) =>
+  // Parâmetros novos (migração 10) só são enviados quando usados: a chamada básica funciona também no banco anterior.
+  oportunidades: (ies: number, f: { etapa?: Etapa; coorte?: string; curso?: number; pagina?: number; porPagina?: number;
+    busca?: string; forma?: string; somenteMeus?: boolean; slaAtrasado?: boolean }) =>
     c().rpc<Pagina<ItemOportunidade>>('rpc_listar_oportunidades', {
-      p_ies: ies, p_etapa: f.etapa ?? null, p_coorte: f.coorte ?? null, p_pagina: f.pagina ?? 1, p_por_pagina: f.porPagina ?? 25, p_curso: f.curso ?? null }),
+      p_ies: ies, p_etapa: f.etapa ?? null, p_coorte: f.coorte ?? null, p_pagina: f.pagina ?? 1, p_por_pagina: f.porPagina ?? 25, p_curso: f.curso ?? null,
+      ...(f.busca ? { p_busca: f.busca } : {}), ...(f.forma ? { p_forma: f.forma } : {}),
+      ...(f.somenteMeus ? { p_somente_meus: true } : {}), ...(f.slaAtrasado ? { p_sla_atrasado: true } : {}) }),
   criarOportunidade: (ies: number, dados: Record<string, unknown>) =>
     c().rpc<{ id: number; duplicada: boolean; versao: number; etapa: Etapa; repeticao?: boolean }>('rpc_criar_oportunidade', { p_ies: ies, p_dados: dados, p_chave: chave() }),
   detalhe: (op: number) => c().rpc<Detalhe>('rpc_detalhe', { p_op: op }),
@@ -60,6 +64,13 @@ export const api = {
   propostas: (ies: number, status: StatusProposta) => c().rpc<PropostaLista[]>('rpc_listar_propostas', { p_ies: ies, p_status: status }),
   optout: (op: number, canal: Canal) => c().rpc<{ canal: Canal; tarefas_suprimidas: number }>('rpc_optout', { p_op: op, p_canal: canal }),
   anonimizar: (op: number) => c().rpc<{ anonimizada: true }>('rpc_anonimizar', { p_op: op }),
+  registrarInteracao: (op: number, tipo: string, resumo: string) => c().rpc<{ id: number }>('rpc_registrar_interacao', { p_op: op, p_tipo: tipo, p_resumo: resumo }),
+  registrarObjecao: (op: number, categoria: string, descricao: string) => c().rpc<{ id: number }>('rpc_registrar_objecao', { p_op: op, p_categoria: categoria, p_descricao: descricao }),
+  tratarObjecao: (objecao: number, status: string, tratamento: string) => c().rpc('rpc_tratar_objecao', { p_objecao: objecao, p_status: status, p_tratamento: tratamento }),
+  agendar: (op: number, quando: string, descricao: string, canal?: string) => c().rpc<{ id: number }>('rpc_agendar', { p_op: op, p_quando: quando, p_descricao: descricao, p_canal: canal ?? null }),
+  agenda: (ies: number, de: string, ate: string) => c().rpc<ItemAgenda[]>('rpc_agenda', { p_ies: ies, p_de: de, p_ate: ate }),
+  reatribuir: (op: number, responsavel: string, motivo: string) => c().rpc<{ tarefas_transferidas: number }>('rpc_reatribuir', { p_op: op, p_responsavel: responsavel, p_motivo: motivo }),
+  atendentes: (ies: number, curso?: number) => c().rpc<{ id: string; nome: string }[]>('rpc_atendentes', { p_ies: ies, p_curso: curso ?? null }),
   pendencias: (ies: number) => c().rpc<Pendencia[]>('rpc_pendencias', { p_ies: ies }),
   configurar: (ies: number, v: { sla_horas?: number; max_followups?: number; dias_sem_contato?: number; capacidade_atendente?: number; amostra_minima_forecast?: number }) =>
     c().rpc<Record<string, number>>('rpc_configurar', { p_ies: ies, p_sla_horas: v.sla_horas ?? null, p_max_followups: v.max_followups ?? null,

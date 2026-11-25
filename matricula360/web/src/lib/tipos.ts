@@ -26,7 +26,11 @@ export interface Bi { coorte: string; agrupar: string; cobertura: 'ies' | 'curso
 export interface ItemOportunidade {
   id: number; etapa: Etapa; versao: number; coorte: string; curso_id: number; curso: string; turno: string; forma_ingresso: string;
   responsavel: string | null; nome: string; email: string | null; telefone: string | null; dados_mascarados: boolean;
+  origem?: string; ultima_interacao_em?: string | null; proxima_tarefa_em?: string | null; sla_atrasado?: boolean; score?: number | null;
 }
+export interface ItemAgenda { id: number; tipo: string; quando: string; descricao: string | null; canal: Canal | null; oportunidade_id: number;
+  nome: string; curso: string; etapa: Etapa; responsavel: string | null; atrasada: boolean }
+export interface Score { score: number | null; versao: string; razoes: string[]; aviso: string }
 export interface Pagina<T> { itens: T[]; total: number; pagina: number; por_pagina: number }
 
 export interface Tarefa { id: number; tipo: string; canal: Canal | null; vence_em: string; oportunidade_id: number; responsavel_id: string | null;
@@ -44,8 +48,12 @@ export interface Detalhe {
   transicoes: Etapa[];
   validacoes: { id: number; dimensao: Dimensao; resultado: string; evidencia: string; em: string; por: string | null }[];
   propostas: { id: number; desconto_pct: number; mensalidade_centavos: number; valor_final_centavos: number; validade: string; status: StatusProposta }[];
-  tarefas: { id: number; tipo: string; canal: Canal | null; status: string; vence_em: string; resultado: string | null }[];
+  tarefas: { id: number; tipo: string; canal: Canal | null; status: string; vence_em: string; resultado: string | null; descricao?: string | null; atrasada?: boolean }[];
   historico: { id: number; acao: string; dados: Record<string, unknown>; em: string; por: string | null }[];
+  score?: Score | null;
+  interacoes?: { id: number; tipo: string; resumo: string; em: string; por: string | null }[];
+  objecoes?: { id: number; categoria: string; descricao: string; tratamento: string | null; status: 'aberta' | 'superada' | 'nao_superada'; em: string; por: string | null }[];
+  possiveis_duplicidades?: { pessoa_id: number; email: string | null; telefone: string | null; oportunidades: number }[];
 }
 
 export interface Pendencia { id: number; versao: number; etapa: Etapa; coorte: string; curso: string; nome: string;
