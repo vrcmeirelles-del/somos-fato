@@ -142,7 +142,7 @@ Estados conforme a seção 11: especificado → implementado → testado localme
 |---|---|---|
 | R01 | reproduzido | Homônimos com e-mails distintos criados pelo roteiro E2E; deduplicação por identificador correta. Pendente: alerta de correspondência ambígua com revisão humana |
 | R02 | **homologado** | Até 4 propostas ativas por oportunidade → regra de proposta ativa única com substituição auditada; 5 → 0 no banco real |
-| R03 | **reproduzido; correção pendente de decisão (D1)** | 169 = artefato de precisão numérica (14 ÷ (2/24) truncado = 168,000…0067 → ceil 169). Pela fórmula desta Bíblia, com aritmética exata, o valor é 168 |
+| R03 | **corrigido e testado localmente (migração 9)**; aguardando aplicação | 169 = artefato de precisão numérica (14 ÷ (2/24) truncado = 168,000…0067 → ceil 169). Pela fórmula desta Bíblia, com aritmética exata, o valor é 168 |
 | R04 | **homologado** | 18/20 tarefas de primeiro contato inelegíveis → encerramento e bloqueio por etapa (gatilhos); 22 → 0 no banco real |
 | R05 | **homologado** | `rpc_metas`; a tela carrega as metas cadastradas (E2E: Direito = 10) |
 | R06 | reproduzido | Somas íntegras. A chave de curso concatena o turno, e "EAD" está cadastrado como turno. Pendente: separar curso, turno e modalidade na apresentação e revisar o domínio de turnos |
@@ -161,7 +161,12 @@ Estados conforme a seção 11: especificado → implementado → testado localme
 | Quality | parcial (alertas de pendência de validação) |
 | Score, Performance, Strategy, Recovery, Learning, Retention | especificados |
 
-### 13.4 Divergências abertas (decisão do responsável)
+### 13.4 Divergências — decididas em 25/11/2026 e implementadas na migração 9 (testado localmente: 184/184)
+- **D1:** indicador oficial pela §6 com aritmética exata (cenário R03 = 168). O método por pipeline aparece como "cenário complementar", identificado. Amostra mínima **configurável por IES, padrão 30**: abaixo dela, N/D com motivo.
+- **D2:** receita potencial = soma das mensalidades ofertadas válidas.
+- **D3:** conversão de destaque = ingressantes ÷ oportunidades da coorte.
+
+Texto original das divergências, antes da decisão:
 - **D1 — Forecast.** A migração 7 substituiu a fórmula da seção 6 por uma taxa sobre oportunidades decididas, descontando o pipeline esperado (hoje: 7 a 8), em vez de `ceil(meta restante ÷ conversão observada)` (hoje: 168).
   - A seção 6 é vinculante: a implementação deve voltar a ela, com aritmética exata, N/D com conversão zero, zero com meta cumprida, e com tamanho da amostra e cobertura exibidos.
   - O método por pipeline só permanece como **cenário complementar identificado**, se o responsável aprovar.

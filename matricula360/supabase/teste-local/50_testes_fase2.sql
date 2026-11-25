@@ -34,7 +34,7 @@ select teste.ok((select (b->'totais'->>'taxa_conversao_decididas')::numeric
                    or (b->'totais'->>'taxa_conversao_decididas') is null
                  from (select public.rpc_bi(1, '2027.1') b) x), 'taxa usa apenas oportunidades decididas');
 select teste.ok((public.rpc_bi(1, '2031.1')->'totais'->>'projecao_oportunidades_necessarias') is null, 'sem base decidida a projeção é N/D');
-select teste.ok((public.rpc_bi(1, '2027.1')->'totais'->>'projecao_metodo') like 'Novas oportunidades necessárias%', 'método da projeção explicitado');
+select teste.ok((public.rpc_bi(1, '2027.1')->'totais'->>'projecao_metodo') like 'Oportunidades adicionais%', 'método da projeção explicitado (Bíblia §6)');
 
 -- (5) metas cadastradas legíveis
 select teste.ok((select sum((x->>'meta')::int) from jsonb_array_elements(public.rpc_metas(1, '2027.1')) x) = 16, 'metas cadastradas são lidas (10 + 6)');

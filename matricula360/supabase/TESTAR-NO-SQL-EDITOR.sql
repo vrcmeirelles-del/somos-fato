@@ -400,7 +400,7 @@ insert into teste.var select 't2', id from nova $x$;
                    or (b->'totais'->>'taxa_conversao_decididas') is null
                  from (select public.rpc_bi(1, '2027.1') b) x), 'taxa usa apenas oportunidades decididas') $x$;
   execute $x$ select teste.ok((public.rpc_bi(1, '2031.1')->'totais'->>'projecao_oportunidades_necessarias') is null, 'sem base decidida a projeção é N/D') $x$;
-  execute $x$ select teste.ok((public.rpc_bi(1, '2027.1')->'totais'->>'projecao_metodo') like 'Novas oportunidades necessárias%', 'método da projeção explicitado') $x$;
+  execute $x$ select teste.ok((public.rpc_bi(1, '2027.1')->'totais'->>'projecao_metodo') like 'Oportunidades adicionais%', 'método da projeção explicitado (Bíblia §6)') $x$;
   execute $x$ select teste.ok((select sum((x->>'meta')::int) from jsonb_array_elements(public.rpc_metas(1, '2027.1')) x) = 16, 'metas cadastradas são lidas (10 + 6)') $x$;
   execute $x$ select set_config('request.jwt.claim.sub', teste.id('coord_dir_a')::text, false) $x$;
   execute $x$ select teste.ok(jsonb_array_length(public.rpc_metas(1, '2027.1')) = 1, 'coordenador lê só a meta do curso autorizado') $x$;
@@ -440,6 +440,45 @@ insert into teste.var select 't2', id from nova $x$;
   execute $x$ select teste.erro('select public.rpc_central(1, ''2027.1'')', 'P0002', 'Master sem escopo não acessa a Central') $x$;
   execute $x$ reset role $x$;
   execute $x$ do $$ begin raise notice 'OK  fim da bateria da Central'; end $$ $x$;
+  execute $x$ insert into public.pessoas(ies_id, nome, email, base_legal, origem)
+  select 1, 'R03 ' || g, 'r03-' || g || '@exemplo.invalid', 'consentimento', 'teste R03' from generate_series(1, 24) g $x$;
+  execute $x$ insert into public.oportunidades(ies_id, curso_id, pessoa_id, forma_ingresso, coorte, etapa, matricula_comercial_em, confirmada_em, val_documental, val_financeira, val_academica)
+  select 1, 1, p.id, 'enem', '2030.1', case when n <= 2 then 'confirmado' else 'contato' end,
+         case when n <= 2 then now() end, case when n <= 2 then now() end, n <= 2, n <= 2, n <= 2
+    from (select id, row_number() over (order by id) n from public.pessoas where origem = 'teste R03') p $x$;
+  execute $x$ insert into public.metas values (1, 1, '2030.1', 16) $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.ok((public.rpc_central(1, '2030.1')->'totais'->>'oportunidades_adicionais_projetadas') is null
+                and (public.rpc_central(1, '2030.1')->'totais'->>'forecast_motivo') like 'Amostra insuficiente: 24 oportunidades (mínimo configurado: 30)%', 'amostra abaixo do mínimo padrão (30): N/D com motivo') $x$;
+  execute $x$ select public.rpc_configurar(1, null, null, null, null, 20) $x$;
+  execute $x$ select teste.ok((public.rpc_estrutura(1)->'ies'->>'amostra_minima_forecast')::int = 20, 'gestor configura a amostra mínima') $x$;
+  execute $x$ select teste.ok((public.rpc_central(1, '2030.1')->'totais'->>'oportunidades_adicionais_projetadas')::int = 168, 'R03: cenário da captura dá 168 (aritmética exata), não 169') $x$;
+  execute $x$ select teste.ok((public.rpc_bi(1, '2030.1')->'totais'->>'projecao_oportunidades_necessarias')::int = 168, 'R03: BI legado usa a mesma fórmula (168)') $x$;
+  execute $x$ select teste.ok((public.rpc_central(1, '2030.1')->'totais'->>'conversao')::numeric = round(2::numeric / 24, 4), 'D3: conversão = ingressantes ÷ oportunidades da coorte') $x$;
+  execute $x$ select teste.ok((public.rpc_central(1, '2030.1')->'totais'->>'meta_restante')::int = 14, 'meta restante = max(meta − ingressantes, 0)') $x$;
+  execute $x$ select teste.ok((public.rpc_central(1, '2030.1')->'totais'->'cenario_pipeline'->>'rotulo') like 'Cenário complementar%', 'D1: método por pipeline apenas como cenário identificado') $x$;
+  execute $x$ select teste.erro('select public.rpc_configurar(1, null, null, null, null, 0)', '23514', 'amostra mínima fora da faixa recusada') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ update public.metas set meta = 2 where ies_id = 1 and curso_id = 1 and coorte = '2030.1' $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select teste.ok((public.rpc_central(1, '2030.1')->'totais'->>'oportunidades_adicionais_projetadas')::int = 0
+                and (public.rpc_central(1, '2030.1')->'totais'->>'forecast_motivo') like 'Meta cumprida%', 'meta cumprida: necessidade adicional zero') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ update public.metas set meta = 16 where ies_id = 1 and curso_id = 1 and coorte = '2030.1' $x$;
+  execute $x$ update public.oportunidades set etapa = 'cancelado', cancelada_em = now() where coorte = '2030.1' and etapa = 'confirmado' $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select teste.ok((public.rpc_central(1, '2030.1')->'totais'->>'oportunidades_adicionais_projetadas') is null
+                and (public.rpc_central(1, '2030.1')->'totais'->>'forecast_motivo') like 'Conversão observada zero%', 'conversão zero: projeção indisponível (N/D), nunca zero') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.ok((public.rpc_central(1, '2027.1')->'totais'->>'receita_mensal_potencial_ofertada_centavos')::bigint
+  = (select coalesce(sum(x.valor_final_centavos), 0) from public.propostas x join public.oportunidades o on o.id = x.oportunidade_id
+      where o.ies_id = 1 and o.coorte = '2027.1' and o.etapa not in ('perdido','cancelado')
+        and (x.status = 'aceita' or (x.status in ('aprovada','pendente_aprovacao') and x.validade >= now()))), 'D2: receita potencial = soma das mensalidades ofertadas válidas') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_configurar(1, null, null, null, null, 25)', '42501', 'comercial não altera a amostra mínima') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ do $$ begin raise notice 'OK  fim da bateria de conformidade v0.2'; end $$ $x$;
   execute $x$ reset role $x$;
   select count(*) into n from teste.resultado;
   raise exception 'RESULTADO: % verificações aprovadas, 0 falhas (tudo desfeito; nada ficou gravado)', n;
