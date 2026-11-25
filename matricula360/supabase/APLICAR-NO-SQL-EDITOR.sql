@@ -1,9 +1,8 @@
--- Matrícula 360° — migrações 1 a 3 consolidadas para colar no SQL Editor do Supabase.
--- Projeto: jbimijcvvekomovodfze (homologação). NÃO executar em outro projeto.
--- Executar UMA vez, inteiro, num projeto vazio. Tudo roda numa única transação: se algo falhar, nada fica pela metade.
+-- Matrícula 360° — migrações 1 a 4 consolidadas para colar no SQL Editor do Supabase (instalação NOVA, banco vazio).
+-- Executar UMA vez, inteiro. Tudo roda numa única transação.
 begin;
 
--- ===================== migrations/20261125000001_esquema_rls.sql
+-- ===================== supabase/migrations/20261125000001_esquema_rls.sql
 -- Matrícula 360° — migração 1: esquema, RLS e defesas no banco.
 -- Destino: projeto Supabase independente de homologação. NÃO aplicar em banco de outros produtos.
 -- Princípios:
@@ -323,7 +322,7 @@ create policy auditoria_leitura on public.auditoria for select to authenticated
   using (ies_id is not null and privado.tem_acesso_ies(ies_id, array['gestor']));
 -- privado.idempotencia: RLS ligada e nenhuma política => invisível ao cliente.
 
--- ===================== migrations/20261125000002_rpcs.sql
+-- ===================== supabase/migrations/20261125000002_rpcs.sql
 -- Matrícula 360° — migração 2: RPCs (única via de escrita do cliente).
 -- Toda função: SECURITY DEFINER, search_path vazio, identidade de auth.uid(),
 -- verificação de escopo no servidor e auditoria na MESMA transação.
@@ -794,7 +793,7 @@ revoke execute on all functions in schema privado from public, anon, authenticat
 grant execute on function privado.usuario_ativo(), privado.eh_master(), privado.tem_acesso(bigint, bigint, text[]),
   privado.tem_acesso_ies(bigint, text[]), privado.ve_ies(bigint), privado.ve_oportunidade(bigint, text[]) to authenticated;
 
--- ===================== migrations/20261125000003_rpcs_complementares.sql
+-- ===================== supabase/migrations/20261125000003_rpcs_complementares.sql
 -- Matrícula 360° — migração 3: RPCs complementares (paridade com o piloto local).
 -- MAIM (fila, ciclo, conclusão e disparo bloqueado), aceite de proposta, anonimização,
 -- configurações, metas, pendências e status da IES. Mesmos princípios da migração 2.
@@ -1052,5 +1051,24 @@ to authenticated;
 revoke execute on all functions in schema privado from public, anon, authenticated;
 grant execute on function privado.usuario_ativo(), privado.eh_master(), privado.tem_acesso(bigint, bigint, text[]),
   privado.tem_acesso_ies(bigint, text[]), privado.ve_ies(bigint), privado.ve_oportunidade(bigint, text[]) to authenticated;
+
+-- ===================== supabase/migrations/20261125000004_indices_fk.sql
+-- Matrícula 360° — migração 4: índices para chaves estrangeiras sem cobertura.
+-- Origem: Performance Advisor do Supabase (lint "unindexed_foreign_keys"), 25/11/2026.
+-- Evita varreduras completas em junções, nas checagens de FK e em exclusões.
+create index if not exists auditoria_usuario on public.auditoria(usuario_id);
+create index if not exists cursos_campus on public.cursos(campus_id);
+create index if not exists escopos_ies on public.escopos(ies_id);
+create index if not exists escopos_curso on public.escopos(curso_id);
+create index if not exists escopos_concedido_por on public.escopos(concedido_por);
+create index if not exists metas_curso on public.metas(curso_id);
+create index if not exists propostas_criado_por on public.propostas(criado_por);
+create index if not exists propostas_decidido_por on public.propostas(decidido_por);
+create index if not exists validacoes_usuario on public.validacoes(usuario_id);
+-- Cobertos apenas por índices parciais (não servem à checagem de FK em exclusões).
+-- O advisor não os aponta; incluídos por robustez.
+create index if not exists escopos_usuario_todos on public.escopos(usuario_id);
+create index if not exists pessoas_ies on public.pessoas(ies_id);
+create index if not exists tarefas_responsavel_todos on public.tarefas(responsavel_id);
 
 commit;
