@@ -12,6 +12,7 @@
 | **Telas ligadas ao Supabase real**, desktop e iPhone 13, 7 perfis | `npm run` → `scripts/homologar-supabase.mjs` | **63/63** (`evidencias/supabase/resultado.json`) |
 | **Interface React/TypeScript/Tailwind** ligada ao Supabase real (desktop + iPhone 13) | `npm run homologar:supabase` | **66/66** (`evidencias/supabase/resultado.json`); telas legadas no mesmo roteiro: 66/66 |
 | **Site publicado no Render** (`matricula360-homologacao.onrender.com`), desktop + iPhone 13 | `M360_BASE_EXTERNA=… npm run homologar:supabase` | **66/66** (`evidencias/publicado/resultado.json`) |
+| **Nova interface (Fase 2) no site publicado**, desktop + iPhone 13 | `M360_BASE_EXTERNA=… npm run homologar:supabase` | **83/83** (`evidencias/publicado/resultado.json`) |
 | Unitários da interface React (Vitest) | `npm run web:test` | **12/12** |
 | Migrações Supabase em **Postgres 16 real** (RLS, RPCs, gatilhos) | `npm run testar:postgres` | **107/107 verificações de RLS e regras + corrida real entre 2 sessões + lint (RLS em 100% das tabelas, search_path fixo em 100% das funções)** |
 
@@ -141,6 +142,35 @@ A primeira rodada deu 56/63. As 7 falhas foram 1 contagem do próprio teste e 6 
 3. **Cabeçalhos preenchidos na coluna errada:** corrigido no painel.
 
 **Domínio `matricula360.somosfato.com.br`:** CNAME criado no Registro.br (→ `matricula360-homologacao.onrender.com`), aguardando propagação do DNS no momento deste registro.
+
+## Fase 2, P0 — correções, redesign e Central de Inteligência (25/11/2026)
+
+**Migrações 7 e 8 aplicadas no Supabase de homologação.** O diagnóstico refeito no banco real (`scripts/diagnostico-homologacao.mjs`) confirma os efeitos:
+
+| Ponto | Antes | Depois |
+|---|---|---|
+| Oportunidades com mais de uma proposta ativa | 5 | 0 |
+| Primeiro contato aberto fora de "novo" | 18 | 0 |
+| Tarefas comerciais em matrícula comercial/encerrada | 4 | 0 |
+| Projeção de oportunidades necessárias | 169 (método incorreto) | 8 (taxa das decididas e pipeline esperado) |
+
+- **Central no banco real:** funil 24 › 22 › 15 › 8 › 6 › 2, alertas reais (SLA vencido e propostas pendentes) e metas lidas (10 + 6).
+- **Isolamento:** gestor da Beta → 404 na Central da Alfa; coordenação de Direito filtrando Administração → 0 oportunidades.
+
+**Navegador no site publicado (nova interface, desktop + iPhone 13): 83/83.**
+
+Cobertura:
+- Central: funil, turno/modalidade, custo por lead N/D com motivo, alertas, ausência do rótulo técnico e filtro global de curso refletido na URL.
+- Metas carregadas em Configurações; auditoria sem nenhum evento em código cru; fila sem o botão de disparo externo.
+- CRM, propostas com segregação, validações e Master.
+- Isolamento contra adulteração no cliente; ausência de rolagem horizontal e de erros de console/CSP.
+
+Ajustes do roteiro nesta rodada (nenhum de produto):
+- nova navegação pelo menu lateral (no celular, pela gaveta);
+- candidata de teste identificada como "Teste automatizado E2E" e origem "teste automatizado (E2E)";
+- verificação de auditoria trocada de uma frase específica para "nenhum evento em código cru".
+
+**Dados de teste visíveis na homologação:** 9 oportunidades criadas por roteiros, identificáveis pela origem ("homologação supabase", "teste automatizado (E2E)"). Não são removidas, porque a plataforma não apaga registros.
 
 ## Critérios de aceite da Bíblia-Mestra
 

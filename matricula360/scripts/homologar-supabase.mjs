@@ -60,6 +60,14 @@ const chamar = (page, rpc, args) => page.evaluate(async ([nome, a]) => {
   return { ok: r.ok, status: r.status, msg: d.message };
 }, [rpc, args]);
 
+// Navega pelo menu lateral (no celular, abre a gaveta antes).
+async function ir(page, nome) {
+  // Abaixo de 1024px o menu é uma gaveta: espera o botão existir e abre.
+  if ((page.viewportSize()?.width ?? 1366) < 1024) await page.getByRole('button', { name: 'Abrir menu' }).click({ timeout: 15000 });
+  await page.getByRole('link', { name: nome, exact: true }).click();
+  await page.waitForLoadState('networkidle');
+}
+
 try {
   for (const disp of ['desktop', 'celular']) {
     // Gestor Alfa
@@ -68,15 +76,21 @@ try {
       await page.waitForSelector('.kpi');
       const kpis = await page.textContent('.kpis');
       registrar('gestor', disp, 'painel com dados do Supabase (16 da semente + as criadas na homologação)', /Oportunidades\s*(1[6-9]|[2-9]\d)/.test(kpis), kpis.replace(/\s+/g, ' ').slice(0, 120));
-      registrar('gestor', disp, 'faixa indica homologação Supabase', (await page.textContent('.faixa')).includes('Homologação Supabase'));
+      registrar('gestor', disp, 'faixa indica homologação', (await page.locator('.faixa').first().textContent()).includes('omologação'));
       await checar(page, 'gestor', disp, 'painel', erros);
-      await page.selectOption('#agrupar', 'turno');
-      await page.waitForTimeout(800);
-      registrar('gestor', disp, 'BI agrupado por turno', (await page.textContent('main table')).includes('noturno'));
+      const main = await page.textContent('main');
+      registrar('gestor', disp, 'Central: funil com 6 etapas', (await page.locator('ol[aria-label="Funil comercial"] li').count()) === 6);
+      registrar('gestor', disp, 'Central: desempenho por turno e modalidade', main.includes('Desempenho por turno') && main.includes('Noturno') && main.includes('Presencial'));
+      registrar('gestor', disp, 'Central: custo por lead N/D com motivo (sem investimento)', main.includes('Sem investimento cadastrado'));
+      registrar('gestor', disp, 'Central: alertas do MAIM', main.includes('Alertas e intervenções do MAIM'));
+      registrar('gestor', disp, 'Central: sem rótulo técnico REACT', !(await page.textContent('body')).includes('REACT'));
+      await page.selectOption('#filtro-curso', { label: 'Direito · noturno' });
+      await page.waitForTimeout(1500);
+      registrar('gestor', disp, 'filtro global de curso aplicado (cobertura recorte)', (await page.textContent('main')).includes('recorte filtrado') && page.url().includes('curso='));
       const beta = await chamar(page, 'rpc_bi', { p_ies: 2, p_coorte: '2027.1' });
       registrar('gestor', disp, 'IDOR: BI da IES Beta recusado pelo banco', !beta.ok && beta.status === 404, `status ${beta.status}`);
       if (disp === 'desktop') {
-        await page.click('nav >> text=CRM');
+        await ir(page, 'Pipeline (CRM)');
         await page.waitForSelector('.cartao');
         await checar(page, 'gestor', disp, 'crm', erros);
         await page.locator('.coluna[aria-label="Inscrito"] .cartao').first().click();
@@ -88,7 +102,7 @@ try {
         registrar('gestor', disp, 'proposta acima do limite fica pendente', true);
         await page.screenshot({ path: `${OUT}/${disp}-gestor-detalhe.png` });
         await page.click('#det-corpo button[aria-label="Fechar"]');
-        await page.click('nav >> text=Propostas');
+        await ir(page, 'Propostas e bolsas');
         await page.waitForSelector('main table');
         await page.waitForSelector('main table tbody tr', { timeout: 15000 });
         const propria = page.locator('tr:has-text("Gestora Alfa") button:text("Aprovar")').first();
@@ -97,32 +111,42 @@ try {
           await page.waitForSelector('text=Segregação de funções', { timeout: 15000 });
           registrar('gestor', disp, 'não aprova a própria proposta (segregação)', true);
         }
-        await page.click('nav >> text=Configurações');
-        await page.waitForSelector('text=Auditoria (somente leitura)');
-        await page.waitForSelector('code');
+        await ir(page, 'Configurações e metas');
+        await page.waitForFunction(() => document.querySelector('input[aria-label="Meta Direito"]')?.value === '10', null, { timeout: 15000 }).catch(() => null);
+        registrar('gestor', disp, 'Configurações carregam a meta cadastrada (Direito = 10)', (await page.inputValue('input[aria-label="Meta Direito"]')) === '10');
         await checar(page, 'gestor', disp, 'configuracoes', erros);
+        await ir(page, 'Auditoria');
+        await page.waitForSelector('main li > p', { timeout: 15000 });
+        const frases = await page.$$eval('main li > p', (els) => els.map((e) => e.textContent || ''));
+        const cruas = frases.filter((f) => /— [a-z_]+\.[a-z_]+ \(/.test(f));
+        registrar('gestor', disp, 'auditoria em linguagem institucional (nenhum evento em código cru)', frases.length > 0 && cruas.length === 0, `${frases.length} eventos; crus: ${cruas.slice(0, 2).join(' | ')}`);
+        await checar(page, 'gestor', disp, 'auditoria', erros);
+        await ir(page, 'Fila de intervenções (MAIM)');
+        await page.waitForSelector('text=tarefa(s) aberta(s)', { timeout: 15000 });
+        registrar('gestor', disp, 'fila sem botão de disparo externo', (await page.getByRole('button', { name: 'Disparar' }).count()) === 0);
+        await checar(page, 'gestor', disp, 'intervencoes', erros);
       }
       await ctx.close();
     }
     // Comercial Alfa
     {
       const { ctx, page, erros } = await sessao(disp, 'comercial.alfa');
-      await page.click('nav >> text=CRM');
+      await ir(page, 'Pipeline (CRM)');
       await page.waitForSelector('.cartao');
       if (disp === 'desktop') {
         await page.click('summary:has-text("Nova oportunidade")');
-        await page.fill('label:has-text("Nome") input', 'Candidata Homologação Supabase');
+        await page.fill('label:has-text("Nome") input', 'Teste automatizado E2E');
         await page.fill('label:has-text("E-mail") input', `homolog.${Date.now()}@example.com`);
         await page.fill('label:has-text("Coorte") input', '2027.1');
         await page.click('text=Cadastrar');
         await page.waitForSelector('role=status >> text=Base legal obrigatória', { timeout: 15000 }).catch(() => null);
         registrar('comercial', disp, 'sem base legal o banco recusa (LGPD)', (await page.textContent('main')).includes('Base legal obrigatória'));
         await page.selectOption('label:has-text("Base legal") select', 'consentimento');
-        await page.fill('label:has-text("Origem") input', 'homologação supabase');
+        await page.fill('label:has-text("Origem") input', 'teste automatizado (E2E)');
         await page.click('text=Cadastrar');
         await page.waitForSelector('text=criada e distribuída', { timeout: 15000 });
         registrar('comercial', disp, 'cadastro com base legal gravado no Supabase', true);
-        await page.locator('.coluna[aria-label="Novo"] .cartao:has-text("Candidata Homologação Supabase")').first().click();
+        await page.locator('.coluna[aria-label="Novo"] .cartao:has-text("Teste automatizado E2E")').first().click();
         await page.waitForSelector('#det-titulo');
         await page.click('#det-corpo button:text("→ Contato")');
         await page.waitForSelector('text=Etapa atualizada para Contato', { timeout: 15000 });
@@ -143,9 +167,9 @@ try {
     // Gestor aprova a proposta criada pelo comercial nesta rodada (segregação: quem cria não aprova)
     if (disp === 'desktop') {
       const { ctx, page, erros } = await sessao(disp, 'gestor.alfa');
-      await page.click('nav >> text=Propostas');
+      await ir(page, 'Propostas e bolsas');
       await page.waitForSelector('main table tbody tr', { timeout: 15000 });
-      const aprovar = page.locator('tr:has-text("Candidata Homologação Supabase"):has-text("Atendente Alfa") button:text("Aprovar")').first();
+      const aprovar = page.locator('tr:has-text("Teste automatizado E2E"):has-text("Atendente Alfa") button:text("Aprovar")').first();
       if (await aprovar.count()) {
         await aprovar.click();
         await page.waitForSelector('text=: Aprovada', { timeout: 15000 });
@@ -158,7 +182,7 @@ try {
     if (disp === 'desktop') {
       for (const [perfil, dim] of [['secretaria.alfa', 'Documental'], ['financeiro.alfa', 'Financeira']]) {
         const { ctx, page, erros } = await sessao(disp, perfil);
-        await page.click('nav >> text=Matrículas');
+        await ir(page, 'Matrículas');
         await page.waitForSelector('main table');
         const linha = page.locator('tr:has(button:text("Registrar"))').first();
         await linha.locator('select[aria-label="Dimensão"]').selectOption({ label: dim });
@@ -175,7 +199,7 @@ try {
       const { ctx, page, erros } = await sessao(disp, 'coord.alfa');
       await page.waitForSelector('.kpi');
       registrar('coordenador', disp, 'painel limitado ao curso autorizado', (await page.textContent('main')).includes('somente cursos autorizados'));
-      await page.click('nav >> text=CRM');
+      await ir(page, 'Pipeline (CRM)');
       await page.waitForSelector('.cartao');
       registrar('coordenador', disp, 'CRM sem Administração', (await page.locator('.cartao:has-text("Administração")').count()) === 0);
       await page.locator('.cartao').first().click();

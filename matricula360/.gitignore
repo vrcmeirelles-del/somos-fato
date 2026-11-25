@@ -19,3 +19,5 @@ docs/evidencias/supabase-legado/
 !docs/evidencias/supabase/desktop-gestor-painel.png
 docs/evidencias/render-simulado/
 docs/evidencias/publicado/*.png
+!docs/evidencias/publicado/desktop-gestor-painel.png
+!docs/evidencias/publicado/celular-gestor-painel.png
