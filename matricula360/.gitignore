@@ -9,3 +9,7 @@ docs/evidencias/*.png
 !docs/evidencias/desktop-master-master.png
 !docs/evidencias/celular-gestor-crm.png
 !docs/evidencias/celular-gestor-detalhe.png
+docs/evidencias/supabase/*.png
+!docs/evidencias/supabase/desktop-gestor-detalhe.png
+!docs/evidencias/supabase/celular-coordenador-crm.png
+!docs/evidencias/supabase/desktop-secretaria-matriculas.png

@@ -9,6 +9,7 @@
 | Unitários, domínio e API (HTTP real) | `npm test` | **42/42 aprovados** (`evidencias/saida-testes.txt`) |
 | Navegador, desktop 1366×860 e iPhone 13 | `npm run homologar` | **83/83 verificações** (`evidencias/resultado.json`) |
 | Bateria de RLS no **Supabase real** (projeto de homologação) | SQL Editor: `supabase/TESTAR-NO-SQL-EDITOR.sql` | **138/138** com as migrações 1 a 5 (rodada anterior: 107/107 com as migrações 1 a 4); tudo desfeito ao final |
+| **Telas ligadas ao Supabase real**, desktop e iPhone 13, 7 perfis | `npm run` → `scripts/homologar-supabase.mjs` | **63/63** (`evidencias/supabase/resultado.json`) |
 | Migrações Supabase em **Postgres 16 real** (RLS, RPCs, gatilhos) | `npm run testar:postgres` | **107/107 verificações de RLS e regras + corrida real entre 2 sessões + lint (RLS em 100% das tabelas, search_path fixo em 100% das funções)** |
 
 A verificação no navegador cobre seis perfis: público, gestor, comercial, secretaria, coordenação e Master. Em cada tela checa:
@@ -63,6 +64,38 @@ O "erro" é proposital: a exceção final desfaz a semente e os testes. As 107 v
 - **Migração 5 (RPCs de leitura) aplicada em 25/11/2026.** Na sequência, a bateria completa rodou no banco real: `RESULTADO: 138 verificações aprovadas, 0 falhas`.
 - **Migração 4 aplicada no projeto em 25/11/2026**, segundo o usuário. Não houve conferência independente por esta sessão, porque os índices não são visíveis pela API com a chave publicável. Confirmar no próximo Performance Advisor: devem restar só os avisos de *Unused Index*.
 - mapear os códigos HTTP para usuário autenticado via login real no Supabase Auth: 401/42501 para `anon` já foi confirmado; para `authenticated` são esperados 403/404/409.
+
+## Telas ligadas ao Supabase (25/11/2026, sem publicação)
+
+O servidor local escuta só em `127.0.0.1` e entrega as telas; dados e regras ficam no Supabase. O login é pelo Supabase Auth e toda ação é uma RPC. As contas são sintéticas (`m360.*@example.com`), com senhas aleatórias guardadas apenas em `dados/` (fora do Git). A semente foi aplicada via RPCs: 2 IES, 4 cursos, 9 usuários, 8 escopos, 24 oportunidades e 111 eventos de auditoria.
+
+**Achados e correções da homologação real:**
+1. **SQLSTATE P0002 chegava como HTTP 500.** Corrigido na migração 6 (agora 404).
+2. **SQLSTATE 40001 travava a requisição.** O PostgREST repetia a transação até `upstream request timeout`, o que, num conflito de versão real, deixaria a tela travada. Corrigido na migração 6 (agora 409 imediato, com a versão atual em `details`).
+3. **Mapeamento conferido no Supabase real** após a migração 6:
+
+   | Situação | Resposta |
+   |---|---|
+   | Fora do escopo | 404 |
+   | Sem permissão | 403 |
+   | Regra violada | 400 |
+   | Conflito de versão | 409 (≈0,5 s) |
+
+   Para `anon`, "sem permissão" chega como 401.
+4. **Conta recém-criada no Auth, sem perfil de aplicação:** faz login, mas não acessa nada (RPCs 403; leitura direta vazia).
+
+**Bateria no navegador (63/63)**, cobrindo gestor, comercial, secretaria, financeiro e coordenação da Alfa, além do gestor da Beta e do Master:
+- isolamento entre IES contra adulteração feita no cliente;
+- curso autorizado, com contatos mascarados;
+- LGPD (base legal obrigatória);
+- etapa com versão;
+- proposta acima do limite e segregação na aprovação;
+- validações por papel, com evidência;
+- auditoria;
+- Master sem acesso a candidatos;
+- ausência de rolagem horizontal e de erros de console ou CSP.
+
+A primeira rodada deu 56/63. As 7 falhas foram 1 contagem do próprio teste e 6 respostas 500 (achado 1).
 
 ## Critérios de aceite da Bíblia-Mestra
 
