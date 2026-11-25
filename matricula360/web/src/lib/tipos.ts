@@ -10,7 +10,7 @@ export interface Eu { usuario: { id: string; nome: string; master: boolean; emai
 
 export interface Curso { id: number; nome: string; turno: string; modalidade: string; mensalidade_centavos: number; desconto_max_pct: number; campus?: string }
 export interface Estrutura {
-  ies: { id: number; nome: string; plano: string; sla_horas: number; max_followups: number; dias_sem_contato: number; capacidade_atendente: number };
+  ies: { id: number; nome: string; plano: string; sla_horas: number; max_followups: number; dias_sem_contato: number; capacidade_atendente: number; amostra_minima_forecast: number };
   papeis: Papel[]; acesso_total: boolean; cursos: Curso[]; coortes: string[];
   etapas: Etapa[]; formas_ingresso: string[]; bases_legais: string[]; canais: Canal[];
 }
@@ -67,11 +67,12 @@ export interface ResultadoMaim { follow_ups: number; suprimidos_optout: number; 
 
 export interface CentralTotais {
   oportunidades: number; matriculas_comerciais: number; ingressantes: number; perdidos: number; cancelamentos: number; oportunidades_abertas: number;
-  conversao_geral: number | null; taxa_conversao_decididas: number | null; meta: number | null; atingimento: number | null;
-  ingressos_esperados_pipeline: number | null; projecao_ingressos: number | null; lacuna_meta: number | null; novas_oportunidades_necessarias: number | null;
-  receita_mensal_ingressantes_centavos: number; receita_mensal_potencial_pipeline_centavos: number | null;
+  conversao: number | null; meta: number | null; atingimento: number | null; meta_restante: number | null;
+  amostra: number; amostra_minima: number; oportunidades_adicionais_projetadas: number | null; forecast_motivo: string | null;
+  cenario_pipeline: { rotulo: string; taxa_conversao_decididas: number | null; ingressos_esperados_pipeline: number | null; projecao_ingressos: number | null; novas_oportunidades_necessarias: number | null };
+  receita_mensal_ingressantes_centavos: number; receita_mensal_potencial_ofertada_centavos: number; propostas_validas: number;
   custo_por_lead_centavos: number | null; custo_por_matricula_centavos: number | null; custo_motivo: string;
-  metodos: Record<'taxa' | 'projecao' | 'novas' | 'receita' | 'funil', string>;
+  metodos: Record<'conversao' | 'projecao' | 'cenario' | 'receita' | 'funil', string>;
 }
 export interface Grupo { chave: string; oportunidades: number; ingressantes: number; matriculas_comerciais?: number; conversao?: number | null; meta?: number | null; atingimento?: number | null; curso_id?: number }
 export interface Alerta { tipo: string; prioridade: number; titulo: string; quantidade: number; acao: string }

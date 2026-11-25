@@ -8,6 +8,7 @@ import { useAcao, useCarregar } from '../lib/hooks';
 const CAMPOS = [
   ['sla_horas', 'SLA do primeiro contato (h)'], ['max_followups', 'Máx. follow-ups'],
   ['dias_sem_contato', 'Dias sem contato p/ follow-up'], ['capacidade_atendente', 'Capacidade por atendente'],
+  ['amostra_minima_forecast', 'Amostra mínima p/ projeção (oportunidades)'],
 ] as const;
 
 export function Configuracoes() {

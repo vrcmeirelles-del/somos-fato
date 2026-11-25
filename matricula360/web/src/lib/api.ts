@@ -61,9 +61,10 @@ export const api = {
   optout: (op: number, canal: Canal) => c().rpc<{ canal: Canal; tarefas_suprimidas: number }>('rpc_optout', { p_op: op, p_canal: canal }),
   anonimizar: (op: number) => c().rpc<{ anonimizada: true }>('rpc_anonimizar', { p_op: op }),
   pendencias: (ies: number) => c().rpc<Pendencia[]>('rpc_pendencias', { p_ies: ies }),
-  configurar: (ies: number, v: { sla_horas?: number; max_followups?: number; dias_sem_contato?: number; capacidade_atendente?: number }) =>
+  configurar: (ies: number, v: { sla_horas?: number; max_followups?: number; dias_sem_contato?: number; capacidade_atendente?: number; amostra_minima_forecast?: number }) =>
     c().rpc<Record<string, number>>('rpc_configurar', { p_ies: ies, p_sla_horas: v.sla_horas ?? null, p_max_followups: v.max_followups ?? null,
-      p_dias_sem_contato: v.dias_sem_contato ?? null, p_capacidade_atendente: v.capacidade_atendente ?? null }),
+      p_dias_sem_contato: v.dias_sem_contato ?? null, p_capacidade_atendente: v.capacidade_atendente ?? null,
+      p_amostra_minima_forecast: v.amostra_minima_forecast ?? null }),
   definirMeta: (ies: number, curso: number, coorte: string, meta: number) => c().rpc('rpc_definir_meta', { p_ies: ies, p_curso: curso, p_coorte: coorte, p_meta: meta }),
   auditoria: (ies: number, pagina = 1) => c().rpc<Pagina<EventoAuditoria>>('rpc_auditoria', { p_ies: ies, p_pagina: pagina }),
   master: {

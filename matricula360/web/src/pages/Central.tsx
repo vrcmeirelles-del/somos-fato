@@ -2,7 +2,7 @@ import { AlertTriangle, BadgeDollarSign, BarChart3, CheckCircle2, Filter, Gradua
 import { Link } from 'react-router-dom';
 import { BarraFiltros, useSessao } from '../components/Layout';
 import { Barras, Funil, Linhas, Progresso } from '../components/graficos';
-import { Aviso, Cartao, Estado, Kpi, Titulo, Vazio } from '../components/ui';
+import { Aviso, Cartao, Chip, Estado, Kpi, Titulo, Valor, Vazio } from '../components/ui';
 import { api } from '../lib/api';
 import { ND, moeda, num, pct, rotulo } from '../lib/formato';
 import { useCarregar } from '../lib/hooks';
@@ -18,6 +18,12 @@ export function Central() {
   const c = useCarregar(() => (ies && coorte ? api.central(ies, coorte, resto) : Promise.resolve(null)),
     [ies, coorte, resto.campus_id, resto.curso_id, resto.turno, resto.modalidade]);
   const d = c.dados; const t = d?.totais;
+  // Compatível com o banco antes da migração 9 (campos novos ausentes): mostra N/D com o motivo, sem quebrar a tela.
+  const semM9 = Boolean(t && t.cenario_pipeline === undefined);
+  const legado = t as unknown as Record<string, number | null> | undefined;
+  const cen = t?.cenario_pipeline ?? { rotulo: 'Cenário complementar (não é o indicador oficial)', taxa_conversao_decididas: legado?.taxa_conversao_decididas ?? null,
+    ingressos_esperados_pipeline: legado?.ingressos_esperados_pipeline ?? null, projecao_ingressos: legado?.projecao_ingressos ?? null,
+    novas_oportunidades_necessarias: legado?.novas_oportunidades_necessarias ?? null };
   const moedaOuNd = (v: number | null | undefined) => (v == null ? ND : moeda(v));
 
   return (
@@ -39,21 +45,30 @@ export function Central() {
                 <Kpi rotulo="Ingressantes efetivos" valor={num(t.ingressantes)} icone={UserCheck} destaque />
                 <Kpi rotulo="Meta" valor={num(t.meta)} icone={Target} />
                 <Kpi rotulo="Atingimento" valor={pct(t.atingimento)} icone={CheckCircle2} />
-                <Kpi rotulo="Conversão (decididas)" valor={pct(t.taxa_conversao_decididas)} icone={TrendingUp} detalhe={`Geral: ${pct(t.conversao_geral)}`} />
+                <Kpi rotulo="Conversão da coorte" valor={pct(t.conversao ?? legado?.conversao_geral ?? null)} icone={TrendingUp} detalhe={`Decididas: ${pct(cen.taxa_conversao_decididas)}`} />
                 <Kpi rotulo="Custo por lead" valor={moedaOuNd(t.custo_por_lead_centavos)} icone={BadgeDollarSign} detalhe="Sem investimento cadastrado" />
                 <Kpi rotulo="Custo por matrícula" valor={moedaOuNd(t.custo_por_matricula_centavos)} icone={BadgeDollarSign} detalhe="Módulo Campanhas (P1)" />
               </div>
 
               <div className="grid gap-4 xl:grid-cols-3">
-                <Cartao titulo="Projeção da coorte (estimativa)" icone={BarChart3} className="xl:col-span-1">
+                <Cartao titulo="Projeção da coorte" icone={BarChart3} className="xl:col-span-1">
                   <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
-                    <dt className="text-suave">Oportunidades abertas</dt><dd className="text-right font-semibold">{t.oportunidades_abertas}</dd>
-                    <dt className="text-suave">Ingressos esperados do pipeline</dt><dd className="text-right font-semibold">{num(t.ingressos_esperados_pipeline)}</dd>
-                    <dt className="text-suave">Projeção de ingressos</dt><dd className="text-right font-semibold">{num(t.projecao_ingressos)}</dd>
-                    <dt className="text-suave">Lacuna para a meta</dt><dd className="text-right font-semibold">{num(t.lacuna_meta)}</dd>
-                    <dt className="text-suave">Novas oportunidades necessárias</dt><dd className="text-right text-lg font-semibold text-tec">{num(t.novas_oportunidades_necessarias)}</dd>
+                    <dt className="text-suave">Meta restante</dt><dd className="text-right font-semibold">{num(t.meta_restante ?? legado?.lacuna_meta ?? null)}</dd>
+                    <dt className="text-suave">Amostra (oportunidades)</dt><dd className="text-right font-semibold">{t.amostra ?? t.oportunidades} {t.amostra_minima != null && <span className="text-xs font-normal text-suave">mín. {t.amostra_minima}</span>}</dd>
+                    <dt className="font-medium text-marinho">Oportunidades adicionais projetadas</dt>
+                    <dd className="text-right text-xl font-semibold text-tec"><Valor v={num(semM9 ? null : t.oportunidades_adicionais_projetadas)} /></dd>
                   </dl>
-                  <p className="nota mt-3">{t.metodos.projecao} {t.metodos.novas} Taxa: {t.metodos.taxa}</p>
+                  {(semM9 || t.forecast_motivo) && <p className="mt-2"><Chip tipo="pend">{semM9 ? 'Indicador oficial disponível após a migração 9 no banco.' : t.forecast_motivo}</Chip></p>}
+                  {!semM9 && <p className="nota mt-2">{t.metodos.projecao}</p>}
+                  <div className="mt-4 rounded-lg border border-dashed border-linha bg-fundo p-3">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-suave">{cen.rotulo}</p>
+                    <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                      <dt className="text-suave">Oportunidades abertas</dt><dd className="text-right">{t.oportunidades_abertas}</dd>
+                      <dt className="text-suave">Ingressos esperados do pipeline</dt><dd className="text-right">{num(cen.ingressos_esperados_pipeline)}</dd>
+                      <dt className="text-suave">Novas oportunidades (cenário)</dt><dd className="text-right font-semibold">{num(cen.novas_oportunidades_necessarias)}</dd>
+                    </dl>
+                    <p className="nota mt-1">{t.metodos.cenario ?? 'Taxa sobre oportunidades decididas aplicada ao pipeline aberto.'}</p>
+                  </div>
                 </Cartao>
                 <Cartao titulo="Funil comercial (alcance por etapa)" icone={Layers} className="xl:col-span-2">
                   <Funil etapas={d.funil} />
@@ -85,7 +100,7 @@ export function Central() {
                 <Cartao titulo="Receita mensal" icone={BadgeDollarSign}>
                   <dl className="space-y-2 text-sm">
                     <div className="flex justify-between gap-2"><dt className="text-suave">Ingressantes efetivos</dt><dd className="font-semibold">{moeda(t.receita_mensal_ingressantes_centavos)}</dd></div>
-                    <div className="flex justify-between gap-2"><dt className="text-suave">Potencial do pipeline (estimativa)</dt><dd className="font-semibold">{moedaOuNd(t.receita_mensal_potencial_pipeline_centavos)}</dd></div>
+                    {t.receita_mensal_potencial_ofertada_centavos != null && <div className="flex justify-between gap-2"><dt className="text-suave">Potencial ofertado ({t.propostas_validas} propostas válidas)</dt><dd className="font-semibold">{moeda(t.receita_mensal_potencial_ofertada_centavos)}</dd></div>}
                   </dl>
                   <p className="nota mt-2">{t.metodos.receita}</p>
                 </Cartao>
