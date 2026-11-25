@@ -84,6 +84,10 @@ O servidor local escuta só em `127.0.0.1` e entrega as telas; dados e regras fi
    Para `anon`, "sem permissão" chega como 401.
 4. **Conta recém-criada no Auth, sem perfil de aplicação:** faz login, mas não acessa nada (RPCs 403; leitura direta vazia).
 
+**Configuração do Auth restaurada e conferida em `/auth/v1/settings`** (25/11/2026):
+- `disable_signup = true`: sem cadastro aberto; novos usuários entram por convite;
+- `mailer_autoconfirm = false`: confirmação de e-mail ligada.
+
 **Bateria no navegador (63/63)**, cobrindo gestor, comercial, secretaria, financeiro e coordenação da Alfa, além do gestor da Beta e do Master:
 - isolamento entre IES contra adulteração feita no cliente;
 - curso autorizado, com contatos mascarados;
