@@ -19,6 +19,7 @@ const arquivos = [
   'supabase/migrations/20261125000003_rpcs_complementares.sql',
   'supabase/migrations/20261125000004_indices_fk.sql',
   'supabase/migrations/20261125000005_rpcs_leitura.sql',
+  'supabase/migrations/20261125000006_codigos_http.sql',
   'supabase/teste-local/10_semente.sql',
 ];
 for (const f of arquivos) {

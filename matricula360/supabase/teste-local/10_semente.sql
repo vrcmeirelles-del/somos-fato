@@ -48,7 +48,9 @@ begin
   begin
     execute p_sql;
   exception when others then
-    if sqlstate = p_codigo then raise notice 'OK  % (SQLSTATE %)', p_nome, sqlstate; return; end if;
+    if sqlstate = p_codigo or (sqlstate = 'PGRST' and sqlerrm::jsonb->>'code' = p_codigo) then
+      raise notice 'OK  % (SQLSTATE %)', p_nome, p_codigo; return;
+    end if;
     raise exception 'FALHOU: % — esperado %, obtido % (%)', p_nome, p_codigo, sqlstate, sqlerrm;
   end;
   raise exception 'FALHOU: % — deveria ter falhado com %', p_nome, p_codigo;
