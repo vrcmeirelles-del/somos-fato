@@ -8,6 +8,7 @@
 |---|---|---|
 | Unitários, domínio e API (HTTP real) | `npm test` | **42/42 aprovados** (`evidencias/saida-testes.txt`) |
 | Navegador, desktop 1366×860 e iPhone 13 | `npm run homologar` | **83/83 verificações** (`evidencias/resultado.json`) |
+| Migrações Supabase em **Postgres 16 real** (RLS, RPCs, gatilhos) | `npm run testar:postgres` | **69/69 verificações de RLS + corrida real entre 2 sessões + lint (RLS em 100% das tabelas, search_path fixo em 100% das funções)** |
 
 A verificação no navegador cobre seis perfis: público, gestor, comercial, secretaria, coordenação e Master. Em cada tela checa:
 
@@ -40,7 +41,8 @@ Também cobre os fluxos: cadastro com base legal, proposta acima do limite indo 
 ## Riscos e limitações conhecidas
 
 1. **Peças do pacote v0.1 não chegaram.** Faltavam `server.mjs`, `src/motor.mjs`, os 16 testes, `db/schema-proposto.sql` e `docs/REFERENCIA-COMERCIAL360.md`. O motor foi reconstruído a partir do contrato que a demo usa; o esquema SQL foi feito do zero. Antes de qualquer atribuição específica a esses originais, é preciso conferi-los.
-2. **SQLite local, não Supabase/Postgres.** Isolamento e permissões estão no serviço e em gatilhos do banco, sem RLS. A migração para Postgres com RLS e testes de isolamento no banco depende de autorização de infraestrutura.
+2. **Migrações Supabase prontas e testadas em Postgres local, ainda não aplicadas no Supabase.** `supabase/migrations/` traz o esquema com RLS, sem escrita direta do cliente, e 14 RPCs. O que falta só pode ser verificado no projeto remoto: a criação do projeto (bloqueada porque o conector ainda não enxerga a org Matricula360), o mapeamento HTTP dos códigos de erro pelo PostgREST, os advisors do Supabase e o login pelo Supabase Auth. As RPCs ainda não cobrem MAIM (ciclo/tarefas), anonimização, aceite de proposta e configurações; essas operações seguem só no piloto SQLite.
+2b. **O piloto rodável continua em SQLite local.** Isolamento e permissões estão no serviço e em gatilhos do banco, sem RLS. A migração para Postgres com RLS e testes de isolamento no banco depende de autorização de infraestrutura.
 3. **Stack:** JavaScript sem build, sem React, TypeScript ou Tailwind. Foi escolha deliberada para manter zero dependências no piloto. A migração está na próxima entrega.
 4. **`node:sqlite` é experimental no Node 22.** Serve para o piloto, não para produção.
 5. **Controle de tentativas de login em memória:** zera quando o servidor reinicia.

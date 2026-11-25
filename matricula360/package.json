@@ -8,7 +8,8 @@
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.mjs",
     "start": "node --disable-warning=ExperimentalWarning server.mjs",
     "piloto:reset": "node --disable-warning=ExperimentalWarning scripts/reset.mjs",
-    "homologar": "node --disable-warning=ExperimentalWarning scripts/homologar.mjs"
+    "homologar": "node --disable-warning=ExperimentalWarning scripts/homologar.mjs",
+    "testar:postgres": "node scripts/testar-postgres.mjs"
   },
   "engines": {
     "node": ">=22.13"
