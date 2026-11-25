@@ -14,11 +14,11 @@ const senhas = JSON.parse(readFileSync('dados/contas-homologacao.json', 'utf8'))
 const conta = (p) => `m360.${p}@example.com`;
 const PORTA = 4198;
 const BASE = `http://127.0.0.1:${PORTA}`;
-const OUT = 'docs/evidencias/supabase';
+const OUT = process.env.M360_UI === 'legado' ? 'docs/evidencias/supabase-legado' : 'docs/evidencias/supabase';
 mkdirSync(OUT, { recursive: true });
 
 const srv = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'server.mjs'], {
-  env: { ...process.env, PORT: String(PORTA), M360_SUPABASE_URL: SB_URL, M360_SUPABASE_CHAVE_PUBLICAVEL: SB_CHAVE }, stdio: ['ignore', 'pipe', 'inherit'] });
+  env: { ...process.env, PORT: String(PORTA), M360_SUPABASE_URL: SB_URL, M360_SUPABASE_CHAVE_PUBLICAVEL: SB_CHAVE, M360_UI: process.env.M360_UI || 'react' }, stdio: ['ignore', 'pipe', 'inherit'] });
 await new Promise((ok, falha) => { srv.stdout.on('data', (b) => { if (String(b).includes('http://')) ok(); }); setTimeout(() => falha(new Error('servidor não subiu')), 15000); });
 
 const resultados = [];
@@ -71,7 +71,7 @@ try {
         await page.waitForSelector('.cartao');
         await checar(page, 'gestor', disp, 'crm', erros);
         await page.locator('.coluna[aria-label="Inscrito"] .cartao').first().click();
-        await page.waitForSelector('#det-titulo');
+        await page.waitForSelector('#det-corpo >> text=oportunidade.criar', { timeout: 15000 }).catch(() => null);
         registrar('gestor', disp, 'detalhe com histórico auditado', (await page.textContent('#det-corpo')).includes('oportunidade.criar'));
         await page.fill('input[aria-label="Desconto em %"]', '55');
         await page.click('text=Gerar proposta');
@@ -81,12 +81,7 @@ try {
         await page.click('#det-corpo button[aria-label="Fechar"]');
         await page.click('nav >> text=Propostas');
         await page.waitForSelector('main table');
-        const aprovar = page.locator('tr:has-text("Atendente Alfa") button:text("Aprovar")').first();
-        if (await aprovar.count()) {
-          await aprovar.click();
-          await page.waitForSelector('text=: Aprovada', { timeout: 15000 });
-          registrar('gestor', disp, 'aprova proposta criada por outro usuário', true);
-        } else registrar('gestor', disp, 'aprova proposta criada por outro usuário', false, 'nenhuma pendente do comercial');
+        await page.waitForSelector('main table tbody tr', { timeout: 15000 });
         const propria = page.locator('tr:has-text("Gestora Alfa") button:text("Aprovar")').first();
         if (await propria.count()) {
           await propria.click();
@@ -123,11 +118,31 @@ try {
         await page.click('#det-corpo button:text("→ Contato")');
         await page.waitForSelector('text=Etapa atualizada para Contato', { timeout: 15000 });
         registrar('comercial', disp, 'move etapa com versão', true);
+        await page.click('#det-corpo button:text("→ Inscrito")');
+        await page.waitForSelector('text=Etapa atualizada para Inscrito', { timeout: 15000 });
+        await page.fill('input[aria-label="Desconto em %"]', '60');
+        await page.click('text=Gerar proposta');
+        await page.waitForSelector('#det-corpo >> text=Pendente de aprovação', { timeout: 15000 });
+        registrar('comercial', disp, 'proposta do comercial acima do limite fica pendente', true);
         await page.click('#det-corpo button[aria-label="Fechar"]');
       }
       const val = await chamar(page, 'POST', '/api/oportunidades/1/validacoes', { dimensao: 'documental', resultado: 'valida', evidencia: 'tentativa indevida', versao_esperada: 1 });
       registrar('comercial', disp, 'comercial não valida (403 do banco)', !val.ok && [403, 422].includes(val.status), `${val.status} ${val.msg}`);
       await checar(page, 'comercial', disp, 'crm', erros);
+      await ctx.close();
+    }
+    // Gestor aprova a proposta criada pelo comercial nesta rodada (segregação: quem cria não aprova)
+    if (disp === 'desktop') {
+      const { ctx, page, erros } = await sessao(disp, 'gestor.alfa');
+      await page.click('nav >> text=Propostas');
+      await page.waitForSelector('main table tbody tr', { timeout: 15000 });
+      const aprovar = page.locator('tr:has-text("Candidata Homologação Supabase"):has-text("Atendente Alfa") button:text("Aprovar")').first();
+      if (await aprovar.count()) {
+        await aprovar.click();
+        await page.waitForSelector('text=: Aprovada', { timeout: 15000 });
+        registrar('gestor', disp, 'aprova proposta criada por outro usuário', true);
+      } else registrar('gestor', disp, 'aprova proposta criada por outro usuário', false, 'proposta do comercial não encontrada');
+      await checar(page, 'gestor', disp, 'propostas', erros);
       await ctx.close();
     }
     // Secretaria e financeiro: validação com evidência
@@ -176,7 +191,7 @@ try {
     {
       const { ctx, page, erros } = await sessao(disp, 'master');
       registrar('master', disp, 'Master cai no painel Master', page.url().endsWith('/master'));
-      await page.waitForSelector('main table');
+      await page.waitForSelector('main table tbody tr', { timeout: 15000 });
       registrar('master', disp, 'lista as 2 IES', (await page.locator('main table tbody tr').count()) === 2);
       const cand = await chamar(page, 'GET', '/api/oportunidades/1');
       registrar('master', disp, 'Master sem escopo não lê candidato', !cand.ok && cand.status === 404, `status ${cand.status}`);

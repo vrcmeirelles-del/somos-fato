@@ -13,3 +13,7 @@ docs/evidencias/supabase/*.png
 !docs/evidencias/supabase/desktop-gestor-detalhe.png
 !docs/evidencias/supabase/celular-coordenador-crm.png
 !docs/evidencias/supabase/desktop-secretaria-matriculas.png
+web/node_modules/
+web/dist/
+docs/evidencias/supabase-legado/
+!docs/evidencias/supabase/desktop-gestor-painel.png

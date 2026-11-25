@@ -1,9 +1,11 @@
 // Camada HTTP do piloto. Sem dependências externas.
 import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { ErroApp, inteiro } from './servico.mjs';
 
 const PUBLICO = new URL('../public/', import.meta.url).pathname;
+const WEB_DIST = new URL('../web/dist/', import.meta.url).pathname;
 const MOTOR = new URL('./motor.mjs', import.meta.url).pathname;
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png' };
 const COOKIE = 'm360_sessao';
@@ -48,7 +50,9 @@ function somente(d, permitidos) {
 
 // supabase = { url, chave } liga o modo homologação: as telas falam direto com o Supabase
 // (Auth + RPCs com RLS) e a API local fica desativada. Nenhum dado passa por este servidor.
-export function criarApp(servico, { cookieSeguro = false, supabase = null } = {}) {
+export function criarApp(servico, { cookieSeguro = false, supabase = null, ui = 'react' } = {}) {
+  // Interface React (web/dist) no modo Supabase, se construída; 'legado' mantém as telas HTML/JS do piloto.
+  const react = Boolean(supabase) && ui !== 'legado' && existsSync(join(WEB_DIST, 'index.html'));
   const cabecalhos = { ...CABECALHOS, 'Content-Security-Policy': csp(supabase ? supabase.url : '') };
   const configPublica = supabase
     ? { modo: 'supabase', supabase_url: supabase.url, supabase_chave_publicavel: supabase.chave }
@@ -128,6 +132,14 @@ export function criarApp(servico, { cookieSeguro = false, supabase = null } = {}
     try {
       if (caminho === '/config.json' && req.method === 'GET') return json(res, 200, configPublica);
       if (supabase && caminho.startsWith('/api/')) throw new ErroApp(404, 'API local desativada no modo Supabase');
+      if (react && req.method === 'GET') {
+        if (caminho.startsWith('/assets/')) {
+          const alvo = normalize(caminho).replace(/^\/+/, '');
+          if (alvo.includes('..') || !/^assets\/[\w.-]+$/.test(alvo)) throw new ErroApp(404, 'Não encontrado');
+          return arquivo(res, join(WEB_DIST, alvo));
+        }
+        if (caminho === '/login' || caminho === '/sem-acesso' || PAGINAS_APP.some((re) => re.test(caminho))) return arquivo(res, join(WEB_DIST, 'index.html'));
+      }
       if (supabase && PAGINAS_APP.some((re) => re.test(caminho))) return arquivo(res, join(PUBLICO, 'app.html'));
       if (caminho.startsWith('/api/')) {
         const r = rotas.find((x) => x.metodo === req.method && x.re.test(caminho));

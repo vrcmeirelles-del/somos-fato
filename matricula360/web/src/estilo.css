@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center rounded-lg bg-acao px-4 py-2 text-white hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40; }
+  .btn-peq { @apply px-2.5 py-1.5 text-sm; }
+  .btn-sec { @apply border border-current bg-transparent text-inherit; }
+  .btn-perigo { @apply bg-erro; }
+  .btn-ok { @apply bg-ok; }
+  .campo { @apply rounded-md border border-[#aebed0] bg-white px-2 py-1.5 text-base; }
+  .cartao-base { @apply rounded-xl border border-linha bg-white p-4; }
+  .chip { @apply mr-1 inline-block rounded-full bg-[#eef3f9] px-2 py-0.5 text-xs; }
+  .chip-ok { @apply bg-[#dff3e7] text-ok; }
+  .chip-pend { @apply bg-[#fff1d6] text-alerta; }
+  .chip-erro { @apply bg-[#fbe1df] text-erro; }
+  .nd { @apply italic text-suave; }
+  .nota { @apply text-sm text-suave; }
+  .tabela { @apply w-full overflow-x-auto rounded-xl border border-linha bg-white; }
+  .tabela table { @apply w-full border-collapse text-sm; }
+  .tabela th { @apply bg-[#eef3f9] px-2.5 py-2 text-left font-semibold; }
+  .tabela td { @apply border-t border-linha px-2.5 py-2 align-top; }
+}
+html, body { overflow-x: hidden; }

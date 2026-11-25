@@ -10,6 +10,8 @@
 | Navegador, desktop 1366×860 e iPhone 13 | `npm run homologar` | **83/83 verificações** (`evidencias/resultado.json`) |
 | Bateria de RLS no **Supabase real** (projeto de homologação) | SQL Editor: `supabase/TESTAR-NO-SQL-EDITOR.sql` | **138/138** com as migrações 1 a 5 (rodada anterior: 107/107 com as migrações 1 a 4); tudo desfeito ao final |
 | **Telas ligadas ao Supabase real**, desktop e iPhone 13, 7 perfis | `npm run` → `scripts/homologar-supabase.mjs` | **63/63** (`evidencias/supabase/resultado.json`) |
+| **Interface React/TypeScript/Tailwind** ligada ao Supabase real (desktop + iPhone 13) | `npm run homologar:supabase` | **66/66** (`evidencias/supabase/resultado.json`); telas legadas no mesmo roteiro: 66/66 |
+| Unitários da interface React (Vitest) | `npm run web:test` | **12/12** |
 | Migrações Supabase em **Postgres 16 real** (RLS, RPCs, gatilhos) | `npm run testar:postgres` | **107/107 verificações de RLS e regras + corrida real entre 2 sessões + lint (RLS em 100% das tabelas, search_path fixo em 100% das funções)** |
 
 A verificação no navegador cobre seis perfis: público, gestor, comercial, secretaria, coordenação e Master. Em cada tela checa:
@@ -100,6 +102,29 @@ O servidor local escuta só em `127.0.0.1` e entrega as telas; dados e regras fi
 - ausência de rolagem horizontal e de erros de console ou CSP.
 
 A primeira rodada deu 56/63. As 7 falhas foram 1 contagem do próprio teste e 6 respostas 500 (achado 1).
+
+## Migração para React/TypeScript/Tailwind (25/11/2026)
+
+**Stack (versões exatas e `package-lock.json`):**
+- React 18.3.1, React Router 6.28.0;
+- TypeScript 5.6.3 em modo estrito (`noUncheckedIndexedAccess`);
+- Tailwind 3.4.17, Vite 5.4.11, Vitest 2.1.9.
+
+**Arquitetura:**
+- Sem SDK do Supabase: um cliente mínimo tipado (Auth + RPC) com renovação de token e mapeamento dos códigos do banco (P0002→404, 42501→403, 40001→409, 22023→422).
+- Uma função tipada por RPC.
+- Nenhuma regra de autorização no cliente: a interface só esconde ações por conveniência, e o banco decide.
+
+**Paridade com as telas anteriores:** o mesmo roteiro de navegador passa nas duas interfaces (66/66 cada).
+
+**Ajustes do roteiro nesta etapa:**
+- esperas explícitas, porque a interface React renderiza a estrutura antes dos dados;
+- a proposta usada no teste de segregação passa a ser criada pelo comercial em cada rodada, o que deixa o teste independente do estado do banco.
+
+**Pendências da interface:**
+- auditoria de acessibilidade com axe;
+- divisão do pacote por rota (217 KB, 69 KB comprimido, hoje em um único arquivo);
+- remoção das telas legadas após aceite.
 
 ## Critérios de aceite da Bíblia-Mestra
 

@@ -1,0 +1,73 @@
+// Chamadas tipadas às RPCs. Cada função corresponde a uma RPC homologada no Supabase.
+import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
+import type {
+  AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel,
+} from './tipos';
+
+let cliente: Cliente | null = null;
+let configuracao: Config | null = null;
+
+export async function iniciar(): Promise<Config> {
+  if (configuracao) return configuracao;
+  const cfg = await fetch('/config.json').then((r) => r.json() as Promise<Config>);
+  if (cfg.modo !== 'supabase' || !cfg.supabase_url || !cfg.supabase_chave_publicavel) {
+    throw new ErroApi('Esta interface exige o modo Supabase (M360_SUPABASE_URL e M360_SUPABASE_CHAVE_PUBLICAVEL).', 500);
+  }
+  cliente = criarCliente(cfg.supabase_url, cfg.supabase_chave_publicavel);
+  configuracao = cfg;
+  return cfg;
+}
+function c(): Cliente {
+  if (!cliente) throw new ErroApi('Cliente não iniciado', 500);
+  return cliente;
+}
+const chave = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
+export const api = {
+  entrar: (email: string, senha: string) => c().entrar(email, senha),
+  sair: () => c().sair(),
+  eu: () => c().rpc<Eu>('rpc_me'),
+  estrutura: (ies: number) => c().rpc<Estrutura>('rpc_estrutura', { p_ies: ies }),
+  bi: (ies: number, coorte: string, agrupar = 'curso') => c().rpc<Bi>('rpc_bi', { p_ies: ies, p_coorte: coorte, p_agrupar: agrupar }),
+  fila: (ies: number) => c().rpc<Fila>('rpc_fila', { p_ies: ies }),
+  cicloMaim: (ies: number) => c().rpc<ResultadoMaim>('rpc_ciclo_maim', { p_ies: ies }),
+  concluirTarefa: (tarefa: number, resultado: string) => c().rpc<{ id: number; status: string; motivo: string | null }>('rpc_concluir_tarefa', { p_tarefa: tarefa, p_resultado: resultado }),
+  dispararTarefa: (tarefa: number) => c().rpc<{ enviado: false; motivo: string; elegivel: boolean }>('rpc_disparar_tarefa', { p_tarefa: tarefa }),
+  oportunidades: (ies: number, f: { etapa?: Etapa; coorte?: string; curso?: number; pagina?: number; porPagina?: number }) =>
+    c().rpc<Pagina<ItemOportunidade>>('rpc_listar_oportunidades', {
+      p_ies: ies, p_etapa: f.etapa ?? null, p_coorte: f.coorte ?? null, p_pagina: f.pagina ?? 1, p_por_pagina: f.porPagina ?? 25, p_curso: f.curso ?? null }),
+  criarOportunidade: (ies: number, dados: Record<string, unknown>) =>
+    c().rpc<{ id: number; duplicada: boolean; versao: number; etapa: Etapa; repeticao?: boolean }>('rpc_criar_oportunidade', { p_ies: ies, p_dados: dados, p_chave: chave() }),
+  detalhe: (op: number) => c().rpc<Detalhe>('rpc_detalhe', { p_op: op }),
+  moverEtapa: (op: number, para: Etapa, versao: number, motivo?: string) =>
+    c().rpc<{ id: number; etapa: Etapa; versao: number }>('rpc_mover_etapa', { p_op: op, p_para: para, p_versao: versao, p_motivo: motivo ?? null, p_chave: chave() }),
+  validar: (op: number, dimensao: Dimensao, resultado: string, evidencia: string, versao: number) =>
+    c().rpc<{ versao: number }>('rpc_validar', { p_op: op, p_dimensao: dimensao, p_resultado: resultado, p_evidencia: evidencia, p_versao: versao }),
+  confirmar: (op: number, versao: number) => c().rpc<{ versao: number }>('rpc_confirmar', { p_op: op, p_versao: versao }),
+  cancelar: (op: number, versao: number, motivo: string) => c().rpc<{ versao: number }>('rpc_cancelar', { p_op: op, p_versao: versao, p_motivo: motivo }),
+  criarProposta: (op: number, desconto: number, validadeDias: number) =>
+    c().rpc<{ id: number; status: StatusProposta; valor_final_centavos: number; limite_pct: number }>('rpc_criar_proposta', { p_op: op, p_desconto: desconto, p_validade_dias: validadeDias }),
+  decidirProposta: (proposta: number, decisao: 'aprovar' | 'rejeitar') => c().rpc<{ id: number; status: StatusProposta }>('rpc_decidir_proposta', { p_proposta: proposta, p_decisao: decisao }),
+  aceitarProposta: (proposta: number) => c().rpc<{ id: number; status: StatusProposta }>('rpc_aceitar_proposta', { p_proposta: proposta }),
+  propostas: (ies: number, status: StatusProposta) => c().rpc<PropostaLista[]>('rpc_listar_propostas', { p_ies: ies, p_status: status }),
+  optout: (op: number, canal: Canal) => c().rpc<{ canal: Canal; tarefas_suprimidas: number }>('rpc_optout', { p_op: op, p_canal: canal }),
+  anonimizar: (op: number) => c().rpc<{ anonimizada: true }>('rpc_anonimizar', { p_op: op }),
+  pendencias: (ies: number) => c().rpc<Pendencia[]>('rpc_pendencias', { p_ies: ies }),
+  configurar: (ies: number, v: { sla_horas?: number; max_followups?: number; dias_sem_contato?: number; capacidade_atendente?: number }) =>
+    c().rpc<Record<string, number>>('rpc_configurar', { p_ies: ies, p_sla_horas: v.sla_horas ?? null, p_max_followups: v.max_followups ?? null,
+      p_dias_sem_contato: v.dias_sem_contato ?? null, p_capacidade_atendente: v.capacidade_atendente ?? null }),
+  definirMeta: (ies: number, curso: number, coorte: string, meta: number) => c().rpc('rpc_definir_meta', { p_ies: ies, p_curso: curso, p_coorte: coorte, p_meta: meta }),
+  auditoria: (ies: number, pagina = 1) => c().rpc<Pagina<EventoAuditoria>>('rpc_auditoria', { p_ies: ies, p_pagina: pagina }),
+  master: {
+    ies: () => c().rpc<IesMaster[]>('rpc_master_listar_ies'),
+    acessos: (ies: number) => c().rpc<AcessosIes>('rpc_master_acessos', { p_ies: ies }),
+    provisionar: (nome: string, plano: string, campus: string, cursos: unknown[]) =>
+      c().rpc<{ id: number }>('rpc_provisionar_ies', { p_nome: nome, p_plano: plano, p_campus: campus, p_cursos: cursos }),
+    status: (ies: number, status: 'ativa' | 'suspensa') => c().rpc('rpc_alterar_status_ies', { p_ies: ies, p_status: status }),
+    conceder: (email: string, nome: string, ies: number, curso: number | null, papel: Papel) =>
+      c().rpc<{ escopo_id: number; perfil_novo: boolean }>('rpc_conceder_escopo_email', { p_email: email, p_nome: nome, p_ies: ies, p_curso: curso, p_papel: papel }),
+    revogarEscopo: (escopo: number) => c().rpc('rpc_revogar_escopo', { p_escopo: escopo }),
+    revogarUsuario: (usuario: string) => c().rpc('rpc_revogar_usuario', { p_usuario: usuario }),
+  },
+};

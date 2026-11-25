@@ -15,6 +15,20 @@ npm run homologar   # homologação no navegador (desktop + celular), evidência
 
 O servidor escuta só em `127.0.0.1`. **Não exponha à internet.**
 
+## Interface React/TypeScript/Tailwind ligada ao Supabase (homologação, sem publicar)
+
+```bash
+npm run web:instalar && npm run web:build      # dependências travadas por package-lock (web/)
+npm run web:test                                # 12 testes unitários (Vitest)
+M360_SUPABASE_URL=https://<ref>.supabase.co \
+M360_SUPABASE_CHAVE_PUBLICAVEL=sb_publishable_... npm start   # http://127.0.0.1:4173
+```
+
+- Só a **chave publicável** é aceita; o servidor recusa iniciar com outra.
+- No modo Supabase, o servidor local só entrega as telas: login, dados e regras ficam no Supabase (RLS + RPCs).
+- `M360_UI=legado` mantém as telas HTML/JS anteriores, para comparação.
+- O roteiro `npm run homologar:supabase` precisa de `dados/contas-homologacao.json`, com as contas sintéticas (fora do Git).
+
 ## Usuários do piloto (fictícios)
 
 Senha local padrão: `piloto-local-2026`. Pode ser trocada com `M360_SENHA_PILOTO` antes do primeiro `npm start`.

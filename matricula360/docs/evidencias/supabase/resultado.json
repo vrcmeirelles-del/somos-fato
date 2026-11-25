@@ -1,7 +1,7 @@
 {
-  "em": "2026-11-25T18:50:50.760Z",
+  "em": "2026-11-25T19:04:39.828Z",
   "projeto": "https://jbimijcvvekomovodfze.supabase.co",
-  "total": 63,
+  "total": 66,
   "falhas": 0,
   "resultados": [
     {
@@ -9,7 +9,7 @@
       "dispositivo": "desktop",
       "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
       "ok": true,
-      "detalhe": "Oportunidades17Matrículas comerciais6Ingressantes efetivos2Conversão (coorte)11.8%Meta16Atingimento12.5%Cancelamentos0Op"
+      "detalhe": "Oportunidades19Matrículas comerciais6Ingressantes efetivos2Conversão (coorte)10.5%Meta16Atingimento12.5%Cancelamentos0Op"
     },
     {
       "perfil": "gestor",
@@ -77,13 +77,6 @@
     {
       "perfil": "gestor",
       "dispositivo": "desktop",
-      "passo": "aprova proposta criada por outro usuário",
-      "ok": true,
-      "detalhe": ""
-    },
-    {
-      "perfil": "gestor",
-      "dispositivo": "desktop",
       "passo": "não aprova a própria proposta (segregação)",
       "ok": true,
       "detalhe": ""
@@ -126,6 +119,13 @@
     {
       "perfil": "comercial",
       "dispositivo": "desktop",
+      "passo": "proposta do comercial acima do limite fica pendente",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
       "passo": "comercial não valida (403 do banco)",
       "ok": true,
       "detalhe": "403 Seu perfil não tem permissão para esta operação"
@@ -141,6 +141,27 @@
       "perfil": "comercial",
       "dispositivo": "desktop",
       "passo": "crm: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "aprova proposta criada por outro usuário",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "propostas: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "propostas: sem erros de console/CSP",
       "ok": true,
       "detalhe": ""
     },
@@ -289,7 +310,7 @@
       "dispositivo": "celular",
       "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
       "ok": true,
-      "detalhe": "Oportunidades18Matrículas comerciais6Ingressantes efetivos2Conversão (coorte)11.1%Meta16Atingimento12.5%Cancelamentos0Op"
+      "detalhe": "Oportunidades20Matrículas comerciais6Ingressantes efetivos2Conversão (coorte)10.0%Meta16Atingimento12.5%Cancelamentos0Op"
     },
     {
       "perfil": "gestor",

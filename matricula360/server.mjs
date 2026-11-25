@@ -40,7 +40,7 @@ if (!supabase) {
   }
 }
 
-createServer(criarApp(servico, { supabase })).listen(PORTA, HOST, () => {
+createServer(criarApp(servico, { supabase, ui: process.env.M360_UI || 'react' })).listen(PORTA, HOST, () => {
   console.log(`Matrícula 360° (${supabase ? 'homologação Supabase: ' + supabase.url : 'piloto local'}) em http://${HOST}:${PORTA}`);
   console.log('Somente dados sintéticos. IA e envio externo desativados.');
 });
