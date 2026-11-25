@@ -172,6 +172,22 @@ Ajustes do roteiro nesta rodada (nenhum de produto):
 
 **Dados de teste visíveis na homologação:** 9 oportunidades criadas por roteiros, identificáveis pela origem ("homologação supabase", "teste automatizado (E2E)"). Não são removidas, porque a plataforma não apaga registros.
 
+## Conformidade com a Bíblia v0.2 §6 — migração 9 (25/11/2026)
+Aplicada pelo usuário no projeto de homologação. Conferência no banco real (gestor da Alfa, coorte 2027.1):
+
+| Item | Valor |
+|---|---|
+| Conversão da coorte | 0,0741 (2/27) |
+| Meta restante | 14 |
+| Amostra | 27, mínimo 30 |
+| Oportunidades adicionais projetadas (oficial) | N/D, com o motivo "Amostra insuficiente: 27 oportunidades (mínimo configurado: 30)" |
+| Cenário complementar | Identificado; 5 novas oportunidades pelo pipeline |
+| Receita potencial ofertada | R$ 4.782,45 (13 propostas válidas) |
+
+Comercial tentando alterar a amostra mínima: 403. Cenário R03 reproduzido localmente: 168 (antes, 169, por artefato de precisão).
+
+Navegador no site publicado: 83/83. O build publicado é idêntico ao do repositório.
+
 ## Critérios de aceite da Bíblia-Mestra
 
 | Critério | Onde está provado |

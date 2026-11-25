@@ -1,5 +1,5 @@
 {
-  "em": "2026-11-25T21:01:55.584Z",
+  "em": "2026-11-25T22:44:03.616Z",
   "projeto": "https://jbimijcvvekomovodfze.supabase.co",
   "total": 83,
   "falhas": 0,
@@ -9,7 +9,7 @@
       "dispositivo": "desktop",
       "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
       "ok": true,
-      "detalhe": "Oportunidades25Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão (decididas)50.0%Geral: 8.0%Cu"
+      "detalhe": "Oportunidades27Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte7.4%Decididas: 50.0%"
     },
     {
       "perfil": "gestor",
@@ -394,7 +394,7 @@
       "dispositivo": "celular",
       "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
       "ok": true,
-      "detalhe": "Oportunidades26Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão (decididas)50.0%Geral: 7.7%Cu"
+      "detalhe": "Oportunidades28Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte7.1%Decididas: 50.0%"
     },
     {
       "perfil": "gestor",
