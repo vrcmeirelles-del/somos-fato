@@ -181,21 +181,24 @@ Texto original das divergências, antes da decisão:
 - **D2 — Receita potencial.** Hoje = mensalidade da proposta aceita ou mensalidade cheia, mais pipeline ponderado. A seção 6 define "soma das mensalidades ofertadas válidas, com período e natureza de projeção": alinhar.
 - **D3 — Conversão no card principal.** Hoje o destaque é a taxa sobre decididas. A seção 6 define conversão = ingressantes ÷ oportunidades da coorte: inverter o destaque.
 
-### 13.5 Próxima fase proposta (P4 — ponta a ponta digital), a partir da análise de concorrência de 26/11/2026
-Detalhe e fontes em `docs/ANALISE-CONCORRENCIA.md`. As lacunas abaixo foram identificadas em relação a Slate, Salesforce Education Cloud, Anthology Reach, Ellucian CRM Recruit e ao mercado brasileiro.
-- **L1** Formulários e landing pages públicos de captação, com consentimento LGPD.
-- **L2** Portal do candidato.
-- **L3** Documentos protegidos com checklist.
-- **L4** Inscrição e processo seletivo online.
-- **L5** Matrícula online com assinatura e cobrança.
-- **L6** Comunicação omnicanal com réguas automáticas.
-- **L7** Eventos e visitas com check-in.
-- **L8** Integração acadêmica.
-- **L9** Integrações de mídia e marketplaces.
-- **L10** Atendimento conversacional: exclusão deliberada enquanto vigorar a proibição de IA.
-- **L11** Alerta precoce acadêmico.
+### 13.5 Fase P4 — ponta a ponta digital (análise de concorrência de 26/11/2026; migrações 18–21)
+Detalhe e fontes em `docs/ANALISE-CONCORRENCIA.md`. Decisão do responsável (26/11/2026): construir tudo o que falta para o "360°", seguindo pela captação pública.
 
-Ordem proposta: L1 → L3 → L7 → L4, que não exigem serviço externo. Depois L2 e L6, que exigem autorização de envio externo, e por fim L5, L8 e L9, que exigem contratos e credenciais. **Estado: especificado; aguarda decisão do responsável.**
+| Lacuna | Estado | Implementação |
+|---|---|---|
+| L1 Formulário público de captação | **publicado (migração 18)** | `/f/:endereço` sem login; consentimento LGPD versionado com hash do termo; campanha; campo-isca, tempo mínimo e limites por origem (hash diário do IP), formulário e e-mail; resposta neutra |
+| L2 Portal do candidato | **publicado (migração 18)** | Link secreto de 244 bits (só o hash no banco; 90 dias; no fragmento da URL); sem e-mail; link só para cadastro novo ou gerado pela equipe; opt-out e solicitações do titular (acesso, correção, eliminação) tratadas pelo gestor |
+| L3 Documentos protegidos | **publicado (migração 19)** | Checklist por forma de ingresso; PDF/JPG/PNG conferidos pelo conteúdo, até 3 MB, SHA-256; versões preservadas; download auditado; revisão com motivo; exigência antes da validação documental ligável por IES. Arquivos no banco (trade-off: 500 MB no plano Free; migrar para Storage quando houver função de servidor autorizada) |
+| L4 Processo seletivo online | **publicado (migração 20)** | Prova agendada (vagas), ENEM conferido por pessoa, redação só no horário (envio único) corrigida por pessoa com parecer; sistema só sugere; decisão humana justificada; resultado visível após divulgação; divulgado não muda |
+| L5 Matrícula online | **publicado (migração 21)** | Aceite pelo portal com proposta aprovada e vigente, contrato versionado e nome confirmado; evidências (data, versão, hash do contrato, hash da origem); pré-matrícula → matrícula comercial. **[Não verificado] validade jurídica: a validar pelo jurídico.** Cobrança: integração desligada |
+| L6 Comunicação omnicanal | **publicado em modo simulação (migração 21)** | Modelos por gatilho; régua sob comando sem duplicar; bloqueio por opt-out, anonimização e base legal; texto para envio manual; abertura/clique N/D. Envio real exige provedor e autorização |
+| L7 Eventos e visitas | **publicado (migração 20)** | Vagas, inscrição pelo formulário ou equipe, check-in, conversão de presentes |
+| L8 Integração acadêmica | **parcial (migração 21)** | Importação de vínculos por planilha (idempotente, com relatório). Conexão direta: desligada |
+| L9 Mídia e marketplaces | **parcial (migração 21)** | Importação de custos por planilha (idempotente); leads por importação do CRM com código de campanha. Conexões diretas: desligadas |
+| L10 Atendimento conversacional | exclusão deliberada | Proibição de IA generativa |
+| L11 Alerta precoce acadêmico | especificado | Depende da L8 |
+
+Integrações registradas (todas desligadas, com pedido de ativação auditado): e-mail, SMS, WhatsApp, cobrança, assinatura certificada, Meta Ads, Google Ads, TikTok Ads, sistema acadêmico e marketplaces de bolsas.
 
 ---
 
