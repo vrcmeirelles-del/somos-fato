@@ -81,7 +81,7 @@ try {
       const main = await page.textContent('main');
       registrar('gestor', disp, 'Central: funil com 6 etapas', (await page.locator('ol[aria-label="Funil comercial"] li').count()) === 6);
       registrar('gestor', disp, 'Central: desempenho por turno e modalidade', main.includes('Desempenho por turno') && main.includes('Noturno') && main.includes('Presencial'));
-      registrar('gestor', disp, 'Central: custo por lead N/D com motivo (sem investimento)', main.includes('Sem investimento cadastrado'));
+      registrar('gestor', disp, 'Central: custo por lead N/D com motivo', /Sem investimento cadastrado|Sem custo lançado|R\$/.test(main));
       registrar('gestor', disp, 'Central: alertas do MAIM', main.includes('Alertas e intervenções do MAIM'));
       registrar('gestor', disp, 'Central: sem rótulo técnico REACT', !(await page.textContent('body')).includes('REACT'));
       await page.selectOption('#filtro-curso', { label: 'Direito · noturno' });
@@ -141,6 +141,18 @@ try {
           registrar('gestor', disp, 'Governança: exportação CSV do gestor com contato e registro na auditoria',
             csv.split('\r\n')[0].includes('E-mail') && /@example|@exemplo/.test(csv) && (await page.textContent('main')).includes('registrada na auditoria'));
         } else console.log('AVISO governança não verificada: banco sem a migração 11.');
+        // P1 (migração 12): planejamento e campanhas, só verificados quando o banco já tem a migração.
+        await ir(page, 'Plano, objetivos e 5W2H');
+        await page.waitForFunction(() => /migração 12|Novo plano|Nenhum plano|Objetivos e indicadores/.test(document.querySelector('main')?.textContent || ''), null, { timeout: 15000 }).catch(() => null);
+        if (!(await page.textContent('main')).includes('migração 12')) {
+          registrar('gestor', disp, 'P1: página de Planejamento com plano da coorte e concorrência com fonte', (await page.textContent('main')).includes('Concorrência (somente com fonte verificável)'));
+          await checar(page, 'gestor', disp, 'planejamento', erros);
+          await ir(page, 'Campanhas e custos');
+          await page.waitForSelector('text=Integrações de mídia e mensageria', { timeout: 15000 }).catch(() => null);
+          const camp = await page.textContent('main');
+          registrar('gestor', disp, 'P1: Campanhas com atribuição desconhecida e integrações desligadas', camp.includes('Atribuição desconhecida') && camp.includes('desligada'));
+          await checar(page, 'gestor', disp, 'campanhas', erros);
+        } else console.log('AVISO P1 não verificado: banco sem a migração 12.');
         // R09: trocar a instituição pela URL não expõe a outra IES (a interface volta à IES autorizada e o banco recusa a outra).
         for (const rota of ['/ies/2/crm', '/ies/1/inteligencia?ies=2']) {
           await page.goto(`${BASE}${rota}`);

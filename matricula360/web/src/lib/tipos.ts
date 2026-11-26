@@ -82,8 +82,9 @@ export interface CentralTotais {
   amostra: number; amostra_minima: number; oportunidades_adicionais_projetadas: number | null; forecast_motivo: string | null;
   cenario_pipeline: { rotulo: string; taxa_conversao_decididas: number | null; ingressos_esperados_pipeline: number | null; projecao_ingressos: number | null; novas_oportunidades_necessarias: number | null };
   receita_mensal_ingressantes_centavos: number; receita_mensal_potencial_ofertada_centavos: number; propostas_validas: number;
-  custo_por_lead_centavos: number | null; custo_por_matricula_centavos: number | null; custo_motivo: string;
-  metodos: Record<'conversao' | 'projecao' | 'cenario' | 'receita' | 'funil', string>;
+  custo_por_lead_centavos: number | null; custo_por_matricula_centavos: number | null; custo_motivo: string | null;
+  custo_atribuido_centavos?: number | null; leads_atribuidos?: number; leads_atribuicao_desconhecida?: number;
+  metodos: Record<'conversao' | 'projecao' | 'cenario' | 'receita' | 'funil', string> & { custo?: string };
 }
 export interface Grupo { chave: string; oportunidades: number; ingressantes: number; matriculas_comerciais?: number; conversao?: number | null; meta?: number | null; atingimento?: number | null; curso_id?: number }
 export interface Alerta { tipo: string; prioridade: number; titulo: string; quantidade: number; acao: string }
@@ -91,9 +92,9 @@ export interface Central {
   coorte: string; cobertura: 'ies' | 'recorte'; totais: CentralTotais;
   funil: { etapa: string; quantidade: number; conversao_da_anterior: number | null }[];
   evolucao: { semana: string; oportunidades: number; matriculas_comerciais: number; ingressantes: number }[];
-  por_origem: Grupo[]; por_curso: Grupo[]; por_turno: Grupo[]; por_modalidade: Grupo[]; por_atendente: Grupo[];
+  por_origem: Grupo[]; por_campanha?: Grupo[]; por_curso: Grupo[]; por_turno: Grupo[]; por_modalidade: Grupo[]; por_atendente: Grupo[];
   alertas: Alerta[] | null;
-  filtros_disponiveis: { campi: { id: number; nome: string }[]; turnos: string[]; modalidades: string[] };
+  filtros_disponiveis: { campi: { id: number; nome: string }[]; turnos: string[]; modalidades: string[]; campanhas?: { id: number; nome: string }[] };
 }
 
 export interface OperacaoMatriz { operacao: string; modulo: string; descricao: string; papeis: Papel[]; abrangencia_minima: 'curso' | 'ies'; permitida: boolean }
@@ -101,3 +102,21 @@ export interface Permissoes { escopos: { papel: Papel; abrangencia: Abrangencia;
 export interface LinhaExportacao { id: number; nome: string; email: string | null; telefone: string | null; campus: string; curso: string; turno: string;
   modalidade: string; coorte: string; etapa: Etapa; forma_ingresso: string; origem: string; base_legal: string; responsavel: string | null; criado_em: string }
 export interface Exportacao { linhas: LinhaExportacao[]; total: number; contato_completo: boolean; gerado_em: string }
+
+// Planejamento Estratégico e Marketing e Captação (migração 12)
+export type Indicador = 'ingressantes' | 'oportunidades' | 'matriculas_comerciais' | 'conversao' | 'cpl_centavos' | 'custo_ingressante_centavos';
+export interface Objetivo { id: number; descricao: string; indicador: Indicador; curso_id: number | null; curso: string | null; meta: number; prazo: string | null; realizado: number | null }
+export interface Acao { id: number; objetivo_id: number | null; o_que: string; por_que: string; onde: string | null; quando: string; quem: string; como: string | null;
+  quanto_centavos: number | null; status: 'pendente' | 'em_andamento' | 'concluida' | 'cancelada'; atrasada: boolean }
+export interface Plano { id: number; titulo: string; diagnostico: string | null; status: 'rascunho' | 'em_aprovacao' | 'aprovado' | 'em_revisao' | 'encerrado'; versao: number;
+  orcamento_centavos: number | null; orcamento_alocado_centavos: number | null; gasto_centavos: number | null; revisar_em: string | null; revisao_vencida: boolean;
+  criado_por: string | null; criado_por_mim: boolean; aprovado_por: string | null; aprovado_em: string | null; objetivos: Objetivo[]; acoes: Acao[] }
+export interface Planejamento { coorte: string; pode_editar: boolean; pode_aprovar: boolean; planos: Plano[]; metodos: { realizado: string } }
+export interface RegistroConcorrencia { id: number; instituicao: string; curso: string; modalidade: string | null; mensalidade_centavos: number | null; fonte_url: string;
+  coletado_em: string; observacao: string | null; registrado_por: string | null; registrado_por_mim: boolean; revisado_por: string | null; revisado_em: string | null; desatualizado: boolean }
+export interface CustoCampanha { id: number; data: string; valor_centavos: number; descricao: string; lancado_por: string | null; estornado_em: string | null; motivo_estorno: string | null }
+export interface Campanha { id: number; nome: string; codigo: string; canal: string; inicio: string; fim: string; status: 'planejada' | 'ativa' | 'encerrada' | 'cancelada';
+  objetivo: string | null; versao: number; plano_id: number | null; vigente: boolean; leads: number; matriculas_comerciais: number; ingressantes: number; conversao: number | null;
+  orcamento_centavos: number | null; custo_centavos: number | null; cpl_centavos: number | null; custo_ingressante_centavos: number | null; custos: CustoCampanha[] | null }
+export interface Campanhas { coorte: string; ve_custos: boolean; pode_editar: boolean; pode_lancar_custo: boolean; integracoes: Record<string, string>;
+  campanhas: Campanha[]; atribuicao_desconhecida: { leads: number; ingressantes: number }; metodos: Record<'atribuicao' | 'cpl' | 'custo_ingressante', string> }

@@ -8,6 +8,8 @@ import { lerSessao } from './lib/supabase';
 import type { Eu } from './lib/tipos';
 import { Agenda } from './pages/Agenda';
 import { Auditoria } from './pages/Auditoria';
+import { Campanhas } from './pages/Campanhas';
+import { Planejamento } from './pages/Planejamento';
 import { Central } from './pages/Central';
 import { Configuracoes } from './pages/Configuracoes';
 import { Crm } from './pages/Crm';
@@ -71,6 +73,8 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
     <Routes>
       <Route path="/ies/:ies/inteligencia" element={<ExigeIes><Central /></ExigeIes>} />
       <Route path="/ies/:ies/intervencoes" element={<ExigeIes><Intervencoes abrirDetalhe={abrir} /></ExigeIes>} />
+      <Route path="/ies/:ies/planejamento" element={<ExigeIes><Planejamento /></ExigeIes>} />
+      <Route path="/ies/:ies/campanhas" element={<ExigeIes><Campanhas /></ExigeIes>} />
       <Route path="/ies/:ies/crm" element={<ExigeIes><Crm abrirDetalhe={abrir} versao={versao} /></ExigeIes>} />
       <Route path="/ies/:ies/agenda" element={<ExigeIes><Agenda abrirDetalhe={abrir} versao={versao} /></ExigeIes>} />
       <Route path="/ies/:ies/matriculas" element={<ExigeIes><Matriculas abrirDetalhe={abrir} /></ExigeIes>} />

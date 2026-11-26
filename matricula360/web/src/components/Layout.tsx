@@ -8,7 +8,7 @@ import { AMBIENTES, trilha } from '../lib/navegacao';
 import type { Estrutura, Eu, Papel } from '../lib/tipos';
 import { Estado } from './ui';
 
-export interface Filtros { coorte: string; campus_id: string; curso_id: string; turno: string; modalidade: string }
+export interface Filtros { coorte: string; campus_id: string; curso_id: string; turno: string; modalidade: string; campanha_id: string }
 interface Contexto {
   eu: Eu; ies: number | null; estrutura: Estrutura | null; tem: (...p: Papel[]) => boolean; recarregarEstrutura: () => void;
   filtros: Filtros; setFiltro: (k: keyof Filtros, v: string) => void;
@@ -42,10 +42,10 @@ export function Layout({ eu, children }: { eu: Eu; children: ReactNode }) {
 
   const filtros: Filtros = {
     coorte: busca.get('coorte') ?? est.dados?.coortes[0] ?? '', campus_id: busca.get('campus') ?? '', curso_id: busca.get('curso') ?? '',
-    turno: busca.get('turno') ?? '', modalidade: busca.get('modalidade') ?? '',
+    turno: busca.get('turno') ?? '', modalidade: busca.get('modalidade') ?? '', campanha_id: busca.get('campanha') ?? '',
   };
   const setFiltro = (k: keyof Filtros, v: string) => {
-    const nome = { coorte: 'coorte', campus_id: 'campus', curso_id: 'curso', turno: 'turno', modalidade: 'modalidade' }[k];
+    const nome = { coorte: 'coorte', campus_id: 'campus', curso_id: 'curso', turno: 'turno', modalidade: 'modalidade', campanha_id: 'campanha' }[k];
     const n = new URLSearchParams(busca);
     if (v) n.set(nome, v); else n.delete(nome);
     setBusca(n, { replace: true });
@@ -154,8 +154,8 @@ export function Layout({ eu, children }: { eu: Eu; children: ReactNode }) {
   );
 }
 
-// Barra de filtros globais (instituição está no cabeçalho). Campanha depende do módulo de Campanhas (P1).
-export function BarraFiltros({ campi, completos = true }: { campi?: { id: number; nome: string }[]; completos?: boolean }) {
+// Barra de filtros globais (instituição está no cabeçalho). Campanha: lista vinda do banco (migração 12).
+export function BarraFiltros({ campi, campanhas, completos = true }: { campi?: { id: number; nome: string }[]; campanhas?: { id: number; nome: string }[]; completos?: boolean }) {
   const { estrutura, filtros, setFiltro } = useSessao();
   const cursos = estrutura?.cursos ?? [];
   const turnos = [...new Set(cursos.map((c) => c.turno))];
@@ -175,9 +175,10 @@ export function BarraFiltros({ campi, completos = true }: { campi?: { id: number
       {sel('filtro-curso', 'Curso', 'curso_id', cursos.map((c) => [String(c.id), `${c.nome} · ${c.turno}`]), 'Todos')}
       {completos && sel('filtro-turno', 'Turno', 'turno', turnos.map((t) => [t, rotulo(t)]), 'Todos')}
       {completos && sel('filtro-modalidade', 'Modalidade', 'modalidade', modalidades.map((m) => [m, rotulo(m)]), 'Todas')}
-      <label className="flex flex-col gap-1 text-[11px] font-medium uppercase tracking-wide text-suave">Campanha
-        <select className="campo min-w-[120px]" disabled title="Disponível com o módulo de Campanhas (P1)"><option>Módulo P1</option></select>
-      </label>
+      {completos && (campanhas
+        ? sel('filtro-campanha', 'Campanha', 'campanha_id', campanhas.map((c) => [String(c.id), c.nome]), 'Todas')
+        : <label className="flex flex-col gap-1 text-[11px] font-medium uppercase tracking-wide text-suave">Campanha
+            <select className="campo min-w-[120px]" disabled title="Disponível após a migração 12"><option>Indisponível</option></select></label>)}
     </div>
   );
 }

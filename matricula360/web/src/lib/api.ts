@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -84,6 +84,21 @@ export const api = {
   permissoes: (ies: number) => c().rpc<Permissoes>('rpc_permissoes', { p_ies: ies }),
   exportar: (ies: number, coorte?: string, curso?: number) =>
     c().rpc<Exportacao>('rpc_exportar_oportunidades', { p_ies: ies, p_coorte: coorte || null, p_curso: curso ?? null }),
+  planejamento: (ies: number, coorte: string) => c().rpc<Planejamento>('rpc_planejamento', { p_ies: ies, p_coorte: coorte }),
+  salvarPlano: (ies: number, dados: Record<string, unknown>, id?: number, versao?: number) =>
+    c().rpc<{ id: number; versao: number }>('rpc_salvar_plano', { p_ies: ies, p_dados: dados, p_id: id ?? null, p_versao: versao ?? null }),
+  planoStatus: (plano: number, acao: string, justificativa?: string) => c().rpc<{ status: string }>('rpc_plano_status', { p_plano: plano, p_acao: acao, p_justificativa: justificativa ?? null }),
+  salvarObjetivo: (plano: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number }>('rpc_salvar_objetivo', { p_plano: plano, p_dados: dados, p_id: id ?? null }),
+  salvarAcao: (plano: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number }>('rpc_salvar_acao', { p_plano: plano, p_dados: dados, p_id: id ?? null }),
+  concorrencia: (ies: number) => c().rpc<RegistroConcorrencia[]>('rpc_concorrencia', { p_ies: ies }),
+  registrarConcorrencia: (ies: number, dados: Record<string, unknown>) => c().rpc<{ id: number }>('rpc_registrar_concorrencia', { p_ies: ies, p_dados: dados }),
+  revisarConcorrencia: (id: number) => c().rpc('rpc_revisar_concorrencia', { p_id: id }),
+  campanhas: (ies: number, coorte: string) => c().rpc<Campanhas>('rpc_campanhas', { p_ies: ies, p_coorte: coorte }),
+  salvarCampanha: (ies: number, dados: Record<string, unknown>, id?: number, versao?: number) =>
+    c().rpc<{ id: number; versao: number }>('rpc_salvar_campanha', { p_ies: ies, p_dados: dados, p_id: id ?? null, p_versao: versao ?? null }),
+  lancarCusto: (campanha: number, data: string, valor: number, descricao: string) =>
+    c().rpc<{ id: number; repeticao: boolean }>('rpc_lancar_custo', { p_campanha: campanha, p_data: data, p_valor_centavos: valor, p_descricao: descricao, p_chave: chave() }),
+  estornarCusto: (custo: number, motivo: string) => c().rpc('rpc_estornar_custo', { p_custo: custo, p_motivo: motivo }),
   pendencias: (ies: number) => c().rpc<Pendencia[]>('rpc_pendencias', { p_ies: ies }),
   configurar: (ies: number, v: { sla_horas?: number; max_followups?: number; dias_sem_contato?: number; capacidade_atendente?: number; amostra_minima_forecast?: number }) =>
     c().rpc<Record<string, number>>('rpc_configurar', { p_ies: ies, p_sla_horas: v.sla_horas ?? null, p_max_followups: v.max_followups ?? null,

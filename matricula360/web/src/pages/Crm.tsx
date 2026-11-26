@@ -185,14 +185,14 @@ function MotivoPerda({ nome, aoCancelar, aoConfirmar }: { nome: string; aoCancel
 function NovaOportunidade({ aoCriar }: { aoCriar: () => void }) {
   const { ies, estrutura } = useSessao();
   const acao = useAcao();
-  const vazio = { nome: '', email: '', telefone: '', curso_id: String(estrutura?.cursos[0]?.id ?? ''), forma_ingresso: 'vestibular', coorte: estrutura?.coortes[0] ?? '2027.1', base_legal: '', origem: '' };
+  const vazio = { nome: '', email: '', telefone: '', curso_id: String(estrutura?.cursos[0]?.id ?? ''), forma_ingresso: 'vestibular', coorte: estrutura?.coortes[0] ?? '2027.1', base_legal: '', origem: '', campanha: '' };
   const [f, setF] = useState(vazio);
   const campo = (k: keyof typeof vazio) => ({ value: f[k], onChange: (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value }) });
   return (
     <Detalhes titulo="Nova oportunidade">
       <form className="flex flex-wrap items-end gap-2" onSubmit={(ev) => { ev.preventDefault(); void acao.executar(async () => {
         const dados: Record<string, unknown> = { ...f, curso_id: Number(f.curso_id) };
-        if (!f.email) delete dados.email; if (!f.telefone) delete dados.telefone;
+        if (!f.email) delete dados.email; if (!f.telefone) delete dados.telefone; if (!f.campanha) delete dados.campanha;
         const r = await api.criarOportunidade(ies!, dados);
         setF(vazio); aoCriar();
         return r.duplicada ? `Já existia oportunidade para esta pessoa, curso e coorte (#${r.id}). Nada foi duplicado.` : `Oportunidade #${r.id} criada e distribuída.`;
@@ -205,6 +205,7 @@ function NovaOportunidade({ aoCriar }: { aoCriar: () => void }) {
         <Campo rotulo="Coorte"><input className="campo w-24" pattern="\d{4}\.[12]" {...campo('coorte')} /></Campo>
         <Campo rotulo="Base legal (LGPD)"><select className="campo" {...campo('base_legal')}><option value="">Selecione…</option>{estrutura?.bases_legais.map((x) => <option key={x} value={x}>{rotulo(x)}</option>)}</select></Campo>
         <Campo rotulo="Origem"><input className="campo" placeholder="ex.: site, evento escolar" {...campo('origem')} /></Campo>
+        <Campo rotulo="Código da campanha"><input className="campo w-40" placeholder="opcional" {...campo('campanha')} /></Campo>
         <button className="btn" type="submit" disabled={acao.enviando}>Cadastrar</button>
       </form>
       <Mensagem m={acao.mensagem} />
@@ -219,7 +220,7 @@ function Importar({ aoImportar }: { aoImportar: () => void }) {
   const [rejeitadas, setRejeitadas] = useState<{ linha: number; motivo: string }[]>([]);
   return (
     <Detalhes titulo="Importar lista (deduplicada)">
-      <p className="nota mb-2">Uma linha por candidato: nome;email;telefone;curso_id;forma_ingresso;coorte;base_legal;origem. Cursos: {estrutura?.cursos.map((c) => `${c.id}=${c.nome}`).join(', ')}. Linhas sem origem ou base legal são rejeitadas.</p>
+      <p className="nota mb-2">Uma linha por candidato: nome;email;telefone;curso_id;forma_ingresso;coorte;base_legal;origem;campanha (código opcional). Cursos: {estrutura?.cursos.map((c) => `${c.id}=${c.nome}`).join(', ')}. Linhas sem origem ou base legal são rejeitadas.</p>
       <textarea className="campo min-h-[110px] w-full" aria-label="Linhas para importar" value={texto} onChange={(e) => setTexto(e.target.value)}
         placeholder="nome;email;telefone;curso_id;forma_ingresso;coorte;base_legal;origem" />
       <button className="btn mt-2" disabled={acao.enviando} onClick={() => void acao.executar(async () => {

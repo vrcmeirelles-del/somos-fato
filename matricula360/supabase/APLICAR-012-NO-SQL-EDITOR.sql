@@ -44,7 +44,7 @@ insert into public.matriz_permissoes(operacao, modulo, descricao, papeis, abrang
   ('planejamento.aprovar',  'Planejamento Estratégico', 'Aprovar ou devolver plano (nunca o próprio)',   array['gestor','reitoria'], 'ies', 'rpc_plano_status'),
   ('concorrencia.registrar','Planejamento Estratégico', 'Registrar oferta concorrente com fonte e data',  array['gestor','coordenador'], 'curso', 'rpc_registrar_concorrencia'),
   ('concorrencia.revisar',  'Planejamento Estratégico', 'Revisar registro de concorrência (nunca o próprio)', array['gestor'], 'ies', 'rpc_revisar_concorrencia'),
-  ('campanha.ver',          'Marketing e Captação',     'Ver campanhas e códigos de atribuição',         array['gestor','reitoria','coordenador','comercial'], 'curso', 'rpc_campanhas'),
+  ('campanha.ver',          'Marketing e Captação',     'Ver campanhas e códigos de atribuição',         array['gestor','reitoria','coordenador','comercial','financeiro'], 'curso', 'rpc_campanhas'),
   ('campanha.editar',       'Marketing e Captação',     'Criar e editar campanhas',                      array['gestor'], 'ies', 'rpc_salvar_campanha'),
   ('campanha.custos_ver',   'Marketing e Captação',     'Ver custos, CPL e custo por ingressante',       array['gestor','reitoria','financeiro'], 'ies', 'rpc_campanhas'),
   ('custo.lancar',          'Marketing e Captação',     'Lançar e estornar custo de campanha',           array['gestor','financeiro'], 'ies', 'rpc_lancar_custo')

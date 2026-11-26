@@ -22,6 +22,11 @@ const ROTULOS: Record<string, string> = {
   preco: 'Preço', horario: 'Horário', distancia: 'Distância', documentacao: 'Documentação', concorrencia: 'Concorrência', credibilidade: 'Credibilidade', tempo: 'Tempo', familia: 'Família', outra: 'Outra',
   aberta: 'Aberta', superada: 'Superada', nao_superada: 'Não superada',
   ies: 'Instituição', campus: 'Campus',
+  rascunho: 'Rascunho', em_aprovacao: 'Em aprovação', em_revisao: 'Em revisão', encerrado: 'Encerrado', pendente: 'Pendente', em_andamento: 'Em andamento', concluida: 'Concluída', cancelada: 'Cancelada',
+  planejada: 'Planejada', ativa: 'Ativa', encerrada: 'Encerrada',
+  ingressantes: 'Ingressantes efetivos', oportunidades: 'Oportunidades', matriculas_comerciais: 'Matrículas comerciais', conversao: 'Conversão',
+  cpl_centavos: 'Custo por lead', custo_ingressante_centavos: 'Custo por ingressante',
+  meta_ads: 'Meta Ads', google_ads: 'Google Ads', tiktok_ads: 'TikTok Ads', whatsapp: 'WhatsApp', email: 'E-mail', site: 'Site', radio_tv: 'Rádio/TV', impresso: 'Impresso', outro: 'Outro',
   curso: 'Curso', turno: 'Turno', modalidade: 'Modalidade', forma_ingresso: 'Forma de ingresso', atendente: 'Atendente',
 };
 export const rotulo = (k: string | null | undefined) => (k == null ? '' : ROTULOS[k] ?? k);
@@ -34,12 +39,13 @@ export function centavos(texto: string): number {
   return Math.round(v * 100);
 }
 
-// Linha de importação "nome;email;telefone;curso_id;forma;coorte;base_legal;origem" -> objeto da RPC.
+// Linha de importação "nome;email;telefone;curso_id;forma;coorte;base_legal;origem[;campanha]" -> objeto da RPC.
 export function linhaImportacao(l: string): Record<string, unknown> {
-  const [nome, email, telefone, curso, forma, coorte, base, origem] = l.split(';').map((x) => x.trim());
+  const [nome, email, telefone, curso, forma, coorte, base, origem, campanha] = l.split(';').map((x) => x.trim());
   const o: Record<string, unknown> = { nome, curso_id: Number(curso), forma_ingresso: forma, coorte, base_legal: base, origem };
   if (email) o.email = email;
   if (telefone) o.telefone = telefone;
+  if (campanha) o.campanha = campanha;
   return o;
 }
 

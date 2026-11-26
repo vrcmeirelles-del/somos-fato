@@ -1,4 +1,4 @@
-import { AlertTriangle, BadgeDollarSign, BarChart3, CheckCircle2, Filter, GraduationCap, Layers, Target, TrendingUp, Users, UserCheck } from 'lucide-react';
+import { AlertTriangle, BadgeDollarSign, Megaphone, BarChart3, CheckCircle2, Filter, GraduationCap, Layers, Target, TrendingUp, Users, UserCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BarraFiltros, useSessao } from '../components/Layout';
 import { Barras, Funil, Linhas, Progresso } from '../components/graficos';
@@ -16,7 +16,7 @@ export function Central() {
   const { ies, estrutura, filtros } = useSessao();
   const { coorte, ...resto } = filtros;
   const c = useCarregar(() => (ies && coorte ? api.central(ies, coorte, resto) : Promise.resolve(null)),
-    [ies, coorte, resto.campus_id, resto.curso_id, resto.turno, resto.modalidade]);
+    [ies, coorte, resto.campus_id, resto.curso_id, resto.turno, resto.modalidade, resto.campanha_id]);
   const d = c.dados; const t = d?.totais;
   // Compatível com o banco antes da migração 9 (campos novos ausentes): mostra N/D com o motivo, sem quebrar a tela.
   const semM9 = Boolean(t && t.cenario_pipeline === undefined);
@@ -29,7 +29,7 @@ export function Central() {
   return (
     <>
       <Titulo titulo="Central de Inteligência" subtitulo={`${estrutura?.ies.nome ?? ''} · visão executiva da captação`} />
-      <BarraFiltros campi={d?.filtros_disponiveis.campi} />
+      <BarraFiltros campi={d?.filtros_disponiveis.campi} campanhas={d?.filtros_disponiveis.campanhas} />
       {!coorte ? <Vazio texto="Sem coortes com dados ou metas" detalhe="Os indicadores ficam indisponíveis (N/D) até existir uma coorte com oportunidades ou metas cadastradas." /> : (
         <>
           <Estado carregando={c.carregando && !d} erro={c.erro} />
@@ -46,8 +46,10 @@ export function Central() {
                 <Kpi rotulo="Meta" valor={num(t.meta)} icone={Target} />
                 <Kpi rotulo="Atingimento" valor={pct(t.atingimento)} icone={CheckCircle2} />
                 <Kpi rotulo="Conversão da coorte" valor={pct(t.conversao ?? legado?.conversao_geral ?? null)} icone={TrendingUp} detalhe={`Decididas: ${pct(cen.taxa_conversao_decididas)}`} />
-                <Kpi rotulo="Custo por lead" valor={moedaOuNd(t.custo_por_lead_centavos)} icone={BadgeDollarSign} detalhe="Sem investimento cadastrado" />
-                <Kpi rotulo="Custo por matrícula" valor={moedaOuNd(t.custo_por_matricula_centavos)} icone={BadgeDollarSign} detalhe="Módulo Campanhas (P1)" />
+                <Kpi rotulo="Custo por lead" valor={moedaOuNd(t.custo_por_lead_centavos)} icone={BadgeDollarSign}
+                  detalhe={t.custo_por_lead_centavos != null ? `${t.leads_atribuidos ?? 0} leads atribuídos` : (t.custo_motivo ?? 'Sem custo lançado')} />
+                <Kpi rotulo="Custo por ingressante" valor={moedaOuNd(t.custo_por_matricula_centavos)} icone={BadgeDollarSign}
+                  detalhe={t.custo_por_matricula_centavos != null ? 'Ingresso efetivo atribuído' : (t.custo_motivo ?? 'Sem custo lançado')} />
               </div>
 
               <div className="grid gap-4 xl:grid-cols-3">
@@ -91,6 +93,8 @@ export function Central() {
 
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <Cartao titulo="Captação por origem" icone={Users}><Barras dados={d.por_origem} valor="oportunidades" sufixo={(g) => `conv. ${pct(g.conversao as number | null)}`} /></Cartao>
+                {d.por_campanha && <Cartao titulo="Captação por campanha (atribuição)" icone={Megaphone}><Barras dados={d.por_campanha} valor="oportunidades" sufixo={(g) => `conv. ${pct(g.conversao as number | null)}`} />
+                  {t.metodos.custo && <p className="nota mt-2">{t.metodos.custo}</p>}</Cartao>}
                 <Cartao titulo="Desempenho por turno" icone={GraduationCap}><Barras dados={d.por_turno} valor="oportunidades" sufixo={(g) => `${g.ingressantes} ingr.`} /></Cartao>
                 <Cartao titulo="Desempenho por modalidade" icone={GraduationCap}><Barras dados={d.por_modalidade} valor="oportunidades" sufixo={(g) => `${g.ingressantes} ingr.`} /></Cartao>
                 <Cartao titulo="Desempenho por atendente" icone={UserCheck}><Barras dados={d.por_atendente} valor="oportunidades" sufixo={(g) => `${g.ingressantes} ingr. · ${pct(g.conversao as number | null)}`} /></Cartao>

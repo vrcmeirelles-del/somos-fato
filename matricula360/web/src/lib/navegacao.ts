@@ -16,10 +16,10 @@ export const AMBIENTES: Ambiente[] = [
     { rotulo: 'Fila de intervenções (MAIM)', rota: (i) => `/ies/${i}/intervencoes`, icone: Activity, papeis: OPERACAO },
   ] },
   { id: 'planejamento', rotulo: 'Planejamento Estratégico', icone: Target, itens: [
-    { rotulo: 'Objetivos, metas e orçamento', icone: Target, fase: 'P1' },
+    { rotulo: 'Plano, objetivos e 5W2H', rota: (i) => `/ies/${i}/planejamento`, icone: Target, papeis: ['gestor', 'reitoria', 'coordenador'] },
   ] },
   { id: 'marketing', rotulo: 'Marketing e Captação', icone: Megaphone, itens: [
-    { rotulo: 'Campanhas e canais', icone: Megaphone, fase: 'P1' },
+    { rotulo: 'Campanhas e custos', rota: (i) => `/ies/${i}/campanhas`, icone: Megaphone, papeis: ['gestor', 'reitoria', 'coordenador', 'comercial', 'financeiro'] },
   ] },
   { id: 'crm', rotulo: 'CRM Educacional', icone: Users, itens: [
     { rotulo: 'Pipeline (CRM)', rota: (i) => `/ies/${i}/crm`, icone: KanbanSquare },
