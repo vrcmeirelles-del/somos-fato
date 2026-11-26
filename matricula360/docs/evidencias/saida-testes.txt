@@ -1,0 +1,50 @@
+# Subtest: cabeçalhos de segurança e cookie HttpOnly/SameSite
+# Subtest: rotas públicas preservadas e páginas da aplicação com guarda no servidor
+# Subtest: API exige sessão; CSRF exige cabeçalho próprio e JSON
+# Subtest: IDOR: IDs de outra IES e IDs adulterados
+# Subtest: elevação de privilégio: campos não permitidos e rotas de Master
+# Subtest: corrida: duas mudanças simultâneas com a mesma versão => uma vence, outra 409
+# Subtest: idempotência: repetir o mesmo evento não duplica
+# Subtest: revogação encerra a sessão em uso
+# Subtest: login: credenciais inválidas e limitação de tentativas
+# Subtest: BI via API devolve null (N/D) e não zero quando indisponível
+# Subtest: código do servidor não contém chamadas de rede de saída nem SDK de IA
+# Subtest: todas as etapas têm transições definidas
+# Subtest: transição válida avança e inválida é recusada
+# Subtest: recuperação: perdido volta para contato
+# Subtest: confirmação incompleta é recusada e lista o que falta
+# Subtest: zero é distinto de indisponível
+# Subtest: conversão usa o denominador informado
+# Subtest: projeção matemática
+# Subtest: proposta: cálculo em centavos e limite de desconto
+# Subtest: normalização e máscara de contato
+# Subtest: isolamento: duas IES e dois cursos por IES
+# Subtest: coordenador vê apenas cursos autorizados e com dados mascarados
+# Subtest: atendente restrito a um curso não cria oportunidade em outro curso
+# Subtest: usuário revogado e escopo revogado perdem acesso imediatamente
+# Subtest: master não acessa candidatos sem escopo explícito
+# Subtest: conflito de versão: segunda escrita com versão antiga é recusada
+# Subtest: alteração direta de etapa para confirmado/cancelado é recusada
+# Subtest: segregação: comercial não valida; secretaria não valida financeira; financeiro não valida documental
+# Subtest: confirmação incompleta recusada; completa confirma; cancelamento preserva histórico
+# Subtest: auditoria é imutável e não contém dados pessoais
+# Subtest: escrita que falha não deixa auditoria nem dados parciais (atomicidade)
+# Subtest: LGPD: sem base legal ou origem não entra; importação reporta rejeições e deduplica
+# Subtest: opt-out suprime tarefas do canal e revalida na execução
+# Subtest: ausência de envio externo: disparo sempre bloqueado e auditado
+# Subtest: desconto excessivo exige aprovação; criador não aprova; desconto > 100 é recusado
+# Subtest: proposta expira após a validade
+# Subtest: BI: zero vs indisponível, denominador por coorte e pessoas distintas
+# Subtest: BI consolidado não conta a mesma pessoa duas vezes
+# Subtest: MAIM: follow-up respeita limite, supressão e distribuição por capacidade
+# Subtest: recuperação: perdido -> contato gera tarefa de recuperação
+# Subtest: anonimização remove dados pessoais e mantém estatística
+# Subtest: IES suspensa bloqueia acesso operacional
+# tests 42
+# suites 0
+# pass 42
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4367.162629

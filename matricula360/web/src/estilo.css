@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { font-family: theme('fontFamily.sans'); -webkit-font-smoothing: antialiased; }
+  h1, h2, h3 { letter-spacing: -0.01em; }
+  :focus-visible { outline: 2px solid theme('colors.tec.DEFAULT'); outline-offset: 2px; }
+}
+@layer components {
+  .btn { @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-tec px-3.5 py-2 text-sm font-medium text-white transition hover:bg-tec-600 disabled:cursor-not-allowed disabled:opacity-40; }
+  .btn-peq { @apply px-2.5 py-1.5 text-xs; }
+  .btn-sec { @apply border border-linha bg-white text-texto hover:bg-fundo; }
+  .btn-fantasma { @apply bg-transparent text-tec hover:bg-tec-50; }
+  .btn-perigo { @apply bg-erro hover:brightness-110; }
+  .btn-ok { @apply bg-ok hover:brightness-110; }
+  .campo { @apply rounded-lg border border-linha bg-white px-2.5 py-1.5 text-sm text-texto shadow-sm focus:border-tec-400 focus:outline-none focus:ring-2 focus:ring-tec-100; }
+  .cartao-base { @apply rounded-xl border border-linha bg-white p-4 shadow-cartao; }
+  .chip { @apply mr-1 inline-flex items-center gap-1 rounded-full bg-fundo px-2 py-0.5 text-xs font-medium text-suave; }
+  .chip-ok { @apply bg-green-50 text-ok; }
+  .chip-pend { @apply bg-amber-50 text-alerta; }
+  .chip-erro { @apply bg-red-50 text-erro; }
+  .chip-tec { @apply bg-tec-100 text-tec-600; }
+  .nd { @apply italic text-suave; }
+  .nota { @apply text-xs leading-relaxed text-suave; }
+  .tabela { @apply w-full overflow-x-auto rounded-xl border border-linha bg-white shadow-cartao; }
+  .tabela table { @apply w-full border-collapse text-sm; }
+  .tabela th { @apply bg-fundo px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-suave; }
+  .tabela td { @apply border-t border-linha px-3 py-2.5 align-top; }
+}
+html, body { overflow-x: hidden; }
+
+/* Impressão do BI e de relatórios: só o conteúdo principal. */
+@media print {
+  aside, header, nav[aria-label="Trilha"] { display: none !important; }
+  main { padding: 0 !important; }
+  .cartao-base, .tabela { break-inside: avoid; box-shadow: none !important; }
+}

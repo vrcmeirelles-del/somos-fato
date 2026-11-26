@@ -1,0 +1,988 @@
+{
+  "em": "2026-11-26T17:39:23.530Z",
+  "projeto": "https://jbimijcvvekomovodfze.supabase.co",
+  "total": 140,
+  "falhas": 0,
+  "resultados": [
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
+      "ok": true,
+      "detalhe": "Oportunidades16Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte12.5%Decididas: 50.0"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "faixa indica homologação",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "painel: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "painel: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "Central: funil com 6 etapas",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "Central: desempenho por turno e modalidade",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "Central: custo por lead N/D com motivo",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "Central: alertas do MAIM",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "Central: sem rótulo técnico REACT",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "filtro global de curso aplicado (cobertura recorte)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "IDOR: BI da IES Beta recusado pelo banco",
+      "ok": true,
+      "detalhe": "status 404"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "crm: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "crm: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "detalhe com histórico auditado",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "proposta acima do limite fica pendente",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "não aprova a própria proposta (segregação)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "Configurações carregam a meta cadastrada (Direito = 10)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "configuracoes: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "configuracoes: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "auditoria em linguagem institucional (nenhum evento em código cru)",
+      "ok": true,
+      "detalhe": "50 eventos; crus: "
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "auditoria: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "auditoria: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "fila sem botão de disparo externo",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "intervencoes: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "intervencoes: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "Governança: matriz de permissões e escopo com abrangência explícita",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "permissoes: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "permissoes: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "Governança: exportação CSV do gestor com contato e registro na auditoria",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P1: página de Planejamento com plano da coorte e concorrência com fonte",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "planejamento: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "planejamento: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P1: Campanhas com atribuição desconhecida e integrações desligadas",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "campanhas: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "campanhas: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P1: funil padrão publicado replicando as etapas oficiais",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "funis: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "funis: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P1: Performance com etapas, denominadores, equipe e aviso de uso",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "performance: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "performance: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P2: Recuperação com elegibilidade LGPD, protocolos e sprints",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "recuperacao: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "recuperacao: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P2: Academia com trilhas, rubrica publicada e aviso de avaliação humana",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "academia: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "academia: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P3: Relacionamento sem presumir evasão, com permanência por marco e indicações",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "relacionamento: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "relacionamento: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P4: página Formulários de captação",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "formularios: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "formularios: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P4: página Eventos e visitas",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "eventos: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "eventos: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P4: página Processo seletivo",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "seletivo: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "seletivo: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P4: página Comunicação e réguas",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "comunicacao: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "comunicacao: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P4: página Integrações e dados",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "integracoes: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "integracoes: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "P4: formulário público abre sem login",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "P4: inscrição pública cria o lead e entrega o link pessoal",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "P4: portal do candidato mostra inscrição, documentos e privacidade",
+      "ok": true,
+      "detalhe": "{\"inscricao\":true,\"documentos\":true,\"lgpd\":true}"
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "P4: candidato envia documento pelo portal",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "P4: portal sem rolagem horizontal e sem erros de console",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "R09: /ies/2/crm não mostra dados da Beta",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "R09: /ies/1/inteligencia?ies=2 não mostra dados da Beta",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "sem base legal o banco recusa (LGPD)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "cadastro com base legal gravado no Supabase",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "move etapa com versão",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "proposta do comercial acima do limite fica pendente",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "CRM: interação registrada aparece na linha do tempo",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "CRM: objeção registrada como aberta",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "CRM: agendamento aparece na agenda da ficha",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "Funil: ficha mostra o funil e a versão fixada",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "CRM: score explicável com aviso de não decisão",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "CRM: busca por nome filtra o quadro",
+      "ok": true,
+      "detalhe": "1 cartões"
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "CRM: arrastar para transição inválida é recusado pelo servidor",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "CRM: agenda comercial lista o agendamento",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "Governança: atendente vê só as oportunidades atribuídas a si",
+      "ok": true,
+      "detalhe": "responsáveis: Atendente Alfa"
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "comercial não valida (403 do banco)",
+      "ok": true,
+      "detalhe": "403 Seu perfil não tem permissão para esta operação"
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "crm: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "crm: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "aprova proposta criada por outro usuário",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "propostas: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "propostas: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "secretaria.alfa",
+      "dispositivo": "desktop",
+      "passo": "validação documental gravada no Supabase",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "secretaria",
+      "dispositivo": "desktop",
+      "passo": "matriculas: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "secretaria",
+      "dispositivo": "desktop",
+      "passo": "matriculas: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "financeiro.alfa",
+      "dispositivo": "desktop",
+      "passo": "validação financeira gravada no Supabase",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "financeiro",
+      "dispositivo": "desktop",
+      "passo": "matriculas: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "financeiro",
+      "dispositivo": "desktop",
+      "passo": "matriculas: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "desktop",
+      "passo": "painel limitado ao curso autorizado",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "desktop",
+      "passo": "CRM sem Administração",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "desktop",
+      "passo": "contatos mascarados pelo banco",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "desktop",
+      "passo": "Governança: exportação da coordenação só do seu curso e com contato mascarado",
+      "ok": true,
+      "detalhe": "8 linhas"
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "desktop",
+      "passo": "crm: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "desktop",
+      "passo": "crm: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor-beta",
+      "dispositivo": "desktop",
+      "passo": "vê só a Beta (8 oportunidades)",
+      "ok": true,
+      "detalhe": "Oportunidades8Matrículas comerciais3Ingressantes efetivos0Meta5Atingimento0.0%Co"
+    },
+    {
+      "perfil": "gestor-beta",
+      "dispositivo": "desktop",
+      "passo": "IDOR: estrutura da Alfa recusada",
+      "ok": true,
+      "detalhe": "status 404"
+    },
+    {
+      "perfil": "gestor-beta",
+      "dispositivo": "desktop",
+      "passo": "painel: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor-beta",
+      "dispositivo": "desktop",
+      "passo": "painel: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "desktop",
+      "passo": "Master cai no painel Master",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "desktop",
+      "passo": "lista as 2 IES",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "desktop",
+      "passo": "Master sem escopo não lê candidato",
+      "ok": true,
+      "detalhe": "status 404"
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "desktop",
+      "passo": "master: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "desktop",
+      "passo": "master: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
+      "ok": true,
+      "detalhe": "Oportunidades18Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte11.1%Decididas: 50.0"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "faixa indica homologação",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "painel: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "painel: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "Central: funil com 6 etapas",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "Central: desempenho por turno e modalidade",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "Central: custo por lead N/D com motivo",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "Central: alertas do MAIM",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "Central: sem rótulo técnico REACT",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "filtro global de curso aplicado (cobertura recorte)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "celular",
+      "passo": "IDOR: BI da IES Beta recusado pelo banco",
+      "ok": true,
+      "detalhe": "status 404"
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "celular",
+      "passo": "comercial não valida (403 do banco)",
+      "ok": true,
+      "detalhe": "403 Seu perfil não tem permissão para esta operação"
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "celular",
+      "passo": "crm: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "celular",
+      "passo": "crm: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "celular",
+      "passo": "painel limitado ao curso autorizado",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "celular",
+      "passo": "CRM sem Administração",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "celular",
+      "passo": "contatos mascarados pelo banco",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "celular",
+      "passo": "crm: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "celular",
+      "passo": "crm: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor-beta",
+      "dispositivo": "celular",
+      "passo": "vê só a Beta (8 oportunidades)",
+      "ok": true,
+      "detalhe": "Oportunidades8Matrículas comerciais3Ingressantes efetivos0Meta5Atingimento0.0%Co"
+    },
+    {
+      "perfil": "gestor-beta",
+      "dispositivo": "celular",
+      "passo": "IDOR: estrutura da Alfa recusada",
+      "ok": true,
+      "detalhe": "status 404"
+    },
+    {
+      "perfil": "gestor-beta",
+      "dispositivo": "celular",
+      "passo": "painel: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor-beta",
+      "dispositivo": "celular",
+      "passo": "painel: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "celular",
+      "passo": "Master cai no painel Master",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "celular",
+      "passo": "lista as 2 IES",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "celular",
+      "passo": "Master sem escopo não lê candidato",
+      "ok": true,
+      "detalhe": "status 404"
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "celular",
+      "passo": "master: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "master",
+      "dispositivo": "celular",
+      "passo": "master: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    }
+  ]
+}

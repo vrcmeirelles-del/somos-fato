@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Matrícula 360° · Piloto</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="topo">
+  <strong>MATRÍCULA 360° <span class="selo">PILOTO</span></strong>
+  <div class="topo-dir">
+    <label class="sr" for="ies">Instituição</label>
+    <select id="ies"></select>
+    <span id="quem" class="quem"></span>
+    <button id="sair" class="sec" type="button">Sair</button>
+  </div>
+</header>
+<nav id="nav" aria-label="Seções"></nav>
+<p class="faixa">Dados sintéticos · IA desativada · Envio externo desativado</p>
+<main id="app" tabindex="-1"><p>Carregando…</p></main>
+<dialog id="detalhe" aria-labelledby="det-titulo"><div id="det-corpo"></div></dialog>
+<script type="module" src="/app.mjs"></script>
+</body>
+</html>

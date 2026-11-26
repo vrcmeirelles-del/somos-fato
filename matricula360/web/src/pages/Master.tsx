@@ -1,0 +1,133 @@
+import { useState } from 'react';
+import { Campo, Detalhes, Estado, Mensagem, Titulo } from '../components/ui';
+import { api } from '../lib/api';
+import { rotulo } from '../lib/formato';
+import { TabelaCursos, linhaVazia } from '../components/TabelaCursos';
+import { errosLinha, paraRpc, type LinhaCurso } from '../lib/cursosPlanilha';
+import { useAcao, useCarregar } from '../lib/hooks';
+import type { IesMaster, Papel } from '../lib/tipos';
+
+const PAPEIS: Papel[] = ['gestor', 'reitoria', 'coordenador', 'comercial', 'secretaria', 'financeiro'];
+
+export function Master() {
+  const lista = useCarregar(() => api.master.ies(), []);
+  const acao = useAcao();
+  const [aberta, setAberta] = useState<IesMaster | null>(null);
+  const [nome, setNome] = useState(''); const [plano, setPlano] = useState('piloto'); const [campus, setCampus] = useState('Campus Principal'); const [cursos, setCursos] = useState<LinhaCurso[]>([linhaVazia()]);
+
+  return (
+    <>
+      <Titulo titulo="Painel Master" subtitulo="Provisionamento de instituições e concessão de escopos. Sem acesso a candidatos." />
+      <p className="nota mb-3">O Master provisiona instituições e concede escopos. Não acessa dados de candidatos sem escopo explícito.</p>
+      <Mensagem m={acao.mensagem} />
+      <Detalhes titulo="Provisionar instituição">
+        <div className="flex flex-wrap items-end gap-2">
+          <Campo rotulo="Nome"><input className="campo" maxLength={120} value={nome} onChange={(e) => setNome(e.target.value)} /></Campo>
+          <Campo rotulo="Plano"><select className="campo" value={plano} onChange={(e) => setPlano(e.target.value)}>{['piloto', 'essencial', 'completo'].map((p) => <option key={p}>{p}</option>)}</select></Campo>
+          <Campo rotulo="Campus"><input className="campo" value={campus} onChange={(e) => setCampus(e.target.value)} /></Campo>
+        </div>
+        <p className="mb-1 mt-3 text-sm font-medium">Cursos</p>
+        <TabelaCursos linhas={cursos} mudar={setCursos} />
+        {(() => {
+          const validas = cursos.filter((l) => l.nome.trim() || l.mensalidade.trim());
+          const comErro = validas.filter((l) => errosLinha(l, validas, validas.indexOf(l)).length > 0).length;
+          return (<>
+            <p className="nota mt-2">{validas.length} curso(s){comErro ? ` · ${comErro} com erro: corrija antes de provisionar` : ''}.</p>
+            <button className="btn mt-2" disabled={acao.enviando || !nome.trim() || !validas.length || comErro > 0} onClick={() => void acao.executar(async () => {
+              const r = await api.master.provisionar(nome.trim(), plano, campus, validas.map(paraRpc)); await lista.recarregar();
+              setNome(''); setCursos([linhaVazia()]); return `IES #${r.id} provisionada com ${validas.length} curso(s). Agora gere o convite do gestor em Acessos.`;
+        })}>Provisionar</button></>);
+        })()}
+      </Detalhes>
+      <Detalhes titulo="Ambiente de demonstração e treinamento">
+        <p className="nota mb-2">Cria uma instituição fictícia com 5 cursos e carga sintética de 4 coortes (funil, custos, bolsas, rematrícula, permanência, inadimplência, casos, pesquisas, escolas). Depois, em Acessos, gere convites coletivos por perfil para a turma.</p>
+        <button className="btn btn-sec" disabled={acao.enviando} onClick={() => void acao.executar(async () => { const r = await api.criarDemo(); await lista.recarregar(); return `Demonstração criada (IES #${r.ies_id}) com ${r.oportunidades} oportunidades.`; })}>Criar ambiente de demonstração</button>
+      </Detalhes>
+      <Estado carregando={lista.carregando && !lista.dados} erro={lista.erro} />
+      <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal">
+        <table>
+          <thead><tr>{['IES', 'Plano', 'Status', 'Cursos', 'Usuários', ''].map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
+          <tbody>{lista.dados?.map((i) => (
+            <tr key={i.id}><td>{i.nome}</td><td>{i.plano}</td><td>{i.status}</td><td>{i.cursos}</td><td>{i.usuarios}</td>
+              <td><div className="flex flex-wrap gap-1.5">
+                <button className="btn btn-peq" onClick={() => setAberta(i)}>Acessos</button>
+                <button className="btn btn-sec btn-peq" disabled={acao.enviando} onClick={() => void acao.executar(async () => {
+                  await api.master.status(i.id, i.status === 'ativa' ? 'suspensa' : 'ativa'); await lista.recarregar(); return `IES ${i.status === 'ativa' ? 'suspensa' : 'reativada'}.`;
+                })}>{i.status === 'ativa' ? 'Suspender' : 'Reativar'}</button>
+              </div></td></tr>
+          ))}</tbody>
+        </table>
+      </div>
+      {aberta && <Acessos ies={aberta} aoMudar={() => void lista.recarregar()} />}
+    </>
+  );
+}
+
+function Acessos({ ies, aoMudar }: { ies: IesMaster; aoMudar: () => void }) {
+  const a = useCarregar(() => api.master.acessos(ies.id), [ies.id]);
+  const acao = useAcao();
+  const [email, setEmail] = useState(''); const [nome, setNome] = useState(''); const [papel, setPapel] = useState<Papel>('comercial'); const [alvo, setAlvo] = useState('');
+  const fazer = (fn: () => Promise<string>) => acao.executar(async () => { const t = await fn(); await a.recarregar(); aoMudar(); return t; });
+  return (
+    <section className="mt-8">
+      <h2 className="mb-2 text-lg font-semibold">Acessos · {ies.nome}</h2>
+      <p className="nota mb-2">Para quem ainda não tem conta, gere um convite abaixo: a pessoa cria a conta pelo link e recebe o perfil. Para quem já tem conta, conceda o escopo direto.</p>
+      <ConviteMaster ies={ies.id} />
+      <div className="flex flex-wrap items-end gap-2">
+        <Campo rotulo="E-mail"><input className="campo" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Campo>
+        <Campo rotulo="Nome"><input className="campo" value={nome} onChange={(e) => setNome(e.target.value)} /></Campo>
+        <Campo rotulo="Papel"><select className="campo" value={papel} onChange={(e) => setPapel(e.target.value as Papel)}>{PAPEIS.map((p) => <option key={p} value={p}>{rotulo(p)}</option>)}</select></Campo>
+        <Campo rotulo="Abrangência"><select className="campo" value={alvo} onChange={(e) => setAlvo(e.target.value)}>
+          <option value="">Toda a instituição</option>
+          {a.dados?.campi?.length ? <optgroup label="Campus">{a.dados.campi.map((c) => <option key={c.id} value={`campus:${c.id}`}>Campus {c.nome}</option>)}</optgroup> : null}
+          <optgroup label="Curso">{a.dados?.cursos.map((c) => <option key={c.id} value={`curso:${c.id}`}>{c.nome} · {c.turno} ({c.campus})</option>)}</optgroup>
+        </select></Campo>
+        <button className="btn" disabled={acao.enviando} onClick={() => void fazer(async () => {
+          const [tipo, id] = alvo.split(':');
+          const r = await api.master.conceder(email, nome || email, ies.id, tipo === 'curso' ? Number(id) : null, papel, tipo === 'campus' ? Number(id) : null);
+          return r.perfil_novo ? 'Escopo concedido e perfil de aplicação criado.' : 'Escopo concedido a usuário existente.';
+        })}>Conceder escopo</button>
+      </div>
+      <Mensagem m={acao.mensagem} />
+      <Estado carregando={a.carregando && !a.dados} erro={a.erro} />
+      <div className="tabela mt-3" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal">
+        <table>
+          <thead><tr>{['Usuário', 'Papel', 'Abrangência', 'Situação', ''].map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
+          <tbody>{a.dados?.escopos.map((e) => (
+            <tr key={e.id}><td>{e.nome}{e.email ? ` (${e.email})` : ''}</td><td>{rotulo(e.papel)}</td><td>{e.curso_nome ? `Curso ${e.curso_nome}` : e.campus_nome ? `Campus ${e.campus_nome}` : 'Toda a instituição'}</td>
+              <td>{e.usuario_revogado_em ? 'usuário revogado' : e.revogado_em ? 'escopo revogado' : 'ativo'}</td>
+              <td>{!e.revogado_em && !e.usuario_revogado_em && (
+                <div className="flex flex-wrap gap-1.5">
+                  <button className="btn btn-sec btn-peq" disabled={acao.enviando} onClick={() => void fazer(async () => { await api.master.revogarEscopo(e.id); return 'Escopo revogado.'; })}>Revogar escopo</button>
+                  <button className="btn btn-perigo btn-peq" disabled={acao.enviando} onClick={() => {
+                    if (!window.confirm(`Revogar o usuário ${e.nome} em todas as instituições?`)) return;
+                    void fazer(async () => { await api.master.revogarUsuario(e.usuario_id); return 'Usuário revogado em todas as IES.'; });
+                  }}>Revogar usuário</button>
+                </div>
+              )}</td></tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function ConviteMaster({ ies }: { ies: number }) {
+  const acao = useAcao();
+  const [email, setEmail] = useState(''); const [papel, setPapel] = useState<Papel>('gestor'); const [usos, setUsos] = useState('1'); const [link, setLink] = useState<string | null>(null);
+  return (
+    <div className="mb-4 rounded-lg border border-linha p-3">
+      <p className="mb-1 text-sm font-medium">Convite por link</p>
+      <div className="flex flex-wrap items-end gap-2">
+        <Campo rotulo="Perfil"><select className="campo" value={papel} onChange={(e) => setPapel(e.target.value as Papel)}>{PAPEIS.map((p) => <option key={p} value={p}>{rotulo(p)}</option>)}</select></Campo>
+        <Campo rotulo="Pessoas (mais de 1 só na demonstração)"><input className="campo w-24" type="number" min={1} max={200} value={usos} onChange={(e) => setUsos(e.target.value)} /></Campo>
+        {Number(usos) <= 1 && <Campo rotulo="E-mail"><input className="campo" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Campo>}
+        <button className="btn btn-sec" disabled={acao.enviando} onClick={() => void acao.executar(async () => {
+          const r = await api.criarConvite(ies, { papel, email: Number(usos) > 1 ? null : email, usos_max: Number(usos), validade_dias: 7 });
+          setLink(`${location.origin}/convite#${r.codigo}`); return 'Convite criado: copie o link agora.'; })}>Gerar convite</button>
+      </div>
+      <Mensagem m={acao.mensagem} />
+      {link && <p className="mt-2 break-all rounded bg-fundo p-2 text-xs">{link} <button className="btn btn-fantasma btn-peq" onClick={() => void navigator.clipboard?.writeText(link)}>Copiar</button></p>}
+    </div>
+  );
+}
