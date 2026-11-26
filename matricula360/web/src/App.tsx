@@ -26,6 +26,8 @@ import { ModoFeira } from './pages/ModoFeira';
 import { Pesquisas } from './pages/Pesquisas';
 import { Automacoes } from './pages/Automacoes';
 import { BiExecutivo } from './pages/BiExecutivo';
+import { Convite } from './pages/Convite';
+import { Implantacao } from './pages/Implantacao';
 import { Conversas, EgressosPagina, FinanceiroAlunos, Polos } from './pages/OndaC';
 import { Funis } from './pages/Funis';
 import { Intervencoes } from './pages/Intervencoes';
@@ -52,8 +54,8 @@ export function App() {
   }, [carregarEu]);
 
   // Área pública (formulário de captação e portal do candidato) não depende de login nem de rpc_me.
-  if (location.pathname.startsWith('/f/') || location.pathname === '/portal') {
-    return <Routes><Route path="/f/:slug" element={<FormularioPublico />} /><Route path="/portal" element={<Portal />} /></Routes>;
+  if (location.pathname.startsWith('/f/') || location.pathname === '/portal' || location.pathname === '/convite') {
+    return <Routes><Route path="/f/:slug" element={<FormularioPublico />} /><Route path="/portal" element={<Portal />} /><Route path="/convite" element={<Convite />} /></Routes>;
   }
   if (erroInicio) return <p role="alert" className="p-6 text-erro">{erroInicio}</p>;
   if (!pronto) return <div className="p-6"><Carregando /></div>;
@@ -125,6 +127,7 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
       <Route path="/ies/:ies/bolsas" element={<ExigeIes><Bolsas abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/configuracoes" element={<ExigeIes><Configuracoes /></ExigeIes>} />
       <Route path="/ies/:ies/permissoes" element={<ExigeIes><Permissoes /></ExigeIes>} />
+      <Route path="/ies/:ies/implantacao" element={<ExigeIes><Implantacao /></ExigeIes>} />
       <Route path="/ies/:ies/automacoes" element={<ExigeIes><Automacoes /></ExigeIes>} />
       <Route path="/ies/:ies/seguranca" element={<ExigeIes><Seguranca /></ExigeIes>} />
       <Route path="/ies/:ies/auditoria" element={<ExigeIes><Auditoria /></ExigeIes>} />

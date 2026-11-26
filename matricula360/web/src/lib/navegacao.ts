@@ -2,7 +2,7 @@
 // não há página de lista fingindo módulo pronto (critério de aceite da Fase 2).
 import {
   Activity, BarChart3, Landmark, Bot, Building, MessageCircleReply, Wallet, CalendarClock, CalendarDays, ClipboardList, FileCheck2, Gauge, MessagesSquare, PlugZap, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HandCoins, HeartHandshake, KanbanSquare, KeyRound,
-  LayoutDashboard, LifeBuoy, Megaphone, RefreshCcw, RotateCw, School, ScrollText, Settings, ShieldCheck, Target, Users, Workflow, type LucideIcon,
+  LayoutDashboard, LifeBuoy, Megaphone, RefreshCcw, Rocket, RotateCw, School, ScrollText, Settings, ShieldCheck, Target, Users, Workflow, type LucideIcon,
 } from 'lucide-react';
 import type { Papel } from './tipos';
 
@@ -57,6 +57,7 @@ export const AMBIENTES: Ambiente[] = [
     { rotulo: 'Rematrícula', rota: (i) => `/ies/${i}/rematricula`, icone: RotateCw, papeis: ['gestor', 'secretaria', 'financeiro', 'coordenador', 'reitoria'] },
   ] },
   { id: 'governanca', rotulo: 'Governança Institucional', icone: ShieldCheck, itens: [
+    { rotulo: 'Implantação', rota: (i) => `/ies/${i}/implantacao`, icone: Rocket, papeis: ['gestor', 'reitoria'] },
     { rotulo: 'Configurações e metas', rota: (i) => `/ies/${i}/configuracoes`, icone: Settings, papeis: ['gestor'] },
     { rotulo: 'Perfis e permissões', rota: (i) => `/ies/${i}/permissoes`, icone: KeyRound },
     { rotulo: 'Automações', rota: (i) => `/ies/${i}/automacoes`, icone: Bot, papeis: ['gestor', 'reitoria'] },

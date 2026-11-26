@@ -66,6 +66,12 @@ export function criarCliente(url: string, chave: string, http: typeof fetch = (.
     guardar(await authSessao('POST', `factors/${fator}/verify`, { challenge_id: ch.id, code: codigo.trim() }), s?.email);
   }
   async function removerFator(fator: string) { await authSessao('DELETE', `factors/${fator}`); }
+  // Cadastro pelo convite (Supabase Auth). Sem sessão de volta = o projeto exige confirmar o e-mail antes de entrar.
+  async function cadastrar(email: string, senha: string): Promise<'entrou' | 'confirmar_email'> {
+    const d = await auth('signup', { email, password: senha });
+    if (d.access_token) { guardar(d, email); return 'entrou'; }
+    return 'confirmar_email';
+  }
   async function entrar(email: string, senha: string) { guardar(await auth('token?grant_type=password', { email, password: senha })); }
   async function renovar() {
     const s = lerSessao();
@@ -99,6 +105,6 @@ export function criarCliente(url: string, chave: string, http: typeof fetch = (.
     if (!r.ok) throw new ErroApi(d?.message || `Erro ${r.status}`, (d?.code && STATUS_POR_CODIGO[d.code]) || r.status, d?.code, d?.details);
     return d as T;
   }
-  return { entrar, sair, rpc, rpcPublico, fatores, cadastrarTotp, verificarTotp, removerFator };
+  return { entrar, cadastrar, sair, rpc, rpcPublico, fatores, cadastrarTotp, verificarTotp, removerFator };
 }
 export type Cliente = ReturnType<typeof criarCliente>;

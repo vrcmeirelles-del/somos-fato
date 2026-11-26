@@ -2163,6 +2163,104 @@ update public.oportunidades set etapa = 'perdido', motivo_perda = 'Escolheu outr
   execute $x$ delete from public.escopos where usuario_id = teste.id('gestor_a') and ies_id = 2 $x$;
   execute $x$ select teste.ok((select count(*) = 0 from public.automacoes_execucoes where fim < inicio), 'automações: fim nunca antes do início') $x$;
   execute $x$ reset role $x$;
+  execute $x$ create temp table imp (chave text primary key, v text) $x$;
+  execute $x$ grant all on imp to anon, authenticated $x$;
+  execute $x$ insert into auth.users(id, email) values ('00000000-0000-0000-0000-0000000000f1', 'nova.atendente@exemplo.invalid'), ('00000000-0000-0000-0000-0000000000f2', 'intrusa@exemplo.invalid') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claims', '', false) $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_criar_convite(1, '{"email":"x@exemplo.invalid","papel":"comercial"}')$q$, '42501', 'comercial não convida') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_b')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_criar_convite(1, '{"email":"x@exemplo.invalid","papel":"comercial"}')$q$, '42501', 'gestor de outra IES não convida') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_criar_convite(1, '{"papel":"comercial","usos_max":5}')$q$, '22023', 'convite coletivo só na demonstração') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_criar_convite(1, '{"papel":"comercial"}')$q$, '22023', 'convite individual exige e-mail') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_criar_convite(1, '{"email":"x@exemplo.invalid","papel":"master"}')$q$, '22023', 'perfil inexistente recusado') $x$;
+  execute $x$ insert into imp select 'cod', public.rpc_criar_convite(1, jsonb_build_object('email','Nova.Atendente@exemplo.invalid','nome','Nova Atendente','papel','comercial','curso_id',1))->>'codigo' $x$;
+  execute $x$ select teste.ok((select length(v) = 64 from imp where chave = 'cod'), 'convite gera código de 64 caracteres') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select count(*) = 1 and bool_and(codigo_hash <> (select v from imp where chave = 'cod')) from public.convites where email = 'nova.atendente@exemplo.invalid'), 'só o hash do código fica no banco') $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.ok((select r->>'papel' = 'comercial' and r->>'email' like 'n***@%' and (r->>'email_fixo')::boolean from (select public.rpc_publico_convite((select v from imp where chave = 'cod')) r) x),
+  'página pública mostra o convite com e-mail mascarado') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_convite(repeat('b', 64))$q$, 'P0002', 'código inválido: 404') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_aceitar_convite((select v from imp where chave = 'cod'))$q$, '42501', 'anônimo não aceita convite') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000f2', false) $x$;
+  execute $x$ select set_config('request.jwt.claims', '{"email":"intrusa@exemplo.invalid"}', false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_aceitar_convite((select v from imp where chave = 'cod'))$q$, '42501', 'e-mail diferente do convite: recusado') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000f1', false) $x$;
+  execute $x$ select set_config('request.jwt.claims', '{"email":"nova.atendente@exemplo.invalid"}', false) $x$;
+  execute $x$ select teste.ok((public.rpc_aceitar_convite((select v from imp where chave = 'cod'), 'Nova Atendente Sintética')->>'papel') = 'comercial', 'convidada aceita e recebe o perfil') $x$;
+  execute $x$ select teste.ok((public.rpc_me()->'usuario'->>'nome') = 'Nova Atendente Sintética', 'perfil criado com o nome informado') $x$;
+  execute $x$ select teste.ok((select count(*) = 1 from jsonb_array_elements(public.rpc_me()->'escopos') e where e->>'papel' = 'comercial' and e->>'abrangencia' = 'curso'), 'escopo restrito ao curso do convite') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_aceitar_convite((select v from imp where chave = 'cod'))$q$, 'P0002', 'convite de uso único não serve de novo') $x$;
+  execute $x$ select set_config('request.jwt.claims', '', false) $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_campus(1, 'Campus Norte')$q$, '42501', 'comercial não cadastra campus') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ insert into imp select 'campus', public.rpc_salvar_campus(1, 'Campus Norte Sintético')->>'id' $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_curso(1, '{"campus_id":999999,"nome":"Enfermagem","turno":"noturno","modalidade":"presencial","mensalidade_centavos":150000}')$q$, '22023', 'curso em campus de outra IES recusado') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_curso(1, jsonb_build_object('campus_id',(select v from imp where chave = 'campus'),'nome','Enfermagem','turno','madrugada','modalidade','presencial','mensalidade_centavos',150000))$q$, '22023', 'turno inválido recusado') $x$;
+  execute $x$ select teste.ok((public.rpc_salvar_curso(1, jsonb_build_object('campus_id',(select v from imp where chave = 'campus'),'nome','Enfermagem','turno','noturno','modalidade','presencial','mensalidade_centavos',150000))->>'id') is not null, 'gestor cadastra curso') $x$;
+  execute $x$ select teste.ok((select (r->>'total')::int = 14 and (r->>'concluidos')::int between 1 and 14 and jsonb_array_length(r->'cursos') >= 1 and (r->>'pode_gerir')::boolean
+                 from (select public.rpc_implantacao(1) r) x), 'checklist com 14 itens e situação calculada') $x$;
+  execute $x$ select teste.ok((select count(*) >= 1 from jsonb_array_elements(public.rpc_convites(1)) c where c->>'situacao' = 'usado' and c->>'aceito_por' like 'Nova Atendente%'), 'lista de convites mostra quem aceitou') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('reitoria_a')::text, false) $x$;
+  execute $x$ select teste.ok(not (public.rpc_implantacao(1)->>'pode_gerir')::boolean, 'reitoria acompanha o checklist sem gerir') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select count(*) >= 4 from public.auditoria where acao in ('convite.criar','convite.aceitar','implantacao.campus','implantacao.curso')), 'implantação auditada') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ create temp table dm (chave text primary key, v text) $x$;
+  execute $x$ grant all on dm to anon, authenticated $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claims', '', false) $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_master_criar_demo()$q$, '42501', 'só o Master cria a demonstração') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_restaurar_demo(1)$q$, '42501', 'IES real não pode ser restaurada') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('master')::text, false) $x$;
+  execute $x$ insert into dm select 'r', public.rpc_master_criar_demo()::text $x$;
+  execute $x$ insert into dm select 'ies', (v::jsonb->>'ies_id') from dm where chave = 'r' $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select demonstracao from public.ies where id = (select v::bigint from dm where chave = 'ies')), 'IES criada e marcada como demonstração') $x$;
+  execute $x$ select teste.ok((select count(*) >= 500 from public.oportunidades where ies_id = (select v::bigint from dm where chave = 'ies')), 'carga com centenas de oportunidades') $x$;
+  execute $x$ select teste.ok((select count(distinct coorte) = 4 from public.oportunidades where ies_id = (select v::bigint from dm where chave = 'ies')), 'quatro coortes') $x$;
+  execute $x$ select teste.ok((select count(*) > 0 from public.custos_campanha where ies_id = (select v::bigint from dm where chave = 'ies'))
+            and (select count(*) > 0 from public.solicitacoes_bolsa where ies_id = (select v::bigint from dm where chave = 'ies') and status = 'aprovada')
+            and (select count(*) > 0 from public.rematriculas where ies_id = (select v::bigint from dm where chave = 'ies'))
+            and (select count(*) > 0 from public.vinculos where ies_id = (select v::bigint from dm where chave = 'ies'))
+            and (select count(*) > 0 from public.pendencias_financeiras where ies_id = (select v::bigint from dm where chave = 'ies'))
+            and (select count(*) > 0 from public.casos where ies_id = (select v::bigint from dm where chave = 'ies'))
+            and (select count(*) >= 50 from public.respostas_pesquisa r join public.pesquisas p on p.id = r.pesquisa_id where p.ies_id = (select v::bigint from dm where chave = 'ies')),
+  'custos, bolsas, rematrícula, vínculos, pendências, casos e respostas de pesquisa preenchidos') $x$;
+  execute $x$ select teste.ok((select bool_and(email like '%@exemplo.invalid' and nome like '%(fictício)') from public.pessoas where ies_id = (select v::bigint from dm where chave = 'ies')), 'todos os dados pessoais são fictícios') $x$;
+  execute $x$ select teste.ok((select count(*) = 0 from public.oportunidades o join public.pessoas p on p.id = o.pessoa_id where o.ies_id = (select v::bigint from dm where chave = 'ies') and p.ies_id <> o.ies_id), 'nada vaza para outra IES') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('master')::text, false) $x$;
+  execute $x$ insert into dm select 'cod', public.rpc_criar_convite((select v::bigint from dm where chave = 'ies'), '{"papel":"gestor","usos_max":30}')->>'codigo' $x$;
+  execute $x$ insert into dm select 'codc', public.rpc_criar_convite((select v::bigint from dm where chave = 'ies'), '{"papel":"comercial","usos_max":30}')->>'codigo' $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select set_config('request.jwt.claims', '{"email":"gestora.alfa@exemplo.invalid"}', false) $x$;
+  execute $x$ select teste.ok((public.rpc_aceitar_convite((select v from dm where chave = 'cod'))->>'papel') = 'gestor', 'gestora real entra na demonstração pelo convite coletivo') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select public.rpc_aceitar_convite((select v from dm where chave = 'codc')) $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select set_config('request.jwt.claims', '', false) $x$;
+  execute $x$ select teste.ok((select jsonb_array_length(r->'ies') = 1 and (r->'ies'->0->>'ies_id')::bigint = 1 from (select public.rpc_bi_executivo('2027.1') r) x),
+  'quem atua em IES real não vê a demonstração no consolidado do BI') $x$;
+  execute $x$ select teste.ok((select (r->'ies'->0->'atual'->>'oportunidades')::int > 100 from (select public.rpc_bi_executivo((select (v::jsonb->'coortes'->>0) from dm where chave = 'r'), array[(select v::bigint from dm where chave = 'ies')]) r) x),
+  'BI da demonstração pelo filtro de IES, com a carga da coorte atual') $x$;
+  execute $x$ select teste.ok((public.rpc_estrutura((select v::bigint from dm where chave = 'ies'))->'ies'->>'demonstracao')::boolean, 'estrutura avisa que é demonstração') $x$;
+  execute $x$ insert into dm select 'rest', public.rpc_restaurar_demo((select v::bigint from dm where chave = 'ies'))::text $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select (v::jsonb->>'registros_apagados')::int > 500 and (v::jsonb->>'atendentes_com_leads')::int = 1 from dm where chave = 'rest'), 'restauração apaga e recria; atendente que entrou recebe leads') $x$;
+  execute $x$ select teste.ok((select count(*) > 0 from public.oportunidades where ies_id = (select v::bigint from dm where chave = 'ies') and responsavel_id = teste.id('comercial_a')), 'leads atribuídos ao atendente da demonstração') $x$;
+  execute $x$ select teste.ok((select count(*) = 2 from public.escopos where ies_id = (select v::bigint from dm where chave = 'ies') and revogado_em is null), 'equipe mantida após restaurar') $x$;
+  execute $x$ select teste.ok((select count(*) = 3 from public.programas_bolsa where ies_id = (select v::bigint from dm where chave = 'ies')), 'sem duplicar programas') $x$;
+  execute $x$ select teste.ok((select count(*) >= 2 from public.auditoria where acao in ('demo.criar','demo.restaurar')), 'criação e restauração auditadas') $x$;
+  execute $x$ update public.escopos set revogado_em = now() where ies_id = (select v::bigint from dm where chave = 'ies') $x$;
+  execute $x$ reset role $x$;
   select count(*) into n from teste.resultado;
   raise exception 'RESULTADO: % verificações aprovadas, 0 falhas (tudo desfeito; nada ficou gravado)', n;
 end

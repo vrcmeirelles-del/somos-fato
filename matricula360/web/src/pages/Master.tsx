@@ -34,6 +34,10 @@ export function Master() {
           const r = await api.master.provisionar(nome, plano, campus, lc); await lista.recarregar(); return `IES #${r.id} provisionada.`;
         })}>Provisionar</button>
       </Detalhes>
+      <Detalhes titulo="Ambiente de demonstração e treinamento">
+        <p className="nota mb-2">Cria uma instituição fictícia com 5 cursos e carga sintética de 4 coortes (funil, custos, bolsas, rematrícula, permanência, inadimplência, casos, pesquisas, escolas). Depois, em Acessos, gere convites coletivos por perfil para a turma.</p>
+        <button className="btn btn-sec" disabled={acao.enviando} onClick={() => void acao.executar(async () => { const r = await api.criarDemo(); await lista.recarregar(); return `Demonstração criada (IES #${r.ies_id}) com ${r.oportunidades} oportunidades.`; })}>Criar ambiente de demonstração</button>
+      </Detalhes>
       <Estado carregando={lista.carregando && !lista.dados} erro={lista.erro} />
       <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal">
         <table>
@@ -62,7 +66,8 @@ function Acessos({ ies, aoMudar }: { ies: IesMaster; aoMudar: () => void }) {
   return (
     <section className="mt-8">
       <h2 className="mb-2 text-lg font-semibold">Acessos · {ies.nome}</h2>
-      <p className="nota mb-2">A conta é criada por convite no Supabase Auth (Authentication → Users). Aqui o Master concede o escopo a uma conta existente.</p>
+      <p className="nota mb-2">Para quem ainda não tem conta, gere um convite abaixo: a pessoa cria a conta pelo link e recebe o perfil. Para quem já tem conta, conceda o escopo direto.</p>
+      <ConviteMaster ies={ies.id} />
       <div className="flex flex-wrap items-end gap-2">
         <Campo rotulo="E-mail"><input className="campo" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Campo>
         <Campo rotulo="Nome"><input className="campo" value={nome} onChange={(e) => setNome(e.target.value)} /></Campo>
@@ -99,5 +104,25 @@ function Acessos({ ies, aoMudar }: { ies: IesMaster; aoMudar: () => void }) {
         </table>
       </div>
     </section>
+  );
+}
+
+function ConviteMaster({ ies }: { ies: number }) {
+  const acao = useAcao();
+  const [email, setEmail] = useState(''); const [papel, setPapel] = useState<Papel>('gestor'); const [usos, setUsos] = useState('1'); const [link, setLink] = useState<string | null>(null);
+  return (
+    <div className="mb-4 rounded-lg border border-linha p-3">
+      <p className="mb-1 text-sm font-medium">Convite por link</p>
+      <div className="flex flex-wrap items-end gap-2">
+        <Campo rotulo="Perfil"><select className="campo" value={papel} onChange={(e) => setPapel(e.target.value as Papel)}>{PAPEIS.map((p) => <option key={p} value={p}>{rotulo(p)}</option>)}</select></Campo>
+        <Campo rotulo="Pessoas (mais de 1 só na demonstração)"><input className="campo w-24" type="number" min={1} max={200} value={usos} onChange={(e) => setUsos(e.target.value)} /></Campo>
+        {Number(usos) <= 1 && <Campo rotulo="E-mail"><input className="campo" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Campo>}
+        <button className="btn btn-sec" disabled={acao.enviando} onClick={() => void acao.executar(async () => {
+          const r = await api.criarConvite(ies, { papel, email: Number(usos) > 1 ? null : email, usos_max: Number(usos), validade_dias: 7 });
+          setLink(`${location.origin}/convite#${r.codigo}`); return 'Convite criado: copie o link agora.'; })}>Gerar convite</button>
+      </div>
+      <Mensagem m={acao.mensagem} />
+      {link && <p className="mt-2 break-all rounded bg-fundo p-2 text-xs">{link} <button className="btn btn-fantasma btn-peq" onClick={() => void navigator.clipboard?.writeText(link)}>Copiar</button></p>}
+    </div>
   );
 }

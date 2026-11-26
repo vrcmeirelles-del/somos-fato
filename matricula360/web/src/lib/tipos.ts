@@ -12,7 +12,7 @@ export interface Eu { usuario: { id: string; nome: string; master: boolean; emai
 
 export interface Curso { id: number; nome: string; turno: string; modalidade: string; mensalidade_centavos: number; desconto_max_pct: number; campus?: string }
 export interface Estrutura {
-  ies: { id: number; nome: string; plano: string; sla_horas: number; max_followups: number; dias_sem_contato: number; capacidade_atendente: number; amostra_minima_forecast: number };
+  ies: { id: number; nome: string; demonstracao?: boolean; plano: string; sla_horas: number; max_followups: number; dias_sem_contato: number; capacidade_atendente: number; amostra_minima_forecast: number };
   papeis: Papel[]; acesso_total: boolean; cursos: Curso[]; coortes: string[];
   etapas: Etapa[]; formas_ingresso: string[]; bases_legais: string[]; canais: Canal[];
 }
@@ -319,3 +319,12 @@ export interface BiExecutivo { coorte: string; coorte_anterior: string; ies: BiI
   consolidado: { oportunidades: number; matriculas_comerciais: number; ingressantes: number; cancelamentos: number; meta: number | null; atingimento: number | null;
     receita_mensal_ingressantes_centavos: number; renuncia_mensal_estimada_centavos: number; anterior_oportunidades: number; anterior_ingressantes: number;
     anterior_receita_mensal_ingressantes_centavos: number; alunos: number; inadimplentes: number; inadimplencia_pct: number | null; casos_abertos: number; casos_vencidos: number; alertas: number } }
+
+// Implantação e demonstração (migrações 35 e 36)
+export interface Implantacao { instituicao: string; demonstracao: boolean; pode_gerir: boolean; concluidos: number; total: number;
+  itens: { item: string; ok: boolean; onde: string }[]; campus: { id: number; nome: string }[];
+  cursos: { id: number; campus_id: number; nome: string; turno: string; modalidade: string; mensalidade_centavos: number; desconto_max_pct: number }[];
+  equipe: { nome: string; papel: string; abrangencia: string }[] }
+export interface Convite { id: number; email: string | null; nome: string | null; papel: string; abrangencia: string; alvo: string | null; usos: number; usos_max: number;
+  expira_em: string; situacao: string; aceito_por: string | null; criado_por: string | null; criado_em: string }
+export interface ConvitePublico { instituicao: string; demonstracao: boolean; papel: string; alvo: string | null; email: string | null; email_fixo: boolean; nome: string | null; expira_em: string }

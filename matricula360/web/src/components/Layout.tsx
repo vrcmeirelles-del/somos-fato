@@ -136,6 +136,7 @@ export function Layout({ eu, children }: { eu: Eu; children: ReactNode }) {
             </div>
           </header>
           <p className="faixa bg-faixa px-4 py-1 text-[11px] text-alerta md:hidden">Homologação · dados sintéticos · IA e envio externo desativados</p>
+          {est.dados?.ies.demonstracao && <p role="note" className="bg-tec-100 px-4 py-1.5 text-center text-xs font-medium text-marinho">Ambiente de demonstração e treinamento: todos os dados são fictícios e podem ser restaurados a qualquer momento.</p>}
           <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-5 sm:px-6">
             {migalhas.length > 0 && (
               <nav aria-label="Trilha" className="mb-2 text-xs text-suave">

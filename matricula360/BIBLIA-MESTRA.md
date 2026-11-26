@@ -244,6 +244,24 @@ Para gestor e reitoria com abrangência da instituição. Mostra o consolidado d
   - legenda, valores escritos, leitura ao passar o mouse e tabela para leitores de tela;
   - no consolidado, os dados das IES são somados.
 
+### 13.9 Implantação de novos clientes e ambiente de demonstração (migrações 35 e 36)
+**Implantação** (Governança → Implantação; o Master também atua pelo Painel Master):
+- **Convites por link.** O Master gera para qualquer IES; o gestor, para a própria. Cada convite define perfil e abrangência e vale de 1 a 30 dias. Só o hash do código fica no banco, e o sistema não envia e-mail.
+- **Entrada da pessoa.** Ela cria a conta (ou entra com a que já tem) e aceita o convite. O e-mail precisa ser o do convite. Tudo é auditado.
+- **Cadastro do gestor:** campus e cursos.
+- **Checklist de 14 itens**, calculado a partir do que já está configurado.
+
+**Demonstração e treinamento:**
+- **Criação:** o Master cria uma IES fictícia com 5 cursos e carga sintética de 4 coortes, que alimenta todas as telas e o BI.
+- **Convite coletivo:** só existe na demonstração e serve para uma turma inteira.
+- **Restauração:** apaga o movimento e recria a carga; mantém configuração, equipe, convites e auditoria. Os leads em aberto são distribuídos entre os atendentes que já entraram.
+- **Aviso fixo** em todas as telas da IES de demonstração.
+- **Fora do BI consolidado** de quem atua em IES reais.
+
+**Pendente: decisão do responsável sobre o e-mail de confirmação de conta.** [Confirmado na documentação do Supabase] Sem SMTP próprio, o Supabase só envia e-mail para os membros da equipe do projeto. Caminhos:
+- desligar a confirmação de e-mail em Authentication → Providers → Email (sem custo; o convite secreto passa a ser a prova);
+- ou configurar um SMTP próprio, por exemplo Resend, SES ou Brevo (exige conta e credenciais).
+
 ### 13.7 Diretriz de automação e IA (decisão do responsável, 26/11/2026)
 > "Tudo que for feito pode ser feito por algoritmo, automações, você faz. Deixar a IA só para ajuste fino. É por isso que eu travei a IA na Bíblia."
 
