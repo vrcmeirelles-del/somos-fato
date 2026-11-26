@@ -143,3 +143,32 @@ export interface AtendentePerformance { atendente: string; eu: boolean | null; o
 export interface Performance { coorte: string; regra: string; amostra_minima_etapa: number; ve_equipe: boolean; etapas: EtapaPerformance[]; gargalo: EtapaPerformance | null;
   atendentes: AtendentePerformance[]; sla_primeiro_contato_equipe: number | null; recomendacoes: { regra: string; prioridade: number; titulo: string; justificativa: string; proposta: string }[];
   aviso: string; metodos: Record<'conversao_etapa' | 'permanencia' | 'sla' | 'parados', string> }
+
+// Recuperação e Aceleração (migração 15)
+export interface ItemRecuperacao { id: number; status: 'selecionada' | 'contatada' | 'reativada' | 'descartada'; observacao: string | null; atribuido_a: string | null; meu: boolean;
+  oportunidade_origem_id: number; oportunidade_nova_id: number | null; nome: string; curso: string; coorte_origem: string; motivo_perda: string | null }
+export interface Protocolo { id: number; nome: string; tipo: string; responsavel: string; prazo: string; checklist: string[]; meta: number; custo_centavos: number | null;
+  coorte_destino: string; carencia_dias: number; status: 'planejado' | 'em_execucao' | 'concluido' | 'cancelado'; resultado: string | null; sprint_id: number | null; vencido: boolean;
+  selecionadas: number; contatadas: number; reativadas: number; descartadas: number; ingressantes: number; atingimento_meta: number; custo_por_reativacao_centavos: number | null; itens: ItemRecuperacao[] }
+export interface Sprint { id: number; nome: string; objetivo: string; inicio: string; fim: string; status: 'planejada' | 'em_andamento' | 'encerrada'; reavaliacao: string | null; impedimentos: number;
+  itens: { id: number; entrega: string; responsavel: string; status: 'a_fazer' | 'fazendo' | 'feito' | 'impedido'; impedimento: string | null }[] }
+export interface Recuperacao { pode_gerir: boolean; regra: string; elegibilidade: string; protocolos: Protocolo[]; sprints: Sprint[] }
+export interface Recuperavel { id: number; nome: string; curso: string; coorte: string; forma_ingresso: string; motivo_perda: string | null; perdida_em: string; dias_desde_perda: number;
+  elegivel: boolean; motivo_inelegivel: string | null; em_protocolo: boolean }
+
+// Academia de Captação (migração 16)
+export type Competencia = 'comunicacao' | 'escuta' | 'dominio_tecnico' | 'negociacao_etica' | 'objecoes' | 'registro' | 'disciplina_operacional';
+export interface Modulo { id: number; ordem: number; titulo: string; conteudo: string; competencia: Competencia; carga_minutos: number; concluido: boolean }
+export interface Trilha { id: number; nome: string; papel_alvo: string; descricao: string | null; modulos: Modulo[] }
+export interface Criterio { id: number; competencia: Competencia; descricao: string; niveis: string[]; peso: number }
+export interface Rubrica { id: number; nome: string; versao: number; status: 'rascunho' | 'publicada'; criterios: Criterio[] }
+export interface Cenario { id: number; titulo: string; perfil_sintetico: string; objetivo: string; objecoes: string | null; etapa_base: string | null }
+export interface Avaliacao { id: number; avaliado: string; avaliado_id: string; avaliador: string; meu_rascunho: boolean; rubrica: string; rubrica_id: number; cenario: string | null;
+  tipo: 'roleplay' | 'observacao_atendimento'; niveis: Record<string, number>; evidencias: string; comentario: string | null; status: 'rascunho' | 'finalizada';
+  criado_em: string; finalizada_em: string | null; consolidado: number | null }
+export interface Pdi { id: number; usuario: string; meu: boolean; competencia: Competencia; objetivo: string; acoes: string; prazo: string; reavaliar_em: string | null;
+  status: 'aberto' | 'em_andamento' | 'concluido' | 'cancelado'; reavaliacao_vencida: boolean }
+export interface Lacuna { usuario: string; meu: boolean; competencia: Competencia; nivel: number; avaliada_em: string; historico: { em: string; nivel: number }[];
+  recomendados: { modulo_id: number; titulo: string; trilha: string; concluido: boolean }[]; pdi_aberto: boolean }
+export interface Academia { regra: string; ve_equipe: boolean; pode_avaliar: boolean; pode_gerir: boolean; aviso: string; trilhas: Trilha[]; rubricas: Rubrica[];
+  cenarios: Cenario[]; equipe: { id: string; nome: string }[] | null; avaliacoes: Avaliacao[]; pdis: Pdi[]; lacunas: Lacuna[] }

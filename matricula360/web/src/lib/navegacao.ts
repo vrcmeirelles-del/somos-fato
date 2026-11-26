@@ -34,10 +34,10 @@ export const AMBIENTES: Ambiente[] = [
     { rotulo: 'Propostas e bolsas', rota: (i) => `/ies/${i}/propostas`, icone: FileText, papeis: ['gestor', 'comercial'] },
   ] },
   { id: 'recuperacao', rotulo: 'Recuperação e Aceleração', icone: RefreshCcw, itens: [
-    { rotulo: 'Sales Farming e reativação', icone: RefreshCcw, fase: 'P2' },
+    { rotulo: 'Protocolos, reativação e sprints', rota: (i) => `/ies/${i}/recuperacao`, icone: RefreshCcw, papeis: ['gestor', 'reitoria', 'coordenador', 'comercial'] },
   ] },
   { id: 'academia', rotulo: 'Academia de Captação', icone: GraduationCap, itens: [
-    { rotulo: 'Trilhas, rubricas e PDI', icone: BookOpen, fase: 'P2' },
+    { rotulo: 'Trilhas, rubricas e PDI', rota: (i) => `/ies/${i}/academia`, icone: BookOpen, papeis: ['gestor', 'reitoria', 'comercial'] },
   ] },
   { id: 'relacionamento', rotulo: 'Relacionamento Estudantil', icone: HeartHandshake, itens: [
     { rotulo: 'Permanência e rematrícula', icone: HeartHandshake, fase: 'P3' },

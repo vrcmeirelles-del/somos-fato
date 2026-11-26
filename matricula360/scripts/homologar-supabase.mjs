@@ -169,6 +169,21 @@ try {
           registrar('gestor', disp, 'P1: Performance com etapas, denominadores, equipe e aviso de uso', perf.includes('Etapas do funil') && perf.includes('Equipe comercial') && perf.includes('decisões laborais'));
           await checar(page, 'gestor', disp, 'performance', erros);
         } else console.log('AVISO performance não verificada: banco sem a migração 14.');
+        // P2 (migrações 15 e 16): Recuperação e Academia.
+        await ir(page, 'Protocolos, reativação e sprints');
+        await page.waitForFunction(() => /migração 15|Sprints de aceleração/.test(document.querySelector('main')?.textContent || ''), null, { timeout: 15000 }).catch(() => null);
+        if (!(await page.textContent('main')).includes('Disponível após a migração 15')) {
+          const rec = await page.textContent('main');
+          registrar('gestor', disp, 'P2: Recuperação com elegibilidade LGPD, protocolos e sprints', rec.includes('recovery-v1') && rec.includes('Sprints de aceleração'));
+          await checar(page, 'gestor', disp, 'recuperacao', erros);
+        } else console.log('AVISO recuperação não verificada: banco sem a migração 15.');
+        await ir(page, 'Trilhas, rubricas e PDI');
+        await page.waitForFunction(() => /migração 16|Ética e LGPD na captação/.test(document.querySelector('main')?.textContent || ''), null, { timeout: 15000 }).catch(() => null);
+        if (!(await page.textContent('main')).includes('Disponível após a migração 16')) {
+          const aca = await page.textContent('main');
+          registrar('gestor', disp, 'P2: Academia com trilhas, rubrica publicada e aviso de avaliação humana', aca.includes('Ética e LGPD na captação') && aca.includes('Atendimento comercial v1') && aca.includes('Nenhuma nota automática'));
+          await checar(page, 'gestor', disp, 'academia', erros);
+        } else console.log('AVISO academia não verificada: banco sem a migração 16.');
         // R09: trocar a instituição pela URL não expõe a outra IES (a interface volta à IES autorizada e o banco recusa a outra).
         for (const rota of ['/ies/2/crm', '/ies/1/inteligencia?ies=2']) {
           await page.goto(`${BASE}${rota}`);

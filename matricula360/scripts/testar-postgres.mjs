@@ -29,6 +29,7 @@ const arquivos = [
   'supabase/migrations/20261125000013_funis.sql',
   'supabase/migrations/20261125000014_maim_performance.sql',
   'supabase/migrations/20261125000015_recuperacao.sql',
+  'supabase/migrations/20261125000016_academia.sql',
   'supabase/teste-local/10_semente.sql',
 ];
 for (const f of arquivos) {
@@ -37,7 +38,7 @@ for (const f of arquivos) {
 }
 
 let falhou = false;
-const rt = spawnSync('psql', [urlTeste, '-X', '-tAq', '-v', 'ON_ERROR_STOP=1', '-o', '/dev/null', '-f', 'supabase/teste-local/20_testes_rls.sql', '-f', 'supabase/teste-local/30_testes_complementares.sql', '-f', 'supabase/teste-local/40_testes_leitura.sql', '-f', 'supabase/teste-local/50_testes_fase2.sql', '-f', 'supabase/teste-local/60_testes_central.sql', '-f', 'supabase/teste-local/70_testes_biblia_v02.sql', '-f', 'supabase/teste-local/80_testes_crm.sql', '-f', 'supabase/teste-local/90_testes_governanca.sql', '-f', 'supabase/teste-local/95_testes_planejamento.sql', '-f', 'supabase/teste-local/97_testes_funis.sql', '-f', 'supabase/teste-local/98_testes_performance.sql', '-f', 'supabase/teste-local/99_testes_recuperacao.sql'], { encoding: 'utf8' });
+const rt = spawnSync('psql', [urlTeste, '-X', '-tAq', '-v', 'ON_ERROR_STOP=1', '-o', '/dev/null', '-f', 'supabase/teste-local/20_testes_rls.sql', '-f', 'supabase/teste-local/30_testes_complementares.sql', '-f', 'supabase/teste-local/40_testes_leitura.sql', '-f', 'supabase/teste-local/50_testes_fase2.sql', '-f', 'supabase/teste-local/60_testes_central.sql', '-f', 'supabase/teste-local/70_testes_biblia_v02.sql', '-f', 'supabase/teste-local/80_testes_crm.sql', '-f', 'supabase/teste-local/90_testes_governanca.sql', '-f', 'supabase/teste-local/95_testes_planejamento.sql', '-f', 'supabase/teste-local/97_testes_funis.sql', '-f', 'supabase/teste-local/98_testes_performance.sql', '-f', 'supabase/teste-local/99_testes_recuperacao.sql', '-f', 'supabase/teste-local/100_testes_academia.sql'], { encoding: 'utf8' });
 const linhas = (rt.stderr || '').split('\n').map((l) => l.replace(/^psql:[^ ]+ (NOTICE|ERROR):\s+/, (_, t) => (t === 'ERROR' ? 'ERRO: ' : ''))).filter(Boolean);
 for (const l of linhas) console.log(l);
 const okRls = linhas.filter((l) => l.startsWith('OK ') && !l.startsWith('OK  fim')).length;

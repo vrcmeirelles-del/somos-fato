@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -108,6 +108,24 @@ export const api = {
   moverSubetapa: (op: number, ordem: number, versao: number) => c().rpc<{ versao: number }>('rpc_mover_subetapa', { p_op: op, p_ordem: ordem, p_versao: versao }),
   performance: (ies: number, coorte: string, filtros: Record<string, string>) =>
     c().rpc<Performance>('rpc_performance', { p_ies: ies, p_coorte: coorte, p_filtros: Object.fromEntries(Object.entries(filtros).filter(([k, v]) => v && k !== 'campanha_id')) }),
+  recuperacao: (ies: number) => c().rpc<Recuperacao>('rpc_recuperacao', { p_ies: ies }),
+  recuperaveis: (ies: number, carencia: number, motivo?: string, curso?: number) =>
+    c().rpc<Recuperavel[]>('rpc_recuperaveis', { p_ies: ies, p_carencia: carencia, p_motivo: motivo || null, p_curso: curso ?? null }),
+  salvarProtocolo: (ies: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number }>('rpc_salvar_protocolo', { p_ies: ies, p_dados: dados, p_id: id ?? null }),
+  selecionarRecuperacao: (protocolo: number, ops: number[]) =>
+    c().rpc<{ selecionadas: number; recusadas: { id: number; motivo: string }[] }>('rpc_selecionar_recuperacao', { p_protocolo: protocolo, p_ops: ops, p_atribuir: null }),
+  tratarRecuperacao: (item: number, acao: string, observacao?: string) =>
+    c().rpc<{ oportunidade: number | null }>('rpc_tratar_recuperacao', { p_item: item, p_acao: acao, p_observacao: observacao ?? null }),
+  salvarSprint: (ies: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number }>('rpc_salvar_sprint', { p_ies: ies, p_dados: dados, p_id: id ?? null }),
+  salvarItemSprint: (sprint: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number }>('rpc_salvar_item_sprint', { p_sprint: sprint, p_dados: dados, p_id: id ?? null }),
+  academia: (ies: number) => c().rpc<Academia>('rpc_academia', { p_ies: ies }),
+  concluirModulo: (modulo: number) => c().rpc('rpc_concluir_modulo', { p_modulo: modulo }),
+  salvarAvaliacao: (ies: number, dados: Record<string, unknown>, finalizar: boolean, id?: number) =>
+    c().rpc<{ id: number; status: string; consolidado: number | null }>('rpc_salvar_avaliacao', { p_ies: ies, p_dados: dados, p_id: id ?? null, p_finalizar: finalizar }),
+  salvarPdi: (ies: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number }>('rpc_salvar_pdi', { p_ies: ies, p_dados: dados, p_id: id ?? null }),
+  salvarRubrica: (ies: number, acao: string, rubrica: number, criterios?: unknown[]) =>
+    c().rpc<{ id: number }>('rpc_salvar_rubrica', { p_ies: ies, p_acao: acao, p_rubrica: rubrica, p_criterios: criterios ?? null }),
+  salvarCenario: (ies: number, dados: Record<string, unknown>) => c().rpc<{ id: number }>('rpc_salvar_cenario', { p_ies: ies, p_dados: dados }),
   pendencias: (ies: number) => c().rpc<Pendencia[]>('rpc_pendencias', { p_ies: ies }),
   configurar: (ies: number, v: { sla_horas?: number; max_followups?: number; dias_sem_contato?: number; capacidade_atendente?: number; amostra_minima_forecast?: number }) =>
     c().rpc<Record<string, number>>('rpc_configurar', { p_ies: ies, p_sla_horas: v.sla_horas ?? null, p_max_followups: v.max_followups ?? null,

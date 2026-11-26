@@ -880,6 +880,154 @@ end $$ $x$;
   execute $x$ select teste.erro('select public.rpc_performance(2, ''2027'')', '22023', 'coorte inválida recusada') $x$;
   execute $x$ reset role $x$;
   execute $x$ select teste.ok(true, 'fim da bateria de performance') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ insert into teste.var values ('rec_ok', (public.rpc_criar_oportunidade(1, jsonb_build_object('nome', 'Perdido Elegível', 'email', 'perdido.ok@exemplo.invalid', 'curso_id', 1,
+  'forma_ingresso', 'vestibular', 'coorte', '2027.1', 'base_legal', 'consentimento', 'origem', 'site'), 'rec-ok-000001')->>'id')::bigint) $x$;
+  execute $x$ insert into teste.var values ('rec_base', (public.rpc_criar_oportunidade(1, jsonb_build_object('nome', 'Perdido Contratual', 'email', 'perdido.base@exemplo.invalid', 'curso_id', 1,
+  'forma_ingresso', 'vestibular', 'coorte', '2027.1', 'base_legal', 'procedimentos_preliminares_contrato', 'origem', 'site'), 'rec-base-00001')->>'id')::bigint) $x$;
+  execute $x$ insert into teste.var values ('rec_opt', (public.rpc_criar_oportunidade(1, jsonb_build_object('nome', 'Perdido Optout', 'email', 'perdido.opt@exemplo.invalid', 'curso_id', 1,
+  'forma_ingresso', 'vestibular', 'coorte', '2027.1', 'base_legal', 'consentimento', 'origem', 'site'), 'rec-opt-000001')->>'id')::bigint) $x$;
+  execute $x$ select public.rpc_mover_etapa((select v from teste.var where k = 'rec_ok'), 'perdido', 1, 'Mensalidade acima do orçamento', 'rec-mov-ok-01') $x$;
+  execute $x$ select public.rpc_mover_etapa((select v from teste.var where k = 'rec_base'), 'perdido', 1, 'Sem retorno', 'rec-mov-base-1') $x$;
+  execute $x$ select public.rpc_mover_etapa((select v from teste.var where k = 'rec_opt'), 'perdido', 1, 'Desistiu', 'rec-mov-opt-01') $x$;
+  execute $x$ select public.rpc_optout((select v from teste.var where k = 'rec_opt'), 'email') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.ok((select (x->>'elegivel')::boolean = false and x->>'motivo_inelegivel' like 'Em carência%' from jsonb_array_elements(public.rpc_recuperaveis(1, 30)) x
+                 where (x->>'id')::bigint = (select v from teste.var where k = 'rec_ok')), 'perda recente respeita a carência') $x$;
+  execute $x$ select teste.ok((select (x->>'elegivel')::boolean from jsonb_array_elements(public.rpc_recuperaveis(1, 0)) x where (x->>'id')::bigint = (select v from teste.var where k = 'rec_ok')),
+  'sem carência, perdido com consentimento e canal disponível é elegível') $x$;
+  execute $x$ select teste.ok((select x->>'motivo_inelegivel' like 'Base legal%' from jsonb_array_elements(public.rpc_recuperaveis(1, 0)) x where (x->>'id')::bigint = (select v from teste.var where k = 'rec_base')),
+  'base legal contratual não permite novo contato após a perda') $x$;
+  execute $x$ select teste.ok((select x->>'motivo_inelegivel' like 'Sem canal%' from jsonb_array_elements(public.rpc_recuperaveis(1, 0)) x where (x->>'id')::bigint = (select v from teste.var where k = 'rec_opt')),
+  'opt-out no único canal torna inelegível') $x$;
+  execute $x$ select teste.ok((select bool_and(x->>'motivo_perda' ilike '%orçamento%') from jsonb_array_elements(public.rpc_recuperaveis(1, 0, 'orçamento')) x), 'filtro por motivo de perda') $x$;
+  execute $x$ select teste.erro('select public.rpc_salvar_protocolo(1, ''{"nome":"Sem meta","tipo":"recuperacao_base","responsavel":"Equipe","prazo":"2027-01-31","coorte_destino":"2027.1"}''::jsonb)', '22023', 'protocolo sem meta recusado') $x$;
+  execute $x$ insert into teste.var values ('prot', (public.rpc_salvar_protocolo(1, '{"nome":"Recuperação de base 2027.1","tipo":"recuperacao_base","responsavel":"Coordenação comercial",
+  "prazo":"2027-02-15","checklist":["Revisar motivo de perda","Oferecer condição vigente","Registrar contato"],"meta":2,"custo_centavos":50000,"coorte_destino":"2027.1","carencia_dias":0}'::jsonb)->>'id')::bigint) $x$;
+  execute $x$ insert into teste.var values ('prot_prox', (public.rpc_salvar_protocolo(1, '{"nome":"Reingresso 2027.2","tipo":"reingresso","responsavel":"Coordenação comercial",
+  "prazo":"2027-06-30","meta":1,"coorte_destino":"2027.2","carencia_dias":0}'::jsonb)->>'id')::bigint) $x$;
+  execute $x$ select teste.ok((select (r->>'selecionadas')::int = 1 and jsonb_array_length(r->'recusadas') = 2
+                 from (select public.rpc_selecionar_recuperacao((select v from teste.var where k = 'prot'),
+                         array[(select v from teste.var where k = 'rec_ok'), (select v from teste.var where k = 'rec_base'), (select v from teste.var where k = 'rec_opt')]) r) x),
+  'seleção aceita só elegíveis e devolve o motivo das recusadas') $x$;
+  execute $x$ select teste.ok((select jsonb_array_length((public.rpc_selecionar_recuperacao((select v from teste.var where k = 'prot'), array[(select v from teste.var where k = 'rec_ok')]))->'recusadas') = 1),
+  'mesma oportunidade não entra duas vezes no protocolo') $x$;
+  execute $x$ insert into teste.var values ('item', (select (i->>'id')::bigint from jsonb_array_elements(public.rpc_recuperacao(1)->'protocolos') p, jsonb_array_elements(p->'itens') i
+                                        where (p->>'id')::bigint = (select v from teste.var where k = 'prot'))) $x$;
+  execute $x$ select teste.ok((select p->>'status' = 'em_execucao' from jsonb_array_elements(public.rpc_recuperacao(1)->'protocolos') p where (p->>'id')::bigint = (select v from teste.var where k = 'prot')),
+  'protocolo passa a em execução ao receber a base') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('com_dir_a')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_tratar_recuperacao((select v from teste.var where k = ''item''), ''contatada'', ''tentativa'')', 'P0002', 'atendente não trata item atribuído a outro') $x$;
+  execute $x$ select teste.ok((select coalesce(sum(jsonb_array_length(p->'itens')), 0) = 0 from jsonb_array_elements(public.rpc_recuperacao(1)->'protocolos') p), 'atendente não vê itens de outros') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_selecionar_recuperacao((select v from teste.var where k = ''prot''), array[1])', '42501', 'atendente não seleciona base') $x$;
+  execute $x$ select teste.erro('select public.rpc_tratar_recuperacao((select v from teste.var where k = ''item''), ''contatada'', '''')', '22023', 'contato sem resumo recusado') $x$;
+  execute $x$ select teste.ok((public.rpc_tratar_recuperacao((select v from teste.var where k = 'item'), 'contatada', 'Conversou sobre bolsa vigente')->>'acao') = 'contatada', 'atendente registra contato') $x$;
+  execute $x$ select teste.ok((public.rpc_tratar_recuperacao((select v from teste.var where k = 'item'), 'reativar', 'Aceitou nova conversa')->>'oportunidade')::bigint = (select v from teste.var where k = 'rec_ok'),
+  'reativação na mesma coorte reabre a própria oportunidade') $x$;
+  execute $x$ select teste.ok((select etapa = 'contato' from public.oportunidades where id = (select v from teste.var where k = 'rec_ok')), 'perdido → contato pela transição oficial') $x$;
+  execute $x$ select teste.ok((public.rpc_detalhe((select v from teste.var where k = 'rec_ok'))->'historico') @? '$[*] ? (@.acao == "oportunidade.etapa" && @.dados.para == "contato" && @.dados.de == "perdido")',
+  'histórico preserva a perda e registra a reativação') $x$;
+  execute $x$ select teste.ok((select count(*) = 1 from public.tarefas where oportunidade_id = (select v from teste.var where k = 'rec_ok') and tipo = 'recuperacao' and status = 'aberta'), 'tarefa de recuperação criada') $x$;
+  execute $x$ select teste.erro('select public.rpc_tratar_recuperacao((select v from teste.var where k = ''item''), ''descartada'', ''x x x'')', '22023', 'item reativado não muda mais') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select public.rpc_mover_etapa((select v from teste.var where k = 'rec_ok'), 'perdido', (select versao from public.oportunidades where id = (select v from teste.var where k = 'rec_ok')), 'Adiou para o próximo semestre', 'rec-mov-ok-02') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select public.rpc_selecionar_recuperacao((select v from teste.var where k = 'prot_prox'), array[(select v from teste.var where k = 'rec_ok')]) $x$;
+  execute $x$ insert into teste.var values ('item2', (select (i->>'id')::bigint from jsonb_array_elements(public.rpc_recuperacao(1)->'protocolos') p, jsonb_array_elements(p->'itens') i
+                                         where (p->>'id')::bigint = (select v from teste.var where k = 'prot_prox'))) $x$;
+  execute $x$ insert into teste.var values ('op_nova', (public.rpc_tratar_recuperacao((select v from teste.var where k = 'item2'), 'reativar')->>'oportunidade')::bigint) $x$;
+  execute $x$ select teste.ok((select coorte = '2027.2' and recuperada_de = (select v from teste.var where k = 'rec_ok') and etapa = 'contato' and funil_versao_id is not null
+                 from public.oportunidades where id = (select v from teste.var where k = 'op_nova')), 'outra coorte: nova oportunidade vinculada à de origem, já no funil') $x$;
+  execute $x$ select teste.ok((select etapa = 'perdido' from public.oportunidades where id = (select v from teste.var where k = 'rec_ok')), 'oportunidade de origem permanece perdida (histórico intacto)') $x$;
+  execute $x$ select teste.ok((select (p->>'reativadas')::int = 1 and (p->>'atingimento_meta')::numeric = 0.5 and (p->>'custo_por_reativacao_centavos')::bigint = 50000
+                 from jsonb_array_elements(public.rpc_recuperacao(1)->'protocolos') p where (p->>'id')::bigint = (select v from teste.var where k = 'prot')),
+  'resultado do protocolo: reativadas, atingimento da meta e custo por reativação') $x$;
+  execute $x$ select teste.erro('select public.rpc_salvar_protocolo(1, ''{"status":"concluido"}''::jsonb, (select v from teste.var where k = ''prot''))', '22023', 'protocolo só conclui com resultado registrado') $x$;
+  execute $x$ insert into teste.var values ('sprint', (public.rpc_salvar_sprint(1, '{"nome":"Sprint de janeiro","objetivo":"Reativar a base perdida de 2026","inicio":"2027-01-04","fim":"2027-01-18"}'::jsonb)->>'id')::bigint) $x$;
+  execute $x$ insert into teste.var values ('sitem', (public.rpc_salvar_item_sprint((select v from teste.var where k = 'sprint'), '{"entrega":"Lista revisada da base","responsavel":"Equipe comercial"}'::jsonb)->>'id')::bigint) $x$;
+  execute $x$ select teste.erro('select public.rpc_salvar_item_sprint((select v from teste.var where k = ''sprint''), ''{"status":"impedido"}''::jsonb, (select v from teste.var where k = ''sitem''))', '22023', 'impedimento exige descrição') $x$;
+  execute $x$ select public.rpc_salvar_item_sprint((select v from teste.var where k = 'sprint'), '{"status":"impedido","impedimento":"Aguardando condição comercial aprovada"}'::jsonb, (select v from teste.var where k = 'sitem')) $x$;
+  execute $x$ select teste.erro('select public.rpc_salvar_sprint(1, ''{"status":"encerrada"}''::jsonb, (select v from teste.var where k = ''sprint''))', '22023', 'sprint não encerra sem reavaliação') $x$;
+  execute $x$ select teste.ok((select (s->>'impedimentos')::int = 1 from jsonb_array_elements(public.rpc_recuperacao(1)->'sprints') s), 'impedimentos contados na sprint') $x$;
+  execute $x$ select public.rpc_salvar_sprint(1, '{"status":"encerrada","reavaliacao":"Base revisada; condição comercial atrasou duas semanas; repetir com aprovação prévia."}'::jsonb, (select v from teste.var where k = 'sprint')) $x$;
+  execute $x$ select teste.erro('select public.rpc_salvar_item_sprint((select v from teste.var where k = ''sprint''), ''{"entrega":"Nova","responsavel":"X"}''::jsonb)', '22023', 'sprint encerrada não recebe itens') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_b')::text, false) $x$;
+  execute $x$ select teste.ok(jsonb_array_length(public.rpc_recuperacao(2)->'protocolos') = 0, 'recuperação isolada por instituição') $x$;
+  execute $x$ select teste.erro('select public.rpc_tratar_recuperacao((select v from teste.var where k = ''item2''), ''descartada'', ''cruzado'')', 'P0002', 'gestor de outra IES não alcança item') $x$;
+  execute $x$ select teste.erro('select public.rpc_recuperaveis(1)', 'P0002', 'gestor de outra IES não lista a base perdida da Alfa') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_recuperacao(1)', '42501', 'secretaria sem acesso à recuperação comercial') $x$;
+  execute $x$ select teste.erro('select count(*) from public.recuperacoes', '42501', 'recuperações sem leitura direta') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok(true, 'fim da bateria de recuperação') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select count(*) from public.trilhas where ies_id = 1) = 5 and (select count(*) from public.rubricas where ies_id = 1 and status = 'publicada') = 1,
+  'conteúdo inicial próprio: 5 trilhas e rubrica publicada') $x$;
+  execute $x$ select teste.ok((select count(*) from public.rubrica_criterios c join public.rubricas r on r.id = c.rubrica_id where r.ies_id = 1) = 7, 'rubrica cobre as 7 competências da Bíblia') $x$;
+  execute $x$ insert into teste.var values ('rub', (select id from public.rubricas where ies_id = 1 and status = 'publicada')) $x$;
+  execute $x$ insert into teste.var values ('crit_escuta', (select c.id from public.rubrica_criterios c where c.rubrica_id = (select v from teste.var where k = 'rub') and c.competencia = 'escuta')) $x$;
+  execute $x$ insert into teste.var values ('cenario', (select min(id) from public.cenarios where ies_id = 1)) $x$;
+  execute $x$ insert into teste.var values ('mod_escuta', (select m.id from public.modulos m join public.trilhas t on t.id = m.trilha_id where t.ies_id = 1 and m.competencia = 'escuta' limit 1)) $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.ok((select jsonb_array_length(r->'trilhas') = 5 and (r->>'ve_equipe')::boolean = false and r->>'aviso' like '%Nenhuma nota automática%'
+                 from (select public.rpc_academia(1) r) x), 'atendente vê trilhas e o aviso de avaliação humana') $x$;
+  execute $x$ select teste.ok((public.rpc_concluir_modulo((select v from teste.var where k = 'mod_escuta'))->>'concluido')::boolean, 'atendente conclui módulo') $x$;
+  execute $x$ select teste.ok((public.rpc_concluir_modulo((select v from teste.var where k = 'mod_escuta'))->>'concluido')::boolean, 'conclusão repetida é idempotente') $x$;
+  execute $x$ select teste.erro('select public.rpc_salvar_avaliacao(1, jsonb_build_object(''avaliado_id'', teste.id(''com_dir_a''), ''rubrica_id'', 1, ''tipo'', ''roleplay'', ''evidencias'', ''tentativa de avaliar colega''))', '42501', 'atendente não avalia') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_avaliacao(1, jsonb_build_object('avaliado_id', teste.id('gestor_a'), 'rubrica_id', (select v from teste.var where k = 'rub'), 'tipo', 'roleplay', 'evidencias', 'autoavaliação indevida'))$q$, '42501', 'ninguém avalia a si mesmo') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_avaliacao(1, jsonb_build_object('avaliado_id', teste.id('secretaria_a'), 'rubrica_id', (select v from teste.var where k = 'rub'), 'tipo', 'roleplay', 'evidencias', 'secretaria não é alvo'))$q$, '22023', 'avaliado precisa ser atendente comercial') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_avaliacao(1, jsonb_build_object('avaliado_id', teste.id('comercial_a'), 'rubrica_id', (select v from teste.var where k = 'rub'), 'tipo', 'roleplay', 'evidencias', 'curta'))$q$, '22023', 'evidência obrigatória (10+ caracteres)') $x$;
+  execute $x$ insert into teste.var values ('aval', (public.rpc_salvar_avaliacao(1, jsonb_build_object('avaliado_id', teste.id('comercial_a'), 'rubrica_id', (select v from teste.var where k = 'rub'),
+  'cenario_id', (select v from teste.var where k = 'cenario'), 'tipo', 'roleplay', 'evidencias', 'Roleplay do cenário EAD: não confirmou o entendimento do objetivo do candidato.',
+  'niveis', jsonb_build_object((select v from teste.var where k = 'crit_escuta')::text, 2)))->>'id')::bigint) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_avaliacao(1, jsonb_build_object('niveis', jsonb_build_object((select v from teste.var where k = 'crit_escuta')::text, 7)), (select v from teste.var where k = 'aval'))$q$, '22023', 'nível fora de 1 a 4 recusado') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_avaliacao(1, '{}'::jsonb, (select v from teste.var where k = 'aval'), true)$q$, '22023', 'finalizar exige todos os critérios') $x$;
+  execute $x$ select teste.ok(public.rpc_salvar_avaliacao(1,
+    jsonb_build_object('niveis', (select jsonb_object_agg(c->>'id', case when c->>'competencia' = 'escuta' then 2 else 3 end)
+                                    from jsonb_array_elements(public.rpc_academia(1)->'rubricas') r, jsonb_array_elements(r->'criterios') c
+                                   where (r->>'id')::bigint = (select v from teste.var where k = 'rub'))),
+    (select v from teste.var where k = 'aval'), true)->>'status' = 'finalizada', 'gestor finaliza a avaliação com todos os critérios') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_avaliacao(1, '{"comentario":"mudança posterior"}'::jsonb, (select v from teste.var where k = 'aval'))$q$, '22023', 'avaliação finalizada é imutável') $x$;
+  execute $x$ select teste.ok((select (a->>'consolidado')::numeric between 2 and 3 from jsonb_array_elements(public.rpc_academia(1)->'avaliacoes') a where (a->>'id')::bigint = (select v from teste.var where k = 'aval')),
+  'consolidação = média ponderada dos níveis humanos') $x$;
+  execute $x$ select teste.ok((select l->>'competencia' = 'escuta' and (l->>'nivel')::int = 2 and jsonb_array_length(l->'recomendados') >= 1 and (l->'recomendados'->0->>'concluido')::boolean
+                 from jsonb_array_elements(public.rpc_academia(1)->'lacunas') l where l->>'usuario' = 'comercial_a'), 'MAIM Learning: lacuna em escuta com módulo recomendado (já concluído pela pessoa)') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_pdi(1, jsonb_build_object('usuario_id', teste.id('comercial_a'), 'competencia', 'escuta', 'objetivo', 'x', 'acoes', 'y', 'prazo', '2027-03-01'))$q$, '22023', 'PDI com objetivo e ações insuficientes recusado') $x$;
+  execute $x$ insert into teste.var values ('pdi', (public.rpc_salvar_pdi(1, jsonb_build_object('usuario_id', teste.id('comercial_a'), 'competencia', 'escuta',
+  'objetivo', 'Confirmar o entendimento do objetivo do candidato em todo diagnóstico', 'acoes', 'Refazer o módulo de diagnóstico; dois roleplays acompanhados',
+  'prazo', '2027-03-01', 'reavaliar_em', '2027-03-15', 'avaliacao_origem', (select v from teste.var where k = 'aval')))->>'id')::bigint) $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.ok((select count(*) = 1 from jsonb_array_elements(public.rpc_academia(1)->'avaliacoes') a where (a->>'avaliado_id')::uuid = teste.id('comercial_a')), 'avaliado vê integralmente a própria avaliação') $x$;
+  execute $x$ select teste.ok((public.rpc_salvar_pdi(1, '{"status":"em_andamento"}'::jsonb, (select v from teste.var where k = 'pdi'))->>'id')::bigint = (select v from teste.var where k = 'pdi'), 'atendente atualiza o andamento do próprio PDI') $x$;
+  execute $x$ select teste.erro('select public.rpc_salvar_pdi(1, ''{"objetivo":"Outro objetivo definido pelo atendente"}''::jsonb, (select v from teste.var where k = ''pdi''))', '42501', 'atendente não reescreve objetivo do PDI') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('com_dir_a')::text, false) $x$;
+  execute $x$ select teste.ok((select jsonb_array_length(r->'avaliacoes') = 0 and jsonb_array_length(r->'pdis') = 0 and jsonb_array_length(r->'lacunas') = 0 from (select public.rpc_academia(1) r) x),
+  'colega não vê avaliação, PDI nem lacunas de outro atendente') $x$;
+  execute $x$ select teste.erro('select public.rpc_salvar_pdi(1, ''{"status":"concluido"}''::jsonb, (select v from teste.var where k = ''pdi''))', 'P0002', 'colega não altera PDI alheio') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ insert into teste.var values ('rub2', (public.rpc_salvar_rubrica(1, 'nova_versao', (select v from teste.var where k = 'rub'))->>'id')::bigint) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_rubrica(1, 'salvar', (select v from teste.var where k = 'rub'), '[]'::jsonb)$q$, '22023', 'rubrica publicada é imutável') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_rubrica(1, 'salvar', (select v from teste.var where k = 'rub2'), '[{"competencia":"escuta","descricao":"Escuta","niveis":["a","b","c"]}]'::jsonb)$q$, '22023', 'critério com menos de 4 níveis recusado') $x$;
+  execute $x$ select public.rpc_salvar_rubrica(1, 'publicar', (select v from teste.var where k = 'rub2')) $x$;
+  execute $x$ select teste.ok((select a->>'rubrica' like '%v1' from jsonb_array_elements(public.rpc_academia(1)->'avaliacoes') a where (a->>'id')::bigint = (select v from teste.var where k = 'aval')),
+  'avaliação antiga mantém a versão de rubrica usada') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_cenario(1, '{"titulo":"Com dado real","perfil_sintetico":"Candidata com e-mail maria@empresa.com.br quer mudar de curso","objetivo":"Testar"}'::jsonb)$q$, '22023', 'cenário com e-mail recusado (sintético)') $x$;
+  execute $x$ select teste.ok((public.rpc_salvar_cenario(1, '{"titulo":"Transferência de outra instituição","perfil_sintetico":"Pessoa fictícia no 3º semestre em outra instituição, insatisfeita com o horário.","objetivo":"Explicar aproveitamento de disciplinas."}'::jsonb)->>'id') is not null, 'cenário sintético criado') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_b')::text, false) $x$;
+  execute $x$ select teste.ok((select jsonb_array_length(public.rpc_academia(2)->'avaliacoes') = 0), 'avaliações isoladas por instituição') $x$;
+  execute $x$ select teste.erro('select public.rpc_concluir_modulo((select v from teste.var where k = ''mod_escuta''))', 'P0002', 'módulo de outra IES não alcançável') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('coord_dir_a')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_academia(1)', '42501', 'coordenação acadêmica fora da Academia comercial') $x$;
+  execute $x$ select teste.erro('select count(*) from public.avaliacoes', '42501', 'avaliações sem leitura direta') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select status = 'arquivada' from public.rubricas where id = (select v from teste.var where k = 'rub')), 'versão anterior da rubrica arquivada') $x$;
+  execute $x$ select teste.ok((select count(*) = 1 from public.trilhas where ies_id = (select v from teste.var where k = 'ies_nova') and nome = 'Ética e LGPD na captação') or not exists (select 1 from teste.var where k = 'ies_nova'),
+  'instituição nova recebe a Academia inicial') $x$;
+  execute $x$ select teste.ok(true, 'fim da bateria da academia') $x$;
   execute $x$ reset role $x$;
   select count(*) into n from teste.resultado;
   raise exception 'RESULTADO: % verificações aprovadas, 0 falhas (tudo desfeito; nada ficou gravado)', n;
