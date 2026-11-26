@@ -295,3 +295,8 @@ export interface Polos { pode_gerir: boolean; aviso: string; unidades: { id: num
   leads: number; inscritos: number; matriculas: number; ingressos: number; conversao_pct: number | null; receita_mensal_centavos: number }[] }
 export interface Egressos { pode_gerir: boolean; pode_ofertar: boolean; egressos: { id: number; oportunidade_id: number; nome: string; curso: string; conclusao: string; consentimento: boolean;
   interesses: string[]; observacao: string | null; ofertas: number; ofertas_convertidas: number }[] }
+
+// Automações (migração 31)
+export interface Automacoes { pode_gerir: boolean; agendador: boolean; aviso: string;
+  regras: { codigo: string; ativa: boolean; parametros: Record<string, number>; ultima_execucao: string | null; ultimo_resultado: Record<string, unknown> | null; alterada_por: string | null; alterada_em: string | null }[];
+  execucoes: { origem: string; inicio: string; fim: string | null; resultado: Record<string, Record<string, unknown>> | null }[] }

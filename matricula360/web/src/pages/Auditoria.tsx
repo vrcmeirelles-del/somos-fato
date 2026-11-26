@@ -1,3 +1,4 @@
+import { REGRAS } from './Automacoes';
 import { ScrollText } from 'lucide-react';
 import { useState } from 'react';
 import { useSessao } from '../components/Layout';
@@ -115,6 +116,9 @@ export function descreverEvento(e: Pick<EventoAuditoria, 'acao' | 'dados' | 'ent
     // Matrícula online, comunicação e integrações (migração 21)
     case 'contrato.publicar': return `Contrato de matrícula versão ${s('versao')} publicado.`;
     case 'matricula.aceite': return `Matrícula aceita no portal (contrato versão ${s('contrato_versao')})${d.menor_de_18 ? ' com representante legal' : ''}${d.confirmacao === 'simulacao' ? '; código em modo simulação' : ''}.`;
+    // Automações (migração 31)
+    case 'automacao.executar': return `Automações executadas (${s('origem') === 'manual' ? 'manual' : 'agendador'}): ${Object.entries((d.resultado ?? {}) as Record<string, Record<string, unknown>>).map(([k, v]) => `${REGRAS[k]?.nome ?? k} (${Object.entries(v ?? {}).filter(([, x]) => x !== 0).map(([a, b]) => `${a.replace(/_/g, ' ')} ${String(b)}`).join(', ') || 'sem efeito'})`).join('; ')}.`;
+    case 'automacao.configurar': return `Automação "${REGRAS[s('codigo')]?.nome ?? s('codigo')}" ${d.ativa ? 'ligada' : 'desligada'}.`;
     // Onda C (migração 30)
     case 'conversa.recebida': return `Mensagem recebida registrada (${rotulo(s('tipo')).toLowerCase()}).`;
     case 'financeiro.importar': return `Pendências financeiras importadas: ${s('importadas')} linha(s), ${s('rejeitadas')} rejeitada(s).`;

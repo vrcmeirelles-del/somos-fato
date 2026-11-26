@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula, Bolsas, PortalBolsas, Rematricula, PortalRematricula, Casos, Campo, LeadCampo, Pesquisas, PortalPesquisa, CriterioBanca, Banca, Aproveitamento, DisciplinaAproveitamento, Conversas, Financeiro, Polos, Egressos, DadosAceite, CodigoAceite, ComprovanteAceite,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula, Bolsas, PortalBolsas, Rematricula, PortalRematricula, Casos, Campo, LeadCampo, Pesquisas, PortalPesquisa, CriterioBanca, Banca, Aproveitamento, DisciplinaAproveitamento, Conversas, Financeiro, Polos, Egressos, Automacoes, DadosAceite, CodigoAceite, ComprovanteAceite,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -203,6 +203,10 @@ export const api = {
   registrarEgresso: (op: number, conclusao: string, consentimento: boolean, interesses: string[], obs?: string) =>
     c().rpc('rpc_registrar_egresso', { p_op: op, p_conclusao: conclusao, p_consentimento: consentimento, p_interesses: interesses, p_observacao: obs ?? null }),
   ofertarEgresso: (egresso: number, curso: number, coorte: string, forma: string) => c().rpc<{ id: number; duplicada: boolean }>('rpc_ofertar_egresso', { p_egresso: egresso, p_curso: curso, p_coorte: coorte, p_forma: forma }),
+  automacoes: (ies: number) => c().rpc<Automacoes>('rpc_automacoes', { p_ies: ies }),
+  configurarAutomacao: (ies: number, codigo: string, ativa: boolean, parametros?: Record<string, number>) =>
+    c().rpc('rpc_configurar_automacao', { p_ies: ies, p_codigo: codigo, p_ativa: ativa, p_parametros: parametros ?? null }),
+  executarAutomacoes: (ies: number) => c().rpc<Record<string, Record<string, unknown>>>('rpc_executar_automacoes', { p_ies: ies }),
   comprovanteAceite: (op: number) => c().rpc<ComprovanteAceite>('rpc_comprovante_aceite', { p_op: op }),
   enviarDocumento: (op: number, tipo: string, nome: string, base64: string) => c().rpc('rpc_enviar_documento', { p_op: op, p_tipo: tipo, p_nome: nome, p_base64: base64 }),
   baixarDocumento: (doc: number) => c().rpc<{ nome_arquivo: string; mime: string; base64: string }>('rpc_baixar_documento', { p_documento: doc }),

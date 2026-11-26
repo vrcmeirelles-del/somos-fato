@@ -195,7 +195,7 @@ Detalhe e fontes em `docs/ANALISE-CONCORRENCIA.md`. Decisão do responsável (26
 | L7 Eventos e visitas | **publicado (migração 20)** | Vagas, inscrição pelo formulário ou equipe, check-in, conversão de presentes |
 | L8 Integração acadêmica | **parcial (migração 21)** | Importação de vínculos por planilha (idempotente, com relatório). Conexão direta: desligada |
 | L9 Mídia e marketplaces | **parcial (migração 21)** | Importação de custos por planilha (idempotente); leads por importação do CRM com código de campanha. Conexões diretas: desligadas |
-| L10 Atendimento conversacional | exclusão deliberada | Proibição de IA generativa |
+| L10 Atendimento conversacional | travado (IA) | IA só para ajuste fino, depois da operação fechada (§13.7) |
 | L11 Alerta precoce acadêmico | especificado | Depende da L8 |
 
 ### 13.6 Ciclo de vida completo — segunda rodada da concorrência (L12 a L22; migrações 23 a 30)
@@ -218,6 +218,27 @@ Detalhe e fontes em `docs/ANALISE-CONCORRENCIA.md` §4. Decisão do responsável
 **Aplicação:** migrações 23 a 30 aplicadas pelo responsável em 26/11/2026, um arquivo por migração. Depois disso: 140/140 na homologação ponta a ponta e 66 telas sem violação de acessibilidade nem erro.
 
 Integrações registradas (todas desligadas, com pedido de ativação auditado): e-mail, SMS, WhatsApp, cobrança, assinatura certificada, Meta Ads, Google Ads, TikTok Ads, sistema acadêmico e marketplaces de bolsas.
+
+### 13.7 Diretriz de automação e IA (decisão do responsável, 26/11/2026)
+> "Tudo que for feito pode ser feito por algoritmo, automações, você faz. Deixar a IA só para ajuste fino. É por isso que eu travei a IA na Bíblia."
+
+1. **Automação determinística sem custo: ativada.** Toda rotina que um algoritmo resolve com regra explícita roda sozinha, pelo agendador do banco (pg_cron, de hora em hora). Cada regra pode ser ligada ou desligada por IES, tem parâmetros, histórico de execuções e auditoria. Ver a migração 31 e a tela Governança → Automações.
+2. **Limites que a automação não cruza:**
+   - não envia nada para fora (a régua roda em simulação até haver fornecedor autorizado);
+   - não decide o que é reservado a pessoas (admissão, resultado do seletivo, bolsa, desconto acima do limite);
+   - regra que afeta direito do aluno nasce desligada (bloqueio de rematrícula por inadimplência).
+3. **IA: travada.** Entra depois que a operação estiver fechada, só para ajuste fino (por exemplo, calibrar a cadência e os parâmetros das regras, redigir textos para revisão humana, resumir históricos). Ativar exige nova decisão do responsável, com fornecedor, custo, base legal e avaliação de impacto.
+
+| Regra | Padrão | O que faz |
+|---|---|---|
+| Cadência comercial (MAIM) | ligada | Follow-ups de leads parados (respeita opt-out e o limite de tentativas), pendências de validação, redistribuição de tarefas sem dono |
+| Régua de comunicação | ligada | Gera as mensagens dos modelos ativos, em simulação |
+| Expirar propostas | ligada | Propostas vencidas passam a expiradas |
+| Rematrícula | ligada | Inclui novos elegíveis e encerra campanhas vencidas |
+| Escalonar casos | ligada | Roteia casos sem dono e eleva a prioridade dos vencidos |
+| Casos financeiros | ligada | Abre caso de apoio para pendência vencida (padrão: 30 dias) |
+| Bloqueio por inadimplência | **desligada** | Bloqueia a rematrícula de inadimplente (padrão: 60 dias). Recomenda-se validação jurídica antes de ligar |
+| Limpeza técnica | ligada | Apaga códigos de confirmação expirados |
 
 ---
 

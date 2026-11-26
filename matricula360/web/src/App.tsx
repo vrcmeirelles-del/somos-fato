@@ -24,6 +24,7 @@ import { Seguranca } from './pages/Seguranca';
 import { CampoCaptacao } from './pages/Campo';
 import { ModoFeira } from './pages/ModoFeira';
 import { Pesquisas } from './pages/Pesquisas';
+import { Automacoes } from './pages/Automacoes';
 import { Conversas, EgressosPagina, FinanceiroAlunos, Polos } from './pages/OndaC';
 import { Funis } from './pages/Funis';
 import { Intervencoes } from './pages/Intervencoes';
@@ -122,6 +123,7 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
       <Route path="/ies/:ies/bolsas" element={<ExigeIes><Bolsas abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/configuracoes" element={<ExigeIes><Configuracoes /></ExigeIes>} />
       <Route path="/ies/:ies/permissoes" element={<ExigeIes><Permissoes /></ExigeIes>} />
+      <Route path="/ies/:ies/automacoes" element={<ExigeIes><Automacoes /></ExigeIes>} />
       <Route path="/ies/:ies/seguranca" element={<ExigeIes><Seguranca /></ExigeIes>} />
       <Route path="/ies/:ies/auditoria" element={<ExigeIes><Auditoria /></ExigeIes>} />
       <Route path="/master" element={eu.usuario.master ? <Master /> : <><Titulo titulo="Acesso restrito ao Master" /></>} />

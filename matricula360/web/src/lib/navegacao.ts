@@ -1,7 +1,7 @@
 // Mapa dos dez ambientes. Itens "planejado" aparecem desabilitados com a fase prevista:
 // não há página de lista fingindo módulo pronto (critério de aceite da Fase 2).
 import {
-  Activity, BarChart3, Building, MessageCircleReply, Wallet, CalendarClock, CalendarDays, ClipboardList, FileCheck2, Gauge, MessagesSquare, PlugZap, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HandCoins, HeartHandshake, KanbanSquare, KeyRound,
+  Activity, BarChart3, Bot, Building, MessageCircleReply, Wallet, CalendarClock, CalendarDays, ClipboardList, FileCheck2, Gauge, MessagesSquare, PlugZap, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HandCoins, HeartHandshake, KanbanSquare, KeyRound,
   LayoutDashboard, LifeBuoy, Megaphone, RefreshCcw, RotateCw, School, ScrollText, Settings, ShieldCheck, Target, Users, Workflow, type LucideIcon,
 } from 'lucide-react';
 import type { Papel } from './tipos';
@@ -58,6 +58,7 @@ export const AMBIENTES: Ambiente[] = [
   { id: 'governanca', rotulo: 'Governança Institucional', icone: ShieldCheck, itens: [
     { rotulo: 'Configurações e metas', rota: (i) => `/ies/${i}/configuracoes`, icone: Settings, papeis: ['gestor'] },
     { rotulo: 'Perfis e permissões', rota: (i) => `/ies/${i}/permissoes`, icone: KeyRound },
+    { rotulo: 'Automações', rota: (i) => `/ies/${i}/automacoes`, icone: Bot, papeis: ['gestor', 'reitoria'] },
     { rotulo: 'Verificação em duas etapas', rota: (i) => `/ies/${i}/seguranca`, icone: ShieldCheck },
     { rotulo: 'Integrações e dados', rota: (i) => `/ies/${i}/integracoes`, icone: PlugZap, papeis: ['gestor', 'secretaria', 'financeiro'] },
     { rotulo: 'Auditoria', rota: (i) => `/ies/${i}/auditoria`, icone: ScrollText, papeis: ['gestor'] },
