@@ -105,7 +105,7 @@ export function Eventos({ abrirDetalhe }: { abrirDetalhe: (id: number) => void }
               <p className="mt-1 text-sm">Inscritos <strong>{v.inscritos}</strong>{v.vagas ? ` de ${v.vagas}` : ''} · presentes <strong>{v.presentes}</strong>
                 {v.inscritos > 0 && ` (${Math.round((v.presentes / v.inscritos) * 100)}%)`} · presentes que ingressaram <strong>{v.ingressantes_presentes}</strong></p>
               {v.inscricoes.length > 0 && (
-                <div className="tabela mt-2"><table>
+                <div className="tabela mt-2" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
                   <thead><tr>{['Pessoa', 'Situação', ''].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
                   <tbody>{v.inscricoes.map((i) => (
                     <tr key={i.id}><td>{i.oportunidade_id ? <button className="text-tec hover:underline" onClick={() => abrirDetalhe(i.oportunidade_id!)}>{i.nome}</button> : i.nome}</td>

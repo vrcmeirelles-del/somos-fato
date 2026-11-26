@@ -260,3 +260,11 @@ export interface Casos { pode_atender: boolean; pode_trilhas: boolean; eu: strin
   indicadores: { abertos: number; vencidos: number; sem_dono: number; meus: number; resolvidos: number; horas_medias_resolucao: number | null; por_motivo: Record<string, number> };
   trilhas: { motivo: string; nome: string; passos: string[]; prazo_horas: number; papel_responsavel: string }[];
   agenda: { caso: number; nome: string; quando: string; texto: string; por: string }[]; casos: Caso[]; equipe: { id: string; nome: string }[] }
+
+// Captação em campo (migração 27)
+export interface Escola { id: number; nome: string; rede: string; cidade: string; uf: string; inep: string | null; contato: string | null; observacao: string | null; ativa: boolean;
+  visitas: number; leads: number; ingressos: number }
+export interface Visita { id: number; titulo: string; tipo: string; data: string; status: string; codigo: string; escola: string | null; responsavel: string | null;
+  publico_estimado: number | null; campanha: string | null; leads: number; inscritos: number; ingressos: number; capturados: number }
+export interface Campo { pode_registrar: boolean; escolas: Escola[]; visitas: Visita[] }
+export interface LeadCampo { id_local: string; nome: string; email?: string; telefone?: string; curso_id: number; coorte: string; consentimento: boolean; consentimento_hash: string; capturado_em: string; motivo?: string }

@@ -102,7 +102,7 @@ function CartaoPlano({ pl, podeEditar, podeAprovar, fazer, enviando, metodo }: {
       )}
       <h3 className="mb-1 flex items-center gap-1.5 font-semibold text-marinho"><Target className="h-4 w-4 text-tec" aria-hidden />Objetivos e indicadores</h3>
       {pl.objetivos.length ? (
-        <div className="tabela mb-2"><table>
+        <div className="tabela mb-2" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
           <thead><tr>{['Objetivo', 'Indicador', 'Recorte', 'Meta', 'Realizado', 'Atingimento'].map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
           <tbody>{pl.objetivos.map((x) => {
             const menorMelhor = x.indicador.endsWith('centavos');
@@ -131,7 +131,7 @@ function CartaoPlano({ pl, podeEditar, podeAprovar, fazer, enviando, metodo }: {
       )}
       <h3 className="mb-1 flex items-center gap-1.5 font-semibold text-marinho"><Flag className="h-4 w-4 text-tec" aria-hidden />Ações 5W2H</h3>
       {pl.acoes.length ? (
-        <div className="tabela mb-2"><table>
+        <div className="tabela mb-2" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
           <thead><tr>{['O quê / por quê', 'Onde', 'Quando', 'Quem', 'Como', 'Quanto', 'Status'].map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
           <tbody>{pl.acoes.map((x) => (
             <tr key={x.id}><td><strong>{x.o_que}</strong><span className="block text-xs text-suave">{x.por_que}</span></td><td>{x.onde ?? '—'}</td>
@@ -177,7 +177,7 @@ function Concorrencia() {
       <Aviso>Cada registro exige endereço da fonte e data de coleta, e é revisado por pessoa diferente de quem registrou. Não registre ofertas sem fonte.</Aviso>
       <Estado carregando={r.carregando && !r.dados} erro={r.erro} />
       {r.dados?.length ? (
-        <div className="tabela my-3"><table>
+        <div className="tabela my-3" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
           <thead><tr>{['Instituição / curso', 'Mensalidade', 'Fonte', 'Coleta', 'Revisão'].map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
           <tbody>{r.dados.map((x) => (
             <tr key={x.id}><td><strong>{x.instituicao}</strong><span className="block text-xs">{x.curso}{x.modalidade ? ` · ${rotulo(x.modalidade)}` : ''}</span>

@@ -8,6 +8,8 @@ export const dataHora = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
 
 const ROTULOS: Record<string, string> = {
+  // captação em campo (migração 27)
+  publica: 'Pública', privada: 'Privada', palestra: 'Palestra', aula_aberta: 'Aula aberta', realizada: 'Realizada',
   // sucesso do aluno (migração 25)
   frequencia: 'Frequência', desempenho: 'Desempenho', adaptacao: 'Adaptação', pessoal: 'Pessoal', rematricula_recusada: 'Recusa de rematrícula',
   em_atendimento: 'Em atendimento', nota: 'Nota', passo: 'Passo concluído', encaminhamento: 'Encaminhamento', resolucao: 'Resolução', cancelamento: 'Cancelamento', resolvido: 'Resolvido', baixa: 'Baixa', media: 'Média', alta: 'Alta',

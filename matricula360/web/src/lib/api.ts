@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula, Bolsas, PortalBolsas, Rematricula, PortalRematricula, Casos, DadosAceite, CodigoAceite, ComprovanteAceite,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula, Bolsas, PortalBolsas, Rematricula, PortalRematricula, Casos, Campo, LeadCampo, DadosAceite, CodigoAceite, ComprovanteAceite,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -22,6 +22,20 @@ export async function iniciar(): Promise<Config> {
   configuracao = cfg;
   return cfg;
 }
+// Sem internet (modo feira), a casca da aplicação usa a última leitura de perfil e estrutura desta aba.
+// Só falha de rede usa o cache; erro do banco (permissão, 2FA) nunca é mascarado.
+async function comCache<T>(chave: string, fn: () => Promise<T>): Promise<T> {
+  try {
+    const v = await fn();
+    try { sessionStorage.setItem(chave, JSON.stringify(v)); } catch { /* sem storage */ }
+    return v;
+  } catch (e) {
+    if (e instanceof ErroApi) throw e;
+    try { const v = sessionStorage.getItem(chave); if (v) return JSON.parse(v) as T; } catch { /* sem storage */ }
+    throw e;
+  }
+}
+
 function c(): Cliente {
   if (!cliente) throw new ErroApi('Cliente não iniciado', 500);
   return cliente;
@@ -40,9 +54,16 @@ const chave = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${
 
 export const api = {
   entrar: (email: string, senha: string) => c().entrar(email, senha),
-  sair: () => c().sair(),
-  eu: () => c().rpc<Eu>('rpc_me'),
-  estrutura: (ies: number) => c().rpc<Estrutura>('rpc_estrutura', { p_ies: ies }),
+  sair: () => { try { Object.keys(sessionStorage).filter((k) => k.startsWith('m360_cache_')).forEach((k) => sessionStorage.removeItem(k)); } catch { /* sem storage */ } return c().sair(); },
+  eu: () => comCache('m360_cache_eu', () => c().rpc<Eu>('rpc_me')),
+  segurancaConta: () => c().rpc<{ aal: string; tem_fator: boolean; exigido: boolean; ok: boolean; ies_que_exigem: string[] }>('rpc_seguranca_conta'),
+  fatores: () => c().fatores(),
+  cadastrarTotp: () => c().cadastrarTotp(),
+  verificarTotp: (fator: string, codigo: string) => c().verificarTotp(fator, codigo),
+  removerFator: (fator: string) => c().removerFator(fator),
+  situacao2fa: (ies: number) => c().rpc<{ exigir_2fa: boolean; equipe: { nome: string; com_fator: boolean }[] }>('rpc_situacao_2fa', { p_ies: ies }),
+  configurar2fa: (ies: number, exigir: boolean) => c().rpc<{ exigir_2fa: boolean; usuarios_sem_fator: number }>('rpc_configurar_2fa', { p_ies: ies, p_exigir: exigir }),
+  estrutura: (ies: number) => comCache(`m360_cache_estrutura_${ies}`, () => c().rpc<Estrutura>('rpc_estrutura', { p_ies: ies })),
   central: (ies: number, coorte: string, filtros: Record<string, string>) =>
     c().rpc<Central>('rpc_central', { p_ies: ies, p_coorte: coorte, p_filtros: Object.fromEntries(Object.entries(filtros).filter(([, v]) => v)) }),
   metas: (ies: number, coorte: string) => c().rpc<{ curso_id: number; meta: number }[]>('rpc_metas', { p_ies: ies, p_coorte: coorte }),
@@ -158,6 +179,10 @@ export const api = {
   atenderCaso: (id: number, acao: string, texto?: string, agendado?: string, responsavel?: string) =>
     c().rpc('rpc_atender_caso', { p_id: id, p_acao: acao, p_texto: texto ?? null, p_agendado_para: agendado ?? null, p_responsavel: responsavel ?? null }),
   salvarTrilha: (ies: number, motivo: string, dados: Record<string, unknown>) => c().rpc('rpc_salvar_trilha', { p_ies: ies, p_motivo: motivo, p_dados: dados }),
+  campo: (ies: number) => c().rpc<Campo>('rpc_campo', { p_ies: ies }),
+  salvarEscola: (ies: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number }>('rpc_salvar_escola', { p_ies: ies, p_dados: dados, p_id: id ?? null }),
+  salvarVisita: (ies: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number; codigo: string }>('rpc_salvar_visita', { p_ies: ies, p_dados: dados, p_id: id ?? null }),
+  captarCampo: (visita: number, leads: LeadCampo[]) => c().rpc<{ recebidos: number; ja_sincronizados: number; contatos_existentes: number; rejeitados: { id_local: string; nome: string; motivo: string }[] }>('rpc_captar_campo', { p_visita: visita, p_leads: leads }),
   comprovanteAceite: (op: number) => c().rpc<ComprovanteAceite>('rpc_comprovante_aceite', { p_op: op }),
   enviarDocumento: (op: number, tipo: string, nome: string, base64: string) => c().rpc('rpc_enviar_documento', { p_op: op, p_tipo: tipo, p_nome: nome, p_base64: base64 }),
   baixarDocumento: (doc: number) => c().rpc<{ nome_arquivo: string; mime: string; base64: string }>('rpc_baixar_documento', { p_documento: doc }),
@@ -226,6 +251,7 @@ export const publico = {
     c().rpcPublico<{ mensagem: string }>('rpc_publico_solicitar_bolsa', { p_token: t, p_op: op, p_programa: programa, p_percentual: percentual, p_declaro: true, p_declaracao: declaracao ?? null }),
   rematricula: (t: string) => c().rpcPublico<PortalRematricula[]>('rpc_publico_portal_rematricula', { p_token: t }),
   responderRematricula: (t: string, id: number, dados: Record<string, unknown>) => c().rpcPublico<{ status: string; mensagem: string }>('rpc_publico_responder_rematricula', { p_token: t, p_id: id, p_dados: dados }),
+  vincularVisita: (t: string, codigo: string) => c().rpcPublico<{ vinculadas: number }>('rpc_publico_vincular_visita', { p_token: t, p_codigo: codigo }),
   codigoAceite: (t: string, op: number) => c().rpcPublico<CodigoAceite>('rpc_publico_codigo_aceite', { p_token: t, p_op: op }),
   aceitar: (t: string, op: number, dados: DadosAceite) =>
     c().rpcPublico<{ aceito: boolean; erro?: string; tentativas_restantes?: number; proximo_passo?: string; evidencia_hash?: string }>('rpc_publico_aceitar_matricula', { p_token: t, p_op: op, p_dados: dados }),

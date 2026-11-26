@@ -25,7 +25,7 @@ export function Propostas() {
       </label>
       <Mensagem m={acao.mensagem} />
       <Estado carregando={lista.carregando && !lista.dados} erro={lista.erro} />
-      <div className="tabela">
+      <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal">
         <table>
           <thead><tr>{['#', 'Candidato', 'Curso', 'Desconto', 'Limite', 'Valor final', 'Criada por', 'Validade', ''].map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
           <tbody>

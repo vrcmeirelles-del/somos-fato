@@ -35,7 +35,7 @@ export function Master() {
         })}>Provisionar</button>
       </Detalhes>
       <Estado carregando={lista.carregando && !lista.dados} erro={lista.erro} />
-      <div className="tabela">
+      <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal">
         <table>
           <thead><tr>{['IES', 'Plano', 'Status', 'Cursos', 'Usuários', ''].map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
           <tbody>{lista.dados?.map((i) => (
@@ -80,7 +80,7 @@ function Acessos({ ies, aoMudar }: { ies: IesMaster; aoMudar: () => void }) {
       </div>
       <Mensagem m={acao.mensagem} />
       <Estado carregando={a.carregando && !a.dados} erro={a.erro} />
-      <div className="tabela mt-3">
+      <div className="tabela mt-3" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal">
         <table>
           <thead><tr>{['Usuário', 'Papel', 'Abrangência', 'Situação', ''].map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
           <tbody>{a.dados?.escopos.map((e) => (

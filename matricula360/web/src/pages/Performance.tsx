@@ -31,7 +31,7 @@ export function Performance() {
             <Kpi rotulo="Parados" valor={num(d.etapas.reduce((s, e) => s + e.parados, 0))} detalhe={d.metodos.parados} />
           </div>
           <Cartao titulo="Etapas do funil" icone={Gauge}>
-            <div className="tabela"><table>
+            <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
               <thead><tr>{['Etapa', 'Alcançaram', 'Avançaram', 'Conversão da etapa', 'Perdidos na etapa', 'Tempo mediano', 'Parados'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
               <tbody>{d.etapas.map((e) => (
                 <tr key={e.etapa} className={d.gargalo?.etapa === e.etapa ? 'bg-amber-50' : ''}>
@@ -49,7 +49,7 @@ export function Performance() {
           </Cartao>
           <Cartao titulo={d.ve_equipe ? 'Equipe comercial' : 'Seus indicadores'} icone={Users}>
             {d.atendentes.length ? (
-              <div className="tabela"><table>
+              <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
                 <thead><tr>{['Atendente', 'Oportunidades', 'Matr. comerciais', 'Ingressantes', 'Conversão', 'SLA 1º contato', 'Horas até 1º contato', 'Interações', 'Tarefas atrasadas'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
                 <tbody>{d.atendentes.map((a) => (
                   <tr key={a.atendente}><td>{a.atendente}{a.eu && <Chip tipo="tec">você</Chip>}</td><td>{a.oportunidades}</td><td>{a.matriculas_comerciais}</td><td>{a.ingressantes}</td>

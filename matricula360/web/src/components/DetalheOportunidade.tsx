@@ -117,7 +117,7 @@ export function DetalheOportunidade({ id, aoFechar, aoMudar }: { id: number; aoF
                 </div>
               )}
               {d.dados.propostas.length ? (
-                <div className="tabela"><table>
+                <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
                   <thead><tr>{['#', 'Desconto', 'Valor final', 'Validade', 'Status', 'Emitida', ''].map((c) => <th key={c}>{c}</th>)}</tr></thead>
                   <tbody>{d.dados.propostas.map((pr) => (
                     <tr key={pr.id}><td>{pr.id}</td><td>{pr.desconto_pct}%</td><td>{moeda(pr.valor_final_centavos)}</td><td>{dataHora(pr.validade)}</td><td>{rotulo(pr.status)}</td><td className="text-xs">{pr.criado_em ? `${dataHora(pr.criado_em)} · ${pr.criado_por ?? ''}` : '—'}</td>

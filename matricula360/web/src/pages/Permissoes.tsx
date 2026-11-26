@@ -28,7 +28,7 @@ export function Permissoes() {
           {[...modulos.entries()].map(([modulo, ops]) => (
             <section key={modulo} className="mb-4">
               <h2 className="mb-2 text-base font-semibold text-marinho">{modulo}</h2>
-              <div className="tabela"><table>
+              <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
                 <thead><tr><th scope="col">Operação</th>{PAPEIS.map((pp) => <th key={pp} scope="col" className="text-center">{rotulo(pp)}</th>)}<th scope="col">Abrangência mínima</th><th scope="col">Você</th></tr></thead>
                 <tbody>{ops.map((o) => (
                   <tr key={o.operacao}>

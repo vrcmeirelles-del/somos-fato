@@ -20,6 +20,9 @@ import { Seletivo } from './pages/Seletivo';
 import { Bolsas } from './pages/Bolsas';
 import { Rematricula } from './pages/Rematricula';
 import { SucessoAluno } from './pages/SucessoAluno';
+import { Seguranca } from './pages/Seguranca';
+import { CampoCaptacao } from './pages/Campo';
+import { ModoFeira } from './pages/ModoFeira';
 import { Funis } from './pages/Funis';
 import { Intervencoes } from './pages/Intervencoes';
 import { Login } from './pages/Login';
@@ -94,6 +97,8 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
       <Route path="/ies/:ies/campanhas" element={<ExigeIes><Campanhas /></ExigeIes>} />
       <Route path="/ies/:ies/funis" element={<ExigeIes><Funis /></ExigeIes>} />
       <Route path="/ies/:ies/formularios" element={<ExigeIes><Formularios /></ExigeIes>} />
+      <Route path="/ies/:ies/campo" element={<ExigeIes><CampoCaptacao /></ExigeIes>} />
+      <Route path="/ies/:ies/campo/:visita/feira" element={<ExigeIes><ModoFeira /></ExigeIes>} />
       <Route path="/ies/:ies/eventos" element={<ExigeIes><Eventos abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/comunicacao" element={<ExigeIes><Comunicacao /></ExigeIes>} />
       <Route path="/ies/:ies/seletivo" element={<ExigeIes><Seletivo abrirDetalhe={abrir} /></ExigeIes>} />
@@ -110,6 +115,7 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
       <Route path="/ies/:ies/bolsas" element={<ExigeIes><Bolsas abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/configuracoes" element={<ExigeIes><Configuracoes /></ExigeIes>} />
       <Route path="/ies/:ies/permissoes" element={<ExigeIes><Permissoes /></ExigeIes>} />
+      <Route path="/ies/:ies/seguranca" element={<ExigeIes><Seguranca /></ExigeIes>} />
       <Route path="/ies/:ies/auditoria" element={<ExigeIes><Auditoria /></ExigeIes>} />
       <Route path="/master" element={eu.usuario.master ? <Master /> : <><Titulo titulo="Acesso restrito ao Master" /></>} />
       <Route path="/ies/:ies/dashboard" element={<Legado para="inteligencia" />} />

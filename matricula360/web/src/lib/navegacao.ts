@@ -2,7 +2,7 @@
 // não há página de lista fingindo módulo pronto (critério de aceite da Fase 2).
 import {
   Activity, BarChart3, CalendarClock, CalendarDays, ClipboardList, FileCheck2, Gauge, MessagesSquare, PlugZap, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HandCoins, HeartHandshake, KanbanSquare, KeyRound,
-  LayoutDashboard, LifeBuoy, Megaphone, RefreshCcw, RotateCw, ScrollText, Settings, ShieldCheck, Target, Users, Workflow, type LucideIcon,
+  LayoutDashboard, LifeBuoy, Megaphone, RefreshCcw, RotateCw, School, ScrollText, Settings, ShieldCheck, Target, Users, Workflow, type LucideIcon,
 } from 'lucide-react';
 import type { Papel } from './tipos';
 
@@ -21,6 +21,7 @@ export const AMBIENTES: Ambiente[] = [
   ] },
   { id: 'marketing', rotulo: 'Marketing e Captação', icone: Megaphone, itens: [
     { rotulo: 'Formulários de captação', rota: (i) => `/ies/${i}/formularios`, icone: ClipboardList, papeis: ['gestor'] },
+    { rotulo: 'Escolas, visitas e feiras', rota: (i) => `/ies/${i}/campo`, icone: School, papeis: ['gestor', 'comercial', 'coordenador', 'reitoria'] },
     { rotulo: 'Eventos e visitas', rota: (i) => `/ies/${i}/eventos`, icone: CalendarDays, papeis: ['gestor', 'comercial', 'secretaria'] },
     { rotulo: 'Comunicação e réguas', rota: (i) => `/ies/${i}/comunicacao`, icone: MessagesSquare, papeis: ['gestor', 'comercial'] },
     { rotulo: 'Campanhas e custos', rota: (i) => `/ies/${i}/campanhas`, icone: Megaphone, papeis: ['gestor', 'reitoria', 'coordenador', 'comercial', 'financeiro'] },
@@ -52,6 +53,7 @@ export const AMBIENTES: Ambiente[] = [
   { id: 'governanca', rotulo: 'Governança Institucional', icone: ShieldCheck, itens: [
     { rotulo: 'Configurações e metas', rota: (i) => `/ies/${i}/configuracoes`, icone: Settings, papeis: ['gestor'] },
     { rotulo: 'Perfis e permissões', rota: (i) => `/ies/${i}/permissoes`, icone: KeyRound },
+    { rotulo: 'Verificação em duas etapas', rota: (i) => `/ies/${i}/seguranca`, icone: ShieldCheck },
     { rotulo: 'Integrações e dados', rota: (i) => `/ies/${i}/integracoes`, icone: PlugZap, papeis: ['gestor', 'secretaria', 'financeiro'] },
     { rotulo: 'Auditoria', rota: (i) => `/ies/${i}/auditoria`, icone: ScrollText, papeis: ['gestor'] },
     { rotulo: 'Painel Master', rota: () => '/master', icone: Building2, master: true },

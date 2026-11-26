@@ -97,7 +97,7 @@ function Avaliacoes({ d, fazer, enviando }: { d: TAcademia; fazer: Fazer; envian
               {f.tipo === 'roleplay' && <Campo rotulo="Cenário sintético"><select className="campo" value={f.cenario_id} onChange={(e) => setF({ ...f, cenario_id: e.target.value })}>
                 <option value="">—</option>{d.cenarios.map((c) => <option key={c.id} value={c.id}>{c.titulo}</option>)}</select></Campo>}
             </div>
-            <div className="tabela"><table>
+            <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
               <thead><tr><th scope="col">Critério</th>{[1, 2, 3, 4].map((n) => <th key={n} scope="col">Nível {n}</th>)}</tr></thead>
               <tbody>{publicada.criterios.map((c) => (
                 <tr key={c.id}><td><strong>{rotulo(c.competencia)}</strong>{c.peso > 1 && <Chip>peso {c.peso}</Chip>}<span className="block text-xs text-suave">{c.descricao}</span></td>
@@ -148,7 +148,7 @@ function Pdis({ d, fazer, enviando }: { d: TAcademia; fazer: Fazer; enviando: bo
           </form>
         </Detalhes>)}
       {d.pdis.length ? (
-        <div className="tabela"><table>
+        <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
           <thead><tr>{['Atendente', 'Competência', 'Objetivo e ações', 'Prazo', 'Reavaliação', 'Status'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
           <tbody>{d.pdis.map((p) => (
             <tr key={p.id}><td>{p.usuario}{p.meu && <Chip tipo="tec">você</Chip>}</td><td>{rotulo(p.competencia)}</td><td><strong>{p.objetivo}</strong><span className="block text-xs">{p.acoes}</span></td>
@@ -201,7 +201,7 @@ function RubricaVisao({ r, gerir, temRascunho, fazer, enviando, ies }: { r: Rubr
   return (
     <section className="mb-3">
       <p className="font-semibold text-marinho">{r.nome} v{r.versao} <Chip tipo={r.status === 'publicada' ? 'ok' : 'tec'}>{rotulo(r.status)}</Chip></p>
-      <div className="tabela mt-1"><table>
+      <div className="tabela mt-1" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
         <thead><tr><th scope="col">Competência</th><th scope="col">Descrição</th><th scope="col">Peso</th>{[1, 2, 3, 4].map((n) => <th key={n} scope="col">Nível {n}</th>)}</tr></thead>
         <tbody>{crit.map((c, i) => (
           <tr key={c.id}><td>{rotulo(c.competencia)}</td>

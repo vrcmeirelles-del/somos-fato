@@ -59,7 +59,7 @@ export function Comunicacao() {
             </Cartao>))}
           {d.recentes && d.recentes.length > 0 && (
             <Cartao titulo="Mensagens recentes (simulação)" icone={MessagesSquare}>
-              <div className="tabela"><table>
+              <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
                 <thead><tr>{['Quando', 'Pessoa', 'Canal', 'Destino', 'Situação'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
                 <tbody>{d.recentes.map((r) => <tr key={r.id}><td>{new Date(r.em).toLocaleString('pt-BR')}</td><td>{r.nome}</td><td>{rotulo(r.canal)}</td><td>{r.destino ?? '—'}</td>
                   <td><Chip tipo={r.status === 'bloqueada' ? 'erro' : 'tec'}>{rotulo(r.status)}</Chip><span className="block text-xs text-suave">{r.motivo}</span></td></tr>)}</tbody>
@@ -86,7 +86,7 @@ export function Integracoes() {
         <div className="space-y-4">
           {i.dados && <Cartao titulo="Integrações externas" icone={PlugZap}>
             <Aviso>{i.dados.aviso}</Aviso>
-            <div className="tabela mt-2"><table>
+            <div className="tabela mt-2" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
               <thead><tr>{['Integração', 'Situação', 'Pedido', ''].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
               <tbody>{i.dados.itens.map((x) => (
                 <tr key={x.tipo}><td>{rotulo(x.tipo)}</td><td><Chip tipo={x.status === 'pedido_registrado' ? 'pend' : undefined}>{rotulo(x.status)}</Chip></td>
@@ -191,7 +191,7 @@ function Solicitacoes() {
     <Cartao titulo="Solicitações de titulares (LGPD)" icone={ShieldCheck}>
       <Mensagem m={acao.mensagem} />
       {s.dados?.length ? (
-        <div className="tabela"><table>
+        <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
           <thead><tr>{['Titular', 'Pedido', 'Prazo interno', 'Situação', ''].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
           <tbody>{s.dados.map((x) => (
             <tr key={x.id}><td>{x.nome}</td><td>{rotulo(x.tipo)}{x.detalhe && <span className="block text-xs text-suave">{x.detalhe}</span>}</td>

@@ -19,7 +19,7 @@ export function Matriculas({ abrirDetalhe }: { abrirDetalhe: (id: number) => voi
         financeiro valida financeira (inclui isenção formal); comercial não valida. A confirmação só ocorre com as três dimensões válidas.</p>
       <Mensagem m={acao.mensagem} />
       <Estado carregando={lista.carregando && !lista.dados} erro={lista.erro} />
-      <div className="tabela">
+      <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal">
         <table>
           <thead><tr>{['Candidato', 'Curso', 'Coorte', 'Situação', 'Validações', 'Ações'].map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
           <tbody>

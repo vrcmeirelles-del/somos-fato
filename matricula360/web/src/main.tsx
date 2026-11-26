@@ -12,3 +12,8 @@ createRoot(document.getElementById('raiz')!).render(
     </BrowserRouter>
   </StrictMode>,
 );
+
+// Aplicação disponível sem internet (modo feira). Só em produção, para não interferir no desenvolvimento.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => undefined); });
+}

@@ -54,6 +54,8 @@ export function FormularioPublico() {
       {d.descricao && <p className="mt-1 text-suave">{d.descricao}</p>}
       <form className="mt-4 space-y-3 rounded-xl border border-linha bg-white p-5" onSubmit={(e) => { e.preventDefault(); void acao.executar(async () => {
         const r = await publico.inscrever(slug, { ...dados, curso_id: Number(dados.curso_id), versao_consentimento: d.versao_consentimento, tempo_ms: Date.now() - inicio.current });
+        const v = new URLSearchParams(location.search).get('v');
+        if (v && r.portal) await publico.vincularVisita(r.portal, v).catch(() => undefined);
         setFim({ mensagem: r.mensagem, portal: r.portal }); }); }}>
         <Campo rotulo="Nome completo"><input className="campo" required minLength={3} maxLength={120} autoComplete="name" value={dados.nome} onChange={(e) => setDados({ ...dados, nome: e.target.value })} /></Campo>
         <Campo rotulo="E-mail"><input className="campo" type="email" required autoComplete="email" value={dados.email} onChange={(e) => setDados({ ...dados, email: e.target.value })} /></Campo>

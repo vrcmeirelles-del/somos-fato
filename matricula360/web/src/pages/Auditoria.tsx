@@ -115,6 +115,13 @@ export function descreverEvento(e: Pick<EventoAuditoria, 'acao' | 'dados' | 'ent
     // Matrícula online, comunicação e integrações (migração 21)
     case 'contrato.publicar': return `Contrato de matrícula versão ${s('versao')} publicado.`;
     case 'matricula.aceite': return `Matrícula aceita no portal (contrato versão ${s('contrato_versao')})${d.menor_de_18 ? ' com representante legal' : ''}${d.confirmacao === 'simulacao' ? '; código em modo simulação' : ''}.`;
+    // Captação em campo (migração 27)
+    case 'campo.escola': return `Escola ${d.novo ? 'cadastrada' : 'atualizada'}${s('nome') ? `: ${s('nome')}` : ''}.`;
+    case 'campo.visita': return `Visita ${d.novo ? 'agendada' : 'atualizada'}${s('titulo') ? `: ${s('titulo')}` : ''}${s('status') ? ` (${rotulo(s('status')).toLowerCase()})` : ''}.`;
+    case 'campo.sincronizar': return `Modo feira sincronizado: ${s('recebidos')} cadastro(s), ${s('contatos_existentes')} contato(s) já existente(s), ${s('rejeitados')} rejeitado(s).`;
+    case 'campo.qr': return `Inscrição pelo QR code vinculada à visita (${s('vinculadas')}).`;
+    // Verificação em duas etapas (migração 26)
+    case 'seguranca.2fa': return d.exigir ? `Verificação em duas etapas passou a ser exigida da equipe (${s('usuarios_sem_fator')} sem aplicativo no momento).` : 'Exigência de verificação em duas etapas desligada.';
     // Sucesso do aluno (migração 25)
     case 'caso.abrir': return `Caso do aluno aberto: ${rotulo(s('motivo')).toLowerCase()}${s('origem') === 'rematricula' ? ' (automático, recusa de rematrícula)' : ''}${d.roteado ? '' : '; sem responsável disponível'}.`;
     case 'caso.atender': return `Caso do aluno: ${({ assumir: 'assumido', nota: 'nota registrada', passo: 'passo da trilha concluído', agendar: 'atendimento agendado', encaminhar: 'encaminhado', resolver: 'resolvido', cancelar: 'cancelado' } as Record<string, string>)[s('acao')] ?? s('acao')}.`;

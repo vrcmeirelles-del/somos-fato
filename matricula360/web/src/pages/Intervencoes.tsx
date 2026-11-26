@@ -34,7 +34,7 @@ export function Intervencoes({ abrirDetalhe }: { abrirDetalhe: (id: number) => v
       {fila.dados && !tarefas.length && <div className="mt-4"><Vazio texto="Nenhuma tarefa aberta" detalhe="Novas tarefas surgem com novas oportunidades, com o ciclo MAIM e com pendências de validação." /></div>}
       {tarefas.length > 0 && (
         <Cartao titulo="Tarefas abertas por vencimento" icone={Activity} className="mt-4 p-0">
-          <div className="tabela rounded-none border-0 shadow-none">
+          <div className="tabela rounded-none border-0 shadow-none" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal">
             <table>
               <thead><tr>{['Vence', 'Tipo', 'Candidato', 'Etapa', 'Curso', 'Canal', 'Responsável', 'Registrar contato'].map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
               <tbody>

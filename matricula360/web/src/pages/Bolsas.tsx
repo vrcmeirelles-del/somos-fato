@@ -58,7 +58,7 @@ export function Bolsas({ abrirDetalhe }: { abrirDetalhe: (id: number) => void })
             </Detalhes>)}
           <Cartao titulo="Programas" icone={HandCoins}>
             {!d.programas.length ? <Vazio texto="Nenhum programa cadastrado." /> : (
-              <div className="tabela"><table><thead><tr><th>Programa</th><th>Tipo</th><th>Máx.</th><th>Vagas</th><th>Pendentes</th><th>Aprovadas</th><th>Ingressos</th><th>% médio</th><th /></tr></thead>
+              <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table><thead><tr><th>Programa</th><th>Tipo</th><th>Máx.</th><th>Vagas</th><th>Pendentes</th><th>Aprovadas</th><th>Ingressos</th><th>% médio</th><th /></tr></thead>
                 <tbody>{d.programas.map((p) => (
                   <tr key={p.id} className={p.ativo ? '' : 'opacity-60'}>
                     <td>{p.nome}{p.cumulativo && <Chip tipo="tec">cumulativo</Chip>}{p.validade_ate && <span className="nota"> · até {new Date(`${p.validade_ate}T12:00:00`).toLocaleDateString('pt-BR')}</span>}</td>

@@ -81,7 +81,7 @@ function SelecionarBase({ protocolos, fazer, enviando }: { protocolos: Protocolo
       </div>
       <Estado carregando={base.carregando && !base.dados} erro={base.erro} />
       {base.dados?.length ? (
-        <div className="tabela max-h-80 overflow-y-auto"><table>
+        <div className="tabela max-h-80 overflow-y-auto" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
           <thead><tr>{['', 'Candidato', 'Curso / coorte', 'Motivo da perda', 'Perdida há', 'Elegibilidade'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
           <tbody>{base.dados.map((x) => (
             <tr key={x.id} className={x.elegivel ? '' : 'text-suave'}>
@@ -117,7 +117,7 @@ function CartaoProtocolo({ p, gerir, fazer, enviando, abrirDetalhe }: { p: Proto
       {p.custo_centavos != null && <p className="mb-2 text-sm">Custo {moeda(p.custo_centavos)} · por reativação <Valor v={p.custo_por_reativacao_centavos == null ? ND : moeda(p.custo_por_reativacao_centavos)} /></p>}
       {p.checklist.length > 0 && <ul className="mb-3 flex flex-wrap gap-1.5 text-xs">{p.checklist.map((c) => <li key={c} className="flex items-center gap-1 rounded-full bg-fundo px-2 py-0.5"><ListChecks className="h-3 w-3" aria-hidden />{c}</li>)}</ul>}
       {p.itens.length ? (
-        <div className="tabela"><table>
+        <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
           <thead><tr>{['Candidato', 'Curso', 'Motivo da perda', 'Atendente', 'Situação', ''].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
           <tbody>{p.itens.map((i) => (
             <tr key={i.id}><td>{i.nome}</td><td>{i.curso} · {i.coorte_origem}</td><td>{i.motivo_perda ?? '—'}</td><td>{i.atribuido_a ?? '—'}{i.meu && <Chip tipo="tec">você</Chip>}</td>

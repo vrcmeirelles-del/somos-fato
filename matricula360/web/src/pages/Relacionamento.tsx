@@ -88,7 +88,7 @@ function Indicacoes({ d, fazer, enviando }: { d: TRel; fazer: Fazer; enviando: b
     <Cartao titulo="Indicações rastreáveis" icone={Link2}>
       <p className="nota mb-2">{d.metodos.indicacao} Informe o código no cadastro ou na importação do CRM.</p>
       {d.indicacoes.length ? (
-        <div className="tabela mb-3"><table>
+        <div className="tabela mb-3" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
           <thead><tr>{['Código', 'Indicador', 'Leads', 'Ingressantes'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
           <tbody>{d.indicacoes.map((i) => <tr key={i.id}><td><code className="text-tec">{i.codigo}</code></td><td>{i.indicador_nome} <Chip>{rotulo(i.indicador_tipo)}</Chip></td><td>{i.leads}</td><td>{i.ingressantes}</td></tr>)}</tbody>
         </table></div>) : <p className="nota mb-2">Nenhum código de indicação.</p>}
@@ -116,7 +116,7 @@ function Embaixadores({ d, fazer, enviando }: { d: TRel; fazer: Fazer; enviando:
     <Cartao titulo="Embaixadores (regras transparentes)" icone={Sparkles}>
       <p className="mb-2 whitespace-pre-line text-sm">{d.programa_embaixadores ?? <span className="nota">Regras do programa ainda não publicadas.</span>}</p>
       {d.embaixadores.length > 0 && (
-        <div className="tabela mb-3"><table>
+        <div className="tabela mb-3" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
           <thead><tr>{['Embaixador(a)', 'Curso', 'Aceite das regras', 'Indicações', 'Ingressantes indicados', 'Status'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
           <tbody>{d.embaixadores.map((e) => <tr key={e.id}><td>{e.nome}</td><td>{e.curso}</td>
             <td>{new Date(e.aceite_regras_em).toLocaleDateString('pt-BR')}{!e.regras_atuais && <Chip tipo="pend">regras mudaram: novo aceite</Chip>}</td>

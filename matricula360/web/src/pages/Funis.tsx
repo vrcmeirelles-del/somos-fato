@@ -69,7 +69,7 @@ function CartaoFunil({ f, podeEditar, podePublicar, fazer, enviando }: { f: Funi
       <p className="nota mb-3">{criterio}</p>
       {publicada && <VisaoVersao v={publicada} />}
       {f.desempenho.length > 0 && (
-        <div className="tabela my-3"><table>
+        <div className="tabela my-3" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
           <thead><tr>{['Forma de ingresso', 'Oportunidades', 'Ingressantes', 'Conversão', 'Meta'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
           <tbody>{f.desempenho.map((d) => (
             <tr key={d.forma_ingresso}><td>{rotulo(d.forma_ingresso)}</td><td>{d.oportunidades}</td><td>{d.ingressantes}</td>
@@ -117,7 +117,7 @@ function EditorVersao({ v, podePublicar, fazer, enviando }: { v: VersaoFunil; po
   return (
     <section className="mt-3 rounded-xl border border-dashed border-tec-400 p-3" aria-label={`Rascunho v${v.versao}`}>
       <h3 className="mb-2 font-semibold text-marinho">Rascunho v{v.versao}</h3>
-      <div className="tabela"><table>
+      <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
         <thead><tr>{['#', 'Etapa do funil', 'Etapa oficial', 'SLA (h)', 'Roteiro', ''].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
         <tbody>{etapas.map((e, i) => (
           <tr key={i}><td>{e.ordem}</td>

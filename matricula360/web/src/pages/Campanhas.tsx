@@ -41,7 +41,7 @@ export function Campanhas() {
           <Aviso>{d.metodos.atribuicao} No cadastro e na importação do CRM, informe o código da campanha.</Aviso>
           {d.pode_editar && <NovaCampanha coorte={coorte} planos={planos.dados?.planos.map((p) => ({ id: p.id, titulo: p.titulo })) ?? []} fazer={fazer} enviando={acao.enviando} />}
           {!d.campanhas.length ? <Vazio texto={`Nenhuma campanha na coorte ${coorte}.`} /> : (
-            <div className="tabela"><table>
+            <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
               <thead><tr>{['Campanha', 'Canal', 'Vigência', 'Status', 'Leads', 'Ingressantes', 'Conversão', 'Orçamento', 'Custo', 'CPL', 'Custo/ingressante'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
               <tbody>{d.campanhas.map((k) => (
                 <tr key={k.id}><td><strong>{k.nome}</strong><code className="block text-xs text-tec">{k.codigo}</code></td><td>{rotulo(k.canal)}</td>
@@ -112,7 +112,7 @@ function Custos({ campanhas, podeLancar, fazer, enviando }: { campanhas: Campanh
         </form>
       )}
       {lancamentos.length ? (
-        <div className="tabela"><table>
+        <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
           <thead><tr>{['Data', 'Campanha', 'Descrição', 'Valor', 'Lançado por', ''].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
           <tbody>{lancamentos.map((x) => (
             <tr key={x.id} className={x.estornado_em ? 'text-suave line-through' : ''}><td>{dt(x.data)}</td><td>{x.campanha}</td><td>{x.descricao}

@@ -3,6 +3,7 @@
 const CHAVE_SESSAO = 'm360_sb_sessao';
 
 export interface Sessao { access: string; refresh: string; expira: number; email?: string }
+export interface Fator { id: string; friendly_name?: string; factor_type: string; status: 'verified' | 'unverified'; created_at?: string }
 export interface Config { modo: 'supabase' | 'local'; supabase_url?: string; supabase_chave_publicavel?: string }
 
 export class ErroApi extends Error {
@@ -37,6 +38,34 @@ export function criarCliente(url: string, chave: string, http: typeof fetch = (.
     gravarSessao({ access: String(d.access_token), refresh: String(d.refresh_token), expira: Date.now() + Number(d.expires_in) * 1000,
       email: email ?? (d.user as { email?: string } | undefined)?.email });
   }
+  // Verificação em duas etapas (Supabase Auth MFA, TOTP). O banco confere o nível da sessão (aal) em cada operação.
+  async function authSessao(metodo: 'GET' | 'POST' | 'DELETE', caminho: string, corpo?: unknown) {
+    const s = lerSessao();
+    if (!s) throw new ErroApi('Sessão ausente', 401);
+    const r = await http(`${url}/auth/v1/${caminho}`, {
+      method: metodo, headers: { apikey: chave, authorization: `Bearer ${s.access}`, 'content-type': 'application/json' },
+      ...(metodo === 'GET' ? {} : { body: JSON.stringify(corpo ?? {}) }),
+    });
+    const d = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+    if (!r.ok) throw new ErroApi(r.status === 422 && /code/i.test(String(d.msg ?? d.message ?? '')) ? 'Código inválido ou expirado' : String(d.msg || d.message || d.error_description || `Erro ${r.status}`), r.status);
+    return d;
+  }
+  async function fatores(): Promise<Fator[]> {
+    const u = await authSessao('GET', 'user');
+    return ((u.factors as Fator[] | undefined) ?? []).filter((f) => f.factor_type === 'totp');
+  }
+  async function cadastrarTotp(): Promise<{ id: string; qr: string; segredo: string }> {
+    for (const f of await fatores()) if (f.status !== 'verified') await authSessao('DELETE', `factors/${f.id}`).catch(() => undefined);
+    const d = await authSessao('POST', 'factors', { factor_type: 'totp', friendly_name: `Matrícula 360° ${new Date().toISOString().slice(0, 16)}` });
+    const t = d.totp as { qr_code: string; secret: string };
+    return { id: String(d.id), qr: t.qr_code, segredo: t.secret };
+  }
+  async function verificarTotp(fator: string, codigo: string) {
+    const ch = await authSessao('POST', `factors/${fator}/challenge`);
+    const s = lerSessao();
+    guardar(await authSessao('POST', `factors/${fator}/verify`, { challenge_id: ch.id, code: codigo.trim() }), s?.email);
+  }
+  async function removerFator(fator: string) { await authSessao('DELETE', `factors/${fator}`); }
   async function entrar(email: string, senha: string) { guardar(await auth('token?grant_type=password', { email, password: senha })); }
   async function renovar() {
     const s = lerSessao();
@@ -70,6 +99,6 @@ export function criarCliente(url: string, chave: string, http: typeof fetch = (.
     if (!r.ok) throw new ErroApi(d?.message || `Erro ${r.status}`, (d?.code && STATUS_POR_CODIGO[d.code]) || r.status, d?.code, d?.details);
     return d as T;
   }
-  return { entrar, sair, rpc, rpcPublico };
+  return { entrar, sair, rpc, rpcPublico, fatores, cadastrarTotp, verificarTotp, removerFator };
 }
 export type Cliente = ReturnType<typeof criarCliente>;
