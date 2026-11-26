@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula, Bolsas, PortalBolsas, Rematricula, PortalRematricula, DadosAceite, CodigoAceite, ComprovanteAceite,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula, Bolsas, PortalBolsas, Rematricula, PortalRematricula, Casos, DadosAceite, CodigoAceite, ComprovanteAceite,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -153,6 +153,11 @@ export const api = {
   salvarCampanhaRematricula: (ies: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number }>('rpc_salvar_campanha_rematricula', { p_ies: ies, p_dados: dados, p_id: id ?? null }),
   statusCampanhaRematricula: (id: number, status: string) => c().rpc<{ novos_elegiveis: number }>('rpc_status_campanha_rematricula', { p_id: id, p_status: status }),
   tratarRematricula: (id: number, acao: string, motivo?: string, categoria?: string) => c().rpc('rpc_tratar_rematricula', { p_id: id, p_acao: acao, p_motivo: motivo ?? null, p_categoria: categoria ?? null }),
+  casos: (ies: number, op?: number) => c().rpc<Casos>('rpc_casos', { p_ies: ies, p_op: op ?? null }),
+  abrirCaso: (op: number, motivo: string, descricao: string, prioridade: string) => c().rpc<{ id: number; responsavel: string | null }>('rpc_abrir_caso', { p_op: op, p_motivo: motivo, p_descricao: descricao, p_prioridade: prioridade }),
+  atenderCaso: (id: number, acao: string, texto?: string, agendado?: string, responsavel?: string) =>
+    c().rpc('rpc_atender_caso', { p_id: id, p_acao: acao, p_texto: texto ?? null, p_agendado_para: agendado ?? null, p_responsavel: responsavel ?? null }),
+  salvarTrilha: (ies: number, motivo: string, dados: Record<string, unknown>) => c().rpc('rpc_salvar_trilha', { p_ies: ies, p_motivo: motivo, p_dados: dados }),
   comprovanteAceite: (op: number) => c().rpc<ComprovanteAceite>('rpc_comprovante_aceite', { p_op: op }),
   enviarDocumento: (op: number, tipo: string, nome: string, base64: string) => c().rpc('rpc_enviar_documento', { p_op: op, p_tipo: tipo, p_nome: nome, p_base64: base64 }),
   baixarDocumento: (doc: number) => c().rpc<{ nome_arquivo: string; mime: string; base64: string }>('rpc_baixar_documento', { p_documento: doc }),

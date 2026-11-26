@@ -115,6 +115,10 @@ export function descreverEvento(e: Pick<EventoAuditoria, 'acao' | 'dados' | 'ent
     // Matrícula online, comunicação e integrações (migração 21)
     case 'contrato.publicar': return `Contrato de matrícula versão ${s('versao')} publicado.`;
     case 'matricula.aceite': return `Matrícula aceita no portal (contrato versão ${s('contrato_versao')})${d.menor_de_18 ? ' com representante legal' : ''}${d.confirmacao === 'simulacao' ? '; código em modo simulação' : ''}.`;
+    // Sucesso do aluno (migração 25)
+    case 'caso.abrir': return `Caso do aluno aberto: ${rotulo(s('motivo')).toLowerCase()}${s('origem') === 'rematricula' ? ' (automático, recusa de rematrícula)' : ''}${d.roteado ? '' : '; sem responsável disponível'}.`;
+    case 'caso.atender': return `Caso do aluno: ${({ assumir: 'assumido', nota: 'nota registrada', passo: 'passo da trilha concluído', agendar: 'atendimento agendado', encaminhar: 'encaminhado', resolver: 'resolvido', cancelar: 'cancelado' } as Record<string, string>)[s('acao')] ?? s('acao')}.`;
+    case 'caso.trilha': return `Trilha de intervenção "${rotulo(s('motivo'))}" atualizada.`;
     // Rematrícula (migração 24)
     case 'rematricula.campanha': return `Campanha de rematrícula ${s('periodo')} ${d.novo ? 'criada' : 'atualizada'}.`;
     case 'rematricula.status': return `Campanha de rematrícula ${s('periodo')} ${s('status') === 'aberta' ? `aberta (${s('novos_elegiveis')} novo(s) elegível(is))` : 'encerrada'}.`;

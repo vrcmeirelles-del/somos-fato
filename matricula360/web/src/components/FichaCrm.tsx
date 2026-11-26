@@ -1,8 +1,9 @@
 // Seções do CRM avançado na ficha da oportunidade (migração 10). Só aparecem quando o banco devolve os campos novos.
-import { AlertTriangle, CalendarClock, FileSignature, HandCoins, FileText, Gauge, Link2, MessageSquarePlus, ShieldQuestion, UserCog, Workflow } from 'lucide-react';
+import { AlertTriangle, CalendarClock, FileSignature, HandCoins, LifeBuoy, FileText, Gauge, Link2, MessageSquarePlus, ShieldQuestion, UserCog, Workflow } from 'lucide-react';
 import { baixarBase64, lerBase64 } from '../lib/arquivo';
 import { baixarTexto, comprovanteHtml, nomeComprovante } from '../lib/contrato';
 import { LinhaSolicitacao } from '../pages/Bolsas';
+import { CartaoCaso, MOTIVOS_CASO } from '../pages/SucessoAluno';
 import { useState } from 'react';
 import { descreverEvento } from '../pages/Auditoria';
 import { api } from '../lib/api';
@@ -199,6 +200,31 @@ export function DocumentosNaFicha({ op, fazer, enviando }: { op: number; fazer: 
             <label className="btn btn-sec btn-peq cursor-pointer">Enviar<input type="file" className="sr-only" accept="application/pdf,image/jpeg,image/png" disabled={enviando} onChange={(e) => {
               const arq = e.target.files?.[0]; if (!arq) return; void f2(async () => { await api.enviarDocumento(op, i.tipo, arq.name, await lerBase64(arq)); return 'Documento enviado.'; }); }} /></label>)}
         </li>))}</ul>
+    </section>
+  );
+}
+
+// Casos do aluno (L15): histórico e abertura de caso a partir da ficha.
+export function CasosNaFicha({ op, fazer, enviando }: { op: number; fazer: Fazer; enviando: boolean }) {
+  const { ies } = useSessao();
+  const [recarga, setRecarga] = useState(0);
+  const r = useCarregar(() => api.casos(ies!, op).catch(() => null), [ies, op, recarga]);
+  const [motivo, setMotivo] = useState('frequencia'); const [prio, setPrio] = useState('media'); const [desc, setDesc] = useState('');
+  if (!r.dados) return null;
+  const d = r.dados;
+  const f2: Fazer = (fn) => fazer(async () => { const t = await fn(); setRecarga((n) => n + 1); return t; });
+  return (
+    <section aria-label="Sucesso do aluno" className="mt-4 rounded-xl border border-linha p-3">
+      <H icone={LifeBuoy}>Sucesso do aluno</H>
+      <div className="space-y-2">{d.casos.map((c) => <CartaoCaso key={c.id} c={c} d={d} fazer={f2} enviando={enviando} />)}</div>
+      {d.pode_atender && (
+        <div className="mt-2 flex flex-wrap items-end gap-2">
+          <Campo rotulo="Motivo"><select className="campo" value={motivo} onChange={(e) => setMotivo(e.target.value)}>{MOTIVOS_CASO.map((m) => <option key={m} value={m}>{rotulo(m)}</option>)}</select></Campo>
+          <Campo rotulo="Prioridade"><select className="campo" value={prio} onChange={(e) => setPrio(e.target.value)}>{['baixa', 'media', 'alta'].map((m) => <option key={m} value={m}>{rotulo(m)}</option>)}</select></Campo>
+          <Campo rotulo="Situação (sem dado sensível)" className="grow"><input className="campo" value={desc} onChange={(e) => setDesc(e.target.value)} /></Campo>
+          <button className="btn btn-sec btn-peq" disabled={enviando || desc.trim().length < 5} onClick={() => void f2(async () => {
+            const x = await api.abrirCaso(op, motivo, desc, prio); setDesc(''); return `Caso aberto${x.responsavel ? ` e roteado para ${x.responsavel}` : '; sem responsável disponível, ficou na fila'}.`; })}>Abrir caso</button>
+        </div>)}
     </section>
   );
 }

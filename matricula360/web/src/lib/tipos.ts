@@ -251,3 +251,12 @@ export interface CampanhaRematricula { id: number; periodo: string; abre_em: str
 export interface Rematricula { pode_gerir: boolean; pode_tratar: boolean; aviso: string; campanhas: CampanhaRematricula[] }
 export interface PortalRematricula { id: number; periodo: string; curso: string; abre_em: string; fecha_em: string; aberta_agora: boolean; termo: string; status: string;
   bloqueio: string | null; respondido_em: string | null; evidencia_hash: string | null; exige_representante: boolean; cpf_no_aceite: boolean }
+
+// Sucesso do aluno (migração 25)
+export interface Caso { id: number; oportunidade_id: number; nome: string; curso: string; motivo: string; origem: string; prioridade: string; status: string; descricao: string;
+  prazo: string; vencido: boolean; responsavel_id: string | null; responsavel: string | null; passos: string[] | null; passos_concluidos: number; resolucao: string | null;
+  aberto_em: string; encerrado_em: string | null; eventos: { tipo: string; texto: string; agendado_para: string | null; por: string; em: string }[] }
+export interface Casos { pode_atender: boolean; pode_trilhas: boolean; eu: string; aviso: string;
+  indicadores: { abertos: number; vencidos: number; sem_dono: number; meus: number; resolvidos: number; horas_medias_resolucao: number | null; por_motivo: Record<string, number> };
+  trilhas: { motivo: string; nome: string; passos: string[]; prazo_horas: number; papel_responsavel: string }[];
+  agenda: { caso: number; nome: string; quando: string; texto: string; por: string }[]; casos: Caso[]; equipe: { id: string; nome: string }[] }

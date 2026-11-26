@@ -19,6 +19,7 @@ import { Comunicacao, Integracoes } from './pages/Comunicacao';
 import { Seletivo } from './pages/Seletivo';
 import { Bolsas } from './pages/Bolsas';
 import { Rematricula } from './pages/Rematricula';
+import { SucessoAluno } from './pages/SucessoAluno';
 import { Funis } from './pages/Funis';
 import { Intervencoes } from './pages/Intervencoes';
 import { Login } from './pages/Login';
@@ -102,6 +103,7 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
       <Route path="/ies/:ies/recuperacao" element={<ExigeIes><Recuperacao abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/academia" element={<ExigeIes><Academia /></ExigeIes>} />
       <Route path="/ies/:ies/relacionamento" element={<ExigeIes><Relacionamento /></ExigeIes>} />
+      <Route path="/ies/:ies/sucesso" element={<ExigeIes><SucessoAluno abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/rematricula" element={<ExigeIes><Rematricula abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/matriculas" element={<ExigeIes><Matriculas abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/propostas" element={<ExigeIes><Propostas /></ExigeIes>} />
