@@ -37,6 +37,7 @@ const arquivos = [
   'supabase/migrations/20261125000021_matricula_comunicacao_integracoes.sql',
   'supabase/migrations/20261126000022_aceite_reforcado.sql',
   'supabase/migrations/20261126000023_bolsas_financiamento.sql',
+  'supabase/migrations/20261126000024_rematricula.sql',
   'supabase/teste-local/10_semente.sql',
 ];
 for (const f of arquivos) {
@@ -45,7 +46,7 @@ for (const f of arquivos) {
 }
 
 let falhou = false;
-const rt = spawnSync('psql', [urlTeste, '-X', '-tAq', '-v', 'ON_ERROR_STOP=1', '-o', '/dev/null', '-f', 'supabase/teste-local/20_testes_rls.sql', '-f', 'supabase/teste-local/30_testes_complementares.sql', '-f', 'supabase/teste-local/40_testes_leitura.sql', '-f', 'supabase/teste-local/50_testes_fase2.sql', '-f', 'supabase/teste-local/60_testes_central.sql', '-f', 'supabase/teste-local/70_testes_biblia_v02.sql', '-f', 'supabase/teste-local/80_testes_crm.sql', '-f', 'supabase/teste-local/90_testes_governanca.sql', '-f', 'supabase/teste-local/95_testes_planejamento.sql', '-f', 'supabase/teste-local/97_testes_funis.sql', '-f', 'supabase/teste-local/98_testes_performance.sql', '-f', 'supabase/teste-local/99_testes_recuperacao.sql', '-f', 'supabase/teste-local/100_testes_academia.sql', '-f', 'supabase/teste-local/101_testes_relacionamento.sql', '-f', 'supabase/teste-local/102_testes_captacao_publica.sql', '-f', 'supabase/teste-local/103_testes_documentos.sql', '-f', 'supabase/teste-local/104_testes_eventos_seletivo.sql', '-f', 'supabase/teste-local/105_testes_matricula_comunicacao.sql', '-f', 'supabase/teste-local/106_testes_aceite_reforcado.sql', '-f', 'supabase/teste-local/107_testes_bolsas.sql'], { encoding: 'utf8' });
+const rt = spawnSync('psql', [urlTeste, '-X', '-tAq', '-v', 'ON_ERROR_STOP=1', '-o', '/dev/null', '-f', 'supabase/teste-local/20_testes_rls.sql', '-f', 'supabase/teste-local/30_testes_complementares.sql', '-f', 'supabase/teste-local/40_testes_leitura.sql', '-f', 'supabase/teste-local/50_testes_fase2.sql', '-f', 'supabase/teste-local/60_testes_central.sql', '-f', 'supabase/teste-local/70_testes_biblia_v02.sql', '-f', 'supabase/teste-local/80_testes_crm.sql', '-f', 'supabase/teste-local/90_testes_governanca.sql', '-f', 'supabase/teste-local/95_testes_planejamento.sql', '-f', 'supabase/teste-local/97_testes_funis.sql', '-f', 'supabase/teste-local/98_testes_performance.sql', '-f', 'supabase/teste-local/99_testes_recuperacao.sql', '-f', 'supabase/teste-local/100_testes_academia.sql', '-f', 'supabase/teste-local/101_testes_relacionamento.sql', '-f', 'supabase/teste-local/102_testes_captacao_publica.sql', '-f', 'supabase/teste-local/103_testes_documentos.sql', '-f', 'supabase/teste-local/104_testes_eventos_seletivo.sql', '-f', 'supabase/teste-local/105_testes_matricula_comunicacao.sql', '-f', 'supabase/teste-local/106_testes_aceite_reforcado.sql', '-f', 'supabase/teste-local/107_testes_bolsas.sql', '-f', 'supabase/teste-local/108_testes_rematricula.sql'], { encoding: 'utf8' });
 const linhas = (rt.stderr || '').split('\n').map((l) => l.replace(/^psql:[^ ]+ (NOTICE|ERROR):\s+/, (_, t) => (t === 'ERROR' ? 'ERRO: ' : ''))).filter(Boolean);
 for (const l of linhas) console.log(l);
 const okRls = linhas.filter((l) => l.startsWith('OK ') && !l.startsWith('OK  fim')).length;

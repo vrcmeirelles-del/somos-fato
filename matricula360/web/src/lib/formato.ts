@@ -8,6 +8,8 @@ export const dataHora = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
 
 const ROTULOS: Record<string, string> = {
+  // rematrícula (migração 24)
+  recusada: 'Recusada', academico: 'Acadêmico',
   // bolsas e financiamento (migração 23)
   prouni: 'ProUni', fies: 'FIES', financiamento_privado: 'Financiamento privado', financiamento_proprio: 'Financiamento próprio', convenio_empresa: 'Convênio com empresa',
   bolsa_institucional: 'Bolsa institucional', solicitada: 'Solicitada', indeferida: 'Indeferida', inscricao: 'Inscrição', pre_selecao: 'Pré-seleção',

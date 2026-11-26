@@ -2,7 +2,7 @@
 // não há página de lista fingindo módulo pronto (critério de aceite da Fase 2).
 import {
   Activity, BarChart3, CalendarClock, CalendarDays, ClipboardList, FileCheck2, Gauge, MessagesSquare, PlugZap, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HandCoins, HeartHandshake, KanbanSquare, KeyRound,
-  LayoutDashboard, Megaphone, RefreshCcw, ScrollText, Settings, ShieldCheck, Target, Users, Workflow, type LucideIcon,
+  LayoutDashboard, Megaphone, RefreshCcw, RotateCw, ScrollText, Settings, ShieldCheck, Target, Users, Workflow, type LucideIcon,
 } from 'lucide-react';
 import type { Papel } from './tipos';
 
@@ -46,6 +46,7 @@ export const AMBIENTES: Ambiente[] = [
   ] },
   { id: 'relacionamento', rotulo: 'Relacionamento Estudantil', icone: HeartHandshake, itens: [
     { rotulo: 'Permanência, indicações e embaixadores', rota: (i) => `/ies/${i}/relacionamento`, icone: HeartHandshake, papeis: ['gestor', 'reitoria', 'coordenador', 'secretaria'] },
+    { rotulo: 'Rematrícula', rota: (i) => `/ies/${i}/rematricula`, icone: RotateCw, papeis: ['gestor', 'secretaria', 'financeiro', 'coordenador', 'reitoria'] },
   ] },
   { id: 'governanca', rotulo: 'Governança Institucional', icone: ShieldCheck, itens: [
     { rotulo: 'Configurações e metas', rota: (i) => `/ies/${i}/configuracoes`, icone: Settings, papeis: ['gestor'] },

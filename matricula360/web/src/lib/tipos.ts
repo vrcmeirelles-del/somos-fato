@@ -242,3 +242,12 @@ export interface Bolsas { pode_gerir: boolean; pode_decidir: boolean; pode_solic
 export interface PortalBolsas { oportunidade_id: number; curso: string;
   programas: { id: number; nome: string; tipo: string; percentual_max: number; requisitos: string | null; documentos: string[]; validade_ate: string | null }[];
   solicitacoes: { id: number; programa: string; percentual: number; status: string; etapa_externa: string | null; justificativa: string | null }[] }
+
+// Rematrícula (migração 24)
+export interface AlunoRematricula { id: number; oportunidade_id: number; nome: string; curso: string; coorte: string; status: string; categoria: string | null;
+  motivo: string | null; origem: string | null; respondido_em: string | null; tratado_por: string | null; evidencia_hash: string | null }
+export interface CampanhaRematricula { id: number; periodo: string; abre_em: string; fecha_em: string; coortes: string[] | null; termo: string; meta_pct: number | null; status: string;
+  totais: { elegiveis: number; aceitas: number; recusadas: number; bloqueadas: number; pendentes: number; taxa_pct: number | null }; alunos: AlunoRematricula[] }
+export interface Rematricula { pode_gerir: boolean; pode_tratar: boolean; aviso: string; campanhas: CampanhaRematricula[] }
+export interface PortalRematricula { id: number; periodo: string; curso: string; abre_em: string; fecha_em: string; aberta_agora: boolean; termo: string; status: string;
+  bloqueio: string | null; respondido_em: string | null; evidencia_hash: string | null; exige_representante: boolean; cpf_no_aceite: boolean }

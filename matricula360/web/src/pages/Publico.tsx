@@ -8,7 +8,7 @@ import { moeda, rotulo } from '../lib/formato';
 import { useAcao, useCarregar } from '../lib/hooks';
 import { TextoContrato } from '../components/TextoContrato';
 import { baixarTexto, comprovanteHtml, nomeComprovante } from '../lib/contrato';
-import type { CodigoAceite, FormularioPublico as TForm, PortalDados, PortalMatricula } from '../lib/tipos';
+import type { CodigoAceite, FormularioPublico as TForm, PortalDados, PortalMatricula, PortalRematricula } from '../lib/tipos';
 
 // Moldura das páginas públicas: sem menu interno, sem dados da equipe.
 function Moldura({ instituicao, children }: { instituicao?: string; children: ReactNode }) {
@@ -100,6 +100,7 @@ export function Portal() {
       </Secao>
       <PortalDocumentos token={token} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
       <PortalSeletivo token={token} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
+      <PortalRematricula token={token} nome={d.nome} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
       <PortalBolsas token={token} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
       <PortalMatricula token={token} nome={d.nome} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
       <Secao titulo="Meus dados e privacidade (LGPD)">
@@ -190,6 +191,53 @@ function PortalSeletivo({ token, fazer, enviando, recarga }: { token: string; fa
       })}
       {d.eventos.length > 0 && <ul className="mt-2 text-sm">{d.eventos.map((ev, i) => <li key={i}>{ev.titulo} · {rotulo(ev.tipo)} · {new Date(ev.inicio).toLocaleString('pt-BR')}{ev.local ? ` · ${ev.local}` : ''} <Chip>{rotulo(ev.status)}</Chip></li>)}</ul>}
     </Secao>
+  );
+}
+
+function PortalRematricula({ token, nome, fazer, enviando, recarga }: { token: string; nome: string; fazer: Fazer; enviando: boolean; recarga: number }) {
+  const r = useCarregar(() => publico.rematricula(token).catch(() => []), [token, recarga]);
+  if (!r.dados?.length) return null;
+  return <Secao titulo="Rematrícula">{r.dados.map((x) => <ItemRematricula key={x.id} x={x} token={token} nome={nome} fazer={fazer} enviando={enviando} />)}</Secao>;
+}
+
+function ItemRematricula({ x, token, nome, fazer, enviando }: { x: PortalRematricula; token: string; nome: string; fazer: Fazer; enviando: boolean }) {
+  const [f, setF] = useState({ nome: '', cpf: '', li: false, concordo: false, motivo: '', rcpf: '', rdecl: false, recusar: false });
+  const data = (s: string) => new Date(`${s}T12:00:00`).toLocaleDateString('pt-BR');
+  const enviar = (resposta: 'aceita' | 'recusada') => void fazer(async () => (await publico.responderRematricula(token, x.id, { resposta, nome: f.nome, cpf: soDigitos(f.cpf),
+    li_termo: f.li, concordo: f.concordo, motivo: f.motivo, ...(x.exige_representante ? { responsavel: { cpf: soDigitos(f.rcpf), declaro: f.rdecl } } : {}) })).mensagem);
+  return (
+    <div className="mb-3 space-y-2 text-sm">
+      <p className="font-medium">{x.curso} · período {x.periodo} · {data(x.abre_em)} a {data(x.fecha_em)}</p>
+      {x.status === 'aceita' ? <p className="text-ok">Rematrícula confirmada{x.respondido_em ? ` em ${new Date(x.respondido_em).toLocaleString('pt-BR')}` : ''}.{x.evidencia_hash ? ` Código de verificação: ${x.evidencia_hash.slice(0, 16)}…` : ''}</p>
+        : x.status === 'recusada' ? <p className="text-suave">Você informou que não fará a rematrícula neste período.</p>
+        : x.status === 'bloqueada' ? <p className="rounded bg-amber-50 p-2 text-alerta">Há uma pendência {x.bloqueio === 'financeiro' ? 'financeira' : x.bloqueio === 'documental' ? 'de documentos' : x.bloqueio === 'academico' ? 'acadêmica' : ''}. Procure a secretaria para resolver e liberar a rematrícula.</p>
+        : !x.aberta_agora ? <p className="text-suave">Fora do prazo de rematrícula online. Fale com a secretaria.</p>
+        : (<>
+          <TextoContrato texto={x.termo} className="max-h-72 overflow-y-auto rounded-lg border border-linha bg-fundo p-3" />
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Campo rotulo={`Nome completo (${nome})`}><input className="campo" value={f.nome} onChange={(e) => setF({ ...f, nome: e.target.value })} /></Campo>
+            <Campo rotulo={x.cpf_no_aceite ? 'CPF (o mesmo da matrícula)' : 'CPF'}><input className="campo" inputMode="numeric" placeholder="000.000.000-00" value={f.cpf} onChange={(e) => setF({ ...f, cpf: e.target.value })} /></Campo>
+          </div>
+          {!f.recusar ? (<>
+            <label className="flex items-start gap-2"><input type="checkbox" checked={f.li} onChange={(e) => setF({ ...f, li: e.target.checked })} />Li o termo de rematrícula do período {x.periodo}.</label>
+            <label className="flex items-start gap-2"><input type="checkbox" checked={f.concordo} onChange={(e) => setF({ ...f, concordo: e.target.checked })} />Quero continuar o curso e concordo com o termo.</label>
+            {x.exige_representante && (
+              <fieldset className="grid gap-2 rounded-lg bg-amber-50 p-2 sm:grid-cols-2"><legend className="font-semibold">Representante legal (aluno menor de 18 anos)</legend>
+                <Campo rotulo="CPF do representante que assinou a matrícula"><input className="campo" inputMode="numeric" value={f.rcpf} onChange={(e) => setF({ ...f, rcpf: e.target.value })} /></Campo>
+                <label className="flex items-start gap-2"><input type="checkbox" checked={f.rdecl} onChange={(e) => setF({ ...f, rdecl: e.target.checked })} />Sou o representante legal e confirmo a rematrícula.</label>
+              </fieldset>)}
+            <div className="flex flex-wrap gap-2">
+              <button className="btn" disabled={enviando || !f.li || !f.concordo || !f.nome || soDigitos(f.cpf).length !== 11} onClick={() => enviar('aceita')}>Confirmar rematrícula</button>
+              <button className="btn btn-fantasma btn-peq" onClick={() => setF({ ...f, recusar: true })}>Não vou continuar</button>
+            </div></>
+          ) : (<>
+            <Campo rotulo="Conte o motivo (ajuda a instituição a melhorar)"><input className="campo" value={f.motivo} onChange={(e) => setF({ ...f, motivo: e.target.value })} /></Campo>
+            <div className="flex flex-wrap gap-2">
+              <button className="btn btn-sec" disabled={enviando || f.motivo.trim().length < 3 || !f.nome || soDigitos(f.cpf).length !== 11} onClick={() => enviar('recusada')}>Registrar que não vou continuar</button>
+              <button className="btn btn-fantasma btn-peq" onClick={() => setF({ ...f, recusar: false })}>Voltar</button>
+            </div></>)}
+        </>)}
+    </div>
   );
 }
 

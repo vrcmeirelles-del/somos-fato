@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula, Bolsas, PortalBolsas, DadosAceite, CodigoAceite, ComprovanteAceite,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula, Bolsas, PortalBolsas, Rematricula, PortalRematricula, DadosAceite, CodigoAceite, ComprovanteAceite,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -149,6 +149,10 @@ export const api = {
   decidirBolsa: (id: number, status: string, justificativa: string, percentual?: number) => c().rpc('rpc_decidir_bolsa', { p_id: id, p_status: status, p_justificativa: justificativa, p_percentual: percentual ?? null }),
   etapaBolsa: (id: number, etapa: string) => c().rpc('rpc_etapa_bolsa', { p_id: id, p_etapa: etapa }),
   cancelarBolsa: (id: number, motivo: string) => c().rpc('rpc_cancelar_bolsa', { p_id: id, p_motivo: motivo }),
+  rematricula: (ies: number) => c().rpc<Rematricula>('rpc_rematricula', { p_ies: ies }),
+  salvarCampanhaRematricula: (ies: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number }>('rpc_salvar_campanha_rematricula', { p_ies: ies, p_dados: dados, p_id: id ?? null }),
+  statusCampanhaRematricula: (id: number, status: string) => c().rpc<{ novos_elegiveis: number }>('rpc_status_campanha_rematricula', { p_id: id, p_status: status }),
+  tratarRematricula: (id: number, acao: string, motivo?: string, categoria?: string) => c().rpc('rpc_tratar_rematricula', { p_id: id, p_acao: acao, p_motivo: motivo ?? null, p_categoria: categoria ?? null }),
   comprovanteAceite: (op: number) => c().rpc<ComprovanteAceite>('rpc_comprovante_aceite', { p_op: op }),
   enviarDocumento: (op: number, tipo: string, nome: string, base64: string) => c().rpc('rpc_enviar_documento', { p_op: op, p_tipo: tipo, p_nome: nome, p_base64: base64 }),
   baixarDocumento: (doc: number) => c().rpc<{ nome_arquivo: string; mime: string; base64: string }>('rpc_baixar_documento', { p_documento: doc }),
@@ -215,6 +219,8 @@ export const publico = {
   bolsas: (t: string) => c().rpcPublico<PortalBolsas[]>('rpc_publico_portal_bolsas', { p_token: t }),
   solicitarBolsa: (t: string, op: number, programa: number, percentual: number, declaracao?: string) =>
     c().rpcPublico<{ mensagem: string }>('rpc_publico_solicitar_bolsa', { p_token: t, p_op: op, p_programa: programa, p_percentual: percentual, p_declaro: true, p_declaracao: declaracao ?? null }),
+  rematricula: (t: string) => c().rpcPublico<PortalRematricula[]>('rpc_publico_portal_rematricula', { p_token: t }),
+  responderRematricula: (t: string, id: number, dados: Record<string, unknown>) => c().rpcPublico<{ status: string; mensagem: string }>('rpc_publico_responder_rematricula', { p_token: t, p_id: id, p_dados: dados }),
   codigoAceite: (t: string, op: number) => c().rpcPublico<CodigoAceite>('rpc_publico_codigo_aceite', { p_token: t, p_op: op }),
   aceitar: (t: string, op: number, dados: DadosAceite) =>
     c().rpcPublico<{ aceito: boolean; erro?: string; tentativas_restantes?: number; proximo_passo?: string; evidencia_hash?: string }>('rpc_publico_aceitar_matricula', { p_token: t, p_op: op, p_dados: dados }),

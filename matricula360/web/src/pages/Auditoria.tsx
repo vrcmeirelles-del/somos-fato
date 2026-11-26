@@ -115,6 +115,11 @@ export function descreverEvento(e: Pick<EventoAuditoria, 'acao' | 'dados' | 'ent
     // Matrícula online, comunicação e integrações (migração 21)
     case 'contrato.publicar': return `Contrato de matrícula versão ${s('versao')} publicado.`;
     case 'matricula.aceite': return `Matrícula aceita no portal (contrato versão ${s('contrato_versao')})${d.menor_de_18 ? ' com representante legal' : ''}${d.confirmacao === 'simulacao' ? '; código em modo simulação' : ''}.`;
+    // Rematrícula (migração 24)
+    case 'rematricula.campanha': return `Campanha de rematrícula ${s('periodo')} ${d.novo ? 'criada' : 'atualizada'}.`;
+    case 'rematricula.status': return `Campanha de rematrícula ${s('periodo')} ${s('status') === 'aberta' ? `aberta (${s('novos_elegiveis')} novo(s) elegível(is))` : 'encerrada'}.`;
+    case 'rematricula.tratar': return `Rematrícula ${s('periodo')}: ${({ bloquear: `bloqueada (${rotulo(s('categoria')).toLowerCase()})`, desbloquear: 'desbloqueada', aceita: 'aceite presencial registrado', recusada: 'recusa presencial registrada' } as Record<string, string>)[s('acao')] ?? s('acao')}.`;
+    case 'rematricula.resposta': return `Rematrícula ${s('periodo')} ${s('resposta') === 'aceita' ? 'aceita' : 'recusada'} pelo aluno no portal.`;
     // Bolsas e financiamento (migração 23)
     case 'bolsa.programa': return `Programa de bolsa ${d.novo ? 'criado' : 'atualizado'}${s('nome') ? `: ${s('nome')}` : ''}.`;
     case 'bolsa.solicitar': return `Bolsa solicitada (${s('programa')}, ${s('percentual')}%) ${s('origem') === 'portal' ? 'pelo candidato no portal' : 'pela equipe'}.`;
