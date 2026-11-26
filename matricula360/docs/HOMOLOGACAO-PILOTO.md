@@ -349,6 +349,23 @@ Testes: banco local 603 aprovadas, com 45 novas em `106_testes_aceite_reforcado.
 
 **[Não verificado]** O enquadramento jurídico precisa ser validado pelo jurídico da instituição: MP 2.200-2/2001, art. 10, §2º; CDC, arts. 46, 49 e 54; Decreto 7.962/2013; CC, arts. 3º a 5º. Também falta definir o contrato que será publicado.
 
+## Ondas A, B e C (migrações 23 a 30) — 26/11/2026
+
+Arquivo para o SQL Editor: `supabase/APLICAR-023-A-030-NO-SQL-EDITOR.sql`, que reúne as oito migrações numa transação. Os arquivos individuais 023 a 030 também estão disponíveis. **Aplicação pendente.**
+
+| Verificação | Resultado |
+|---|---|
+| Banco local (PostgreSQL 16, migrações 1–30) | 791 verificações aprovadas, incluindo RLS e `search_path` em 100% |
+| Bateria remota gerada para o SQL Editor (tudo desfeito ao final) | 803 aprovadas, 0 falhas |
+| Arquivo 023–030 aplicado duas vezes sobre um banco que simula o remoto | sem erro |
+| Arquivos individuais 023–030 reaplicados | sem erro |
+| Consolidado 1–30 aplicado do zero | sem erro |
+| Testes unitários da interface | 24/24 |
+| Build de produção (`tsc -b && vite build`) | sem erro |
+| Acessibilidade (axe-core, WCAG 2.1 AA, 54 telas, computador e celular) | 1 regra violada (tabelas roláveis sem teclado), corrigida em todas as tabelas. As telas novas serão auditadas depois da aplicação |
+
+Ficam desligados (custo, fornecedor ou contrato): WhatsApp e SMS reais, cobrança, consulta a MEC ou bancos e cálculo de repasse a parceiros.
+
 ## Limpeza dos dados de teste (26/11/2026)
 
 Script: `supabase/LIMPAR-DADOS-TESTE.sql`. O usuário rodou a prévia e depois a execução no projeto `jbimijcvvekomovodfze`. A conferência foi feita depois, só com leitura, pelo login gestor.alfa:

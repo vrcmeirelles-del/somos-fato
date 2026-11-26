@@ -24,6 +24,7 @@ import { Seguranca } from './pages/Seguranca';
 import { CampoCaptacao } from './pages/Campo';
 import { ModoFeira } from './pages/ModoFeira';
 import { Pesquisas } from './pages/Pesquisas';
+import { Conversas, EgressosPagina, FinanceiroAlunos, Polos } from './pages/OndaC';
 import { Funis } from './pages/Funis';
 import { Intervencoes } from './pages/Intervencoes';
 import { Login } from './pages/Login';
@@ -93,6 +94,10 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
     <Routes>
       <Route path="/ies/:ies/inteligencia" element={<ExigeIes><Central /></ExigeIes>} />
       <Route path="/ies/:ies/performance" element={<ExigeIes><Performance /></ExigeIes>} />
+      <Route path="/ies/:ies/conversas" element={<ExigeIes><Conversas abrirDetalhe={abrir} /></ExigeIes>} />
+      <Route path="/ies/:ies/financeiro" element={<ExigeIes><FinanceiroAlunos abrirDetalhe={abrir} /></ExigeIes>} />
+      <Route path="/ies/:ies/polos" element={<ExigeIes><Polos /></ExigeIes>} />
+      <Route path="/ies/:ies/egressos" element={<ExigeIes><EgressosPagina abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/pesquisas" element={<ExigeIes><Pesquisas /></ExigeIes>} />
       <Route path="/ies/:ies/intervencoes" element={<ExigeIes><Intervencoes abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/planejamento" element={<ExigeIes><Planejamento /></ExigeIes>} />

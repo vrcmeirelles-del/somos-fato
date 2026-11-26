@@ -8,6 +8,8 @@ export const dataHora = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
 
 const ROTULOS: Record<string, string> = {
+  // onda C (migração 30)
+  sede: 'Sede', polo_proprio: 'Polo próprio', polo_parceiro: 'Polo parceiro', paga: 'Paga', negociada: 'Negociada', extensao: 'Extensão',
   // banca e aproveitamento (migração 29)
   aproveitada: 'Aproveitada', parcial: 'Parcial', nao_aproveitada: 'Não aproveitada', em_analise: 'Em análise',
   // pesquisas (migração 28)

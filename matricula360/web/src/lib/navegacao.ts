@@ -1,7 +1,7 @@
 // Mapa dos dez ambientes. Itens "planejado" aparecem desabilitados com a fase prevista:
 // não há página de lista fingindo módulo pronto (critério de aceite da Fase 2).
 import {
-  Activity, BarChart3, CalendarClock, CalendarDays, ClipboardList, FileCheck2, Gauge, MessagesSquare, PlugZap, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HandCoins, HeartHandshake, KanbanSquare, KeyRound,
+  Activity, BarChart3, Building, MessageCircleReply, Wallet, CalendarClock, CalendarDays, ClipboardList, FileCheck2, Gauge, MessagesSquare, PlugZap, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HandCoins, HeartHandshake, KanbanSquare, KeyRound,
   LayoutDashboard, LifeBuoy, Megaphone, RefreshCcw, RotateCw, School, ScrollText, Settings, ShieldCheck, Target, Users, Workflow, type LucideIcon,
 } from 'lucide-react';
 import type { Papel } from './tipos';
@@ -14,6 +14,7 @@ export const AMBIENTES: Ambiente[] = [
   { id: 'inteligencia', rotulo: 'Central de Inteligência', icone: LayoutDashboard, itens: [
     { rotulo: 'Painel executivo', rota: (i) => `/ies/${i}/inteligencia`, icone: BarChart3 },
     { rotulo: 'Performance e gargalos (MAIM)', rota: (i) => `/ies/${i}/performance`, icone: Gauge, papeis: ['gestor', 'reitoria', 'coordenador', 'comercial'] },
+    { rotulo: 'Polos e parceiros', rota: (i) => `/ies/${i}/polos`, icone: Building, papeis: ['gestor', 'reitoria', 'coordenador', 'comercial'] },
     { rotulo: 'Pesquisas e NPS', rota: (i) => `/ies/${i}/pesquisas`, icone: ClipboardList, papeis: ['gestor', 'reitoria', 'coordenador'] },
     { rotulo: 'Fila de intervenções (MAIM)', rota: (i) => `/ies/${i}/intervencoes`, icone: Activity, papeis: OPERACAO },
   ] },
@@ -29,6 +30,7 @@ export const AMBIENTES: Ambiente[] = [
   ] },
   { id: 'crm', rotulo: 'CRM Educacional', icone: Users, itens: [
     { rotulo: 'Pipeline (CRM)', rota: (i) => `/ies/${i}/crm`, icone: KanbanSquare },
+    { rotulo: 'Conversas aguardando resposta', rota: (i) => `/ies/${i}/conversas`, icone: MessageCircleReply, papeis: ['gestor', 'comercial'] },
     { rotulo: 'Agenda comercial', rota: (i) => `/ies/${i}/agenda`, icone: CalendarClock, papeis: ['gestor', 'comercial'] },
   ] },
   { id: 'funis', rotulo: 'Funis Comerciais', icone: Workflow, itens: [
@@ -49,6 +51,8 @@ export const AMBIENTES: Ambiente[] = [
   { id: 'relacionamento', rotulo: 'Relacionamento Estudantil', icone: HeartHandshake, itens: [
     { rotulo: 'Permanência, indicações e embaixadores', rota: (i) => `/ies/${i}/relacionamento`, icone: HeartHandshake, papeis: ['gestor', 'reitoria', 'coordenador', 'secretaria'] },
     { rotulo: 'Sucesso do aluno', rota: (i) => `/ies/${i}/sucesso`, icone: LifeBuoy, papeis: ['gestor', 'secretaria', 'coordenador', 'financeiro', 'reitoria'] },
+    { rotulo: 'Financeiro dos alunos', rota: (i) => `/ies/${i}/financeiro`, icone: Wallet, papeis: ['gestor', 'financeiro', 'secretaria', 'reitoria'] },
+    { rotulo: 'Egressos', rota: (i) => `/ies/${i}/egressos`, icone: GraduationCap, papeis: ['gestor', 'secretaria', 'comercial', 'coordenador', 'reitoria'] },
     { rotulo: 'Rematrícula', rota: (i) => `/ies/${i}/rematricula`, icone: RotateCw, papeis: ['gestor', 'secretaria', 'financeiro', 'coordenador', 'reitoria'] },
   ] },
   { id: 'governanca', rotulo: 'Governança Institucional', icone: ShieldCheck, itens: [

@@ -204,6 +204,35 @@ export function DocumentosNaFicha({ op, fazer, enviando }: { op: number; fazer: 
   );
 }
 
+// Mensagem recebida (L21): registra a entrada para a fila de respostas.
+export function RecebidaNaFicha({ op, fazer, enviando }: { op: number; fazer: Fazer; enviando: boolean }) {
+  const [tipo, setTipo] = useState('whatsapp_manual'); const [txt, setTxt] = useState(''); const [quando, setQuando] = useState('');
+  return (
+    <div className="mt-2 flex flex-wrap items-end gap-2">
+      <Campo rotulo="Mensagem recebida (cole o texto)" className="grow"><input className="campo" value={txt} onChange={(e) => setTxt(e.target.value)} /></Campo>
+      <Campo rotulo="Canal"><select className="campo" value={tipo} onChange={(e) => setTipo(e.target.value)}>{['whatsapp_manual', 'email_manual', 'ligacao'].map((t) => <option key={t} value={t}>{rotulo(t)}</option>)}</select></Campo>
+      <Campo rotulo="Recebida em (vazio = agora)"><input className="campo" type="datetime-local" value={quando} onChange={(e) => setQuando(e.target.value)} /></Campo>
+      <button className="btn btn-sec btn-peq" disabled={enviando || txt.trim().length < 3} onClick={() => void fazer(async () => {
+        await api.registrarRecebida(op, tipo, txt, quando ? new Date(quando).toISOString() : undefined); setTxt(''); setQuando(''); return 'Mensagem recebida registrada: entra na fila até a resposta ser registrada.'; })}>Registrar recebida</button>
+    </div>
+  );
+}
+
+// Egresso (L20): conclusão do curso com consentimento de contato.
+export function EgressoNaFicha({ op, fazer, enviando }: { op: number; fazer: Fazer; enviando: boolean }) {
+  const [data, setData] = useState(''); const [cons, setCons] = useState(false); const [int, setInt] = useState<string[]>([]);
+  return (
+    <details className="mt-2 text-sm"><summary className="cursor-pointer">Registrar conclusão do curso (egresso)</summary>
+      <div className="mt-1 flex flex-wrap items-end gap-2">
+        <Campo rotulo="Data de conclusão"><input className="campo" type="date" value={data} onChange={(e) => setData(e.target.value)} /></Campo>
+        {['pos_graduacao', 'segunda_graduacao', 'extensao'].map((i) => <label key={i} className="flex items-center gap-1"><input type="checkbox" checked={int.includes(i)} onChange={(e) => setInt(e.target.checked ? [...int, i] : int.filter((x) => x !== i))} />{rotulo(i)}</label>)}
+        <label className="flex items-center gap-1"><input type="checkbox" checked={cons} onChange={(e) => setCons(e.target.checked)} />Egresso consentiu receber ofertas</label>
+        <button className="btn btn-sec btn-peq" disabled={enviando || !data} onClick={() => void fazer(async () => { await api.registrarEgresso(op, data, cons, int); return 'Conclusão registrada.'; })}>Registrar</button>
+      </div>
+    </details>
+  );
+}
+
 // Aproveitamento de estudos (L19): transferência, segunda graduação e reingresso.
 export function AproveitamentoNaFicha({ op, fazer, enviando }: { op: number; fazer: Fazer; enviando: boolean }) {
   const [recarga, setRecarga] = useState(0);
@@ -264,6 +293,7 @@ export function CasosNaFicha({ op, fazer, enviando }: { op: number; fazer: Fazer
   return (
     <section aria-label="Sucesso do aluno" className="mt-4 rounded-xl border border-linha p-3">
       <H icone={LifeBuoy}>Sucesso do aluno</H>
+      {d.pode_atender && <EgressoNaFicha op={op} fazer={f2} enviando={enviando} />}
       <div className="space-y-2">{d.casos.map((c) => <CartaoCaso key={c.id} c={c} d={d} fazer={f2} enviando={enviando} />)}</div>
       {d.pode_atender && (
         <div className="mt-2 flex flex-wrap items-end gap-2">
@@ -333,6 +363,7 @@ export function AcoesCandidato({ op, ies, fazer, enviando }: { op: number; ies: 
   return (
     <section aria-label="Contato com o candidato" className="mt-4 rounded-xl border border-linha p-3">
       <H icone={Link2}>Portal e mensagens</H>
+      <RecebidaNaFicha op={op} fazer={fazer} enviando={enviando} />
       <div className="flex flex-wrap items-end gap-2">
         <button className="btn btn-sec btn-peq" disabled={enviando} onClick={() => { if (window.confirm('Gerar novo link do portal? O link anterior deixa de funcionar.'))
           void fazer(async () => { const r = await api.gerarAcessoPortal(op); setLink(`${location.origin}/portal#${r.token}`); return `Link gerado (válido por ${r.validade_dias} dias). Envie você mesmo ao candidato.`; }); }}>Gerar link do portal</button>

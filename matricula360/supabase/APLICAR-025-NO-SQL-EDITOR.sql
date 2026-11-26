@@ -1,5 +1,5 @@
 -- Matrícula 360° — migração 25 (Onda A, L15): sucesso do aluno — casos, trilhas de intervenção e agendamento.
--- Para o SQL Editor do projeto jbimijcvvekomovodfze. Requer as migrações anteriores aplicadas (aplique na ordem 023 → 024 → 025 → 026).
+-- Para o SQL Editor do projeto jbimijcvvekomovodfze. Requer as migrações anteriores aplicadas (aplique na ordem 023 → 030).
 -- CONFIRA o projeto na URL antes de executar. Idempotente. Transação única. A última linha deve ser commit;
 begin;
 -- Matrícula 360° — migração 25 (Onda A, L15): sucesso do aluno — casos, trilhas de intervenção e agendamento.

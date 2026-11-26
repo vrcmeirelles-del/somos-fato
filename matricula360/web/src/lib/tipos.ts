@@ -285,3 +285,13 @@ export interface DisciplinaAproveitamento { nome: string; carga: number; nota?: 
 export interface Aproveitamento { aplicavel: boolean; pode_analisar: boolean;
   analise: { instituicao_origem: string; curso_origem: string; disciplinas: DisciplinaAproveitamento[]; status: string; carga_aproveitada: number; semestre_sugerido: number | null;
     parecer: string | null; analisado_por: string | null; concluida_em: string | null } | null }
+
+// Onda C (migração 30)
+export interface Conversas { aviso: string; sla_horas: number; fila: { oportunidade_id: number; nome: string; curso: string; etapa: string; responsavel: string | null; tipo: string; texto: string; recebida_em: string; horas: number }[] }
+export interface Financeiro { pode_gerir: boolean; dias_atraso: number; aviso: string;
+  indicadores: { alunos: number; inadimplentes: number; inadimplencia_pct: number | null; em_aberto_centavos: number; negociadas: number };
+  pendencias: { id: number; oportunidade_id: number; nome: string; curso: string; competencia: string; valor_centavos: number; vencimento: string; situacao: string; acordo: string | null; dias_atraso: number; rematricula_pendente: boolean }[] }
+export interface Polos { pode_gerir: boolean; aviso: string; unidades: { id: number; nome: string; tipo: string; parceiro: string | null; regra_repasse: string | null; meta_ingressos: number | null;
+  leads: number; inscritos: number; matriculas: number; ingressos: number; conversao_pct: number | null; receita_mensal_centavos: number }[] }
+export interface Egressos { pode_gerir: boolean; pode_ofertar: boolean; egressos: { id: number; oportunidade_id: number; nome: string; curso: string; conclusao: string; consentimento: boolean;
+  interesses: string[]; observacao: string | null; ofertas: number; ofertas_convertidas: number }[] }

@@ -115,6 +115,14 @@ export function descreverEvento(e: Pick<EventoAuditoria, 'acao' | 'dados' | 'ent
     // Matrícula online, comunicação e integrações (migração 21)
     case 'contrato.publicar': return `Contrato de matrícula versão ${s('versao')} publicado.`;
     case 'matricula.aceite': return `Matrícula aceita no portal (contrato versão ${s('contrato_versao')})${d.menor_de_18 ? ' com representante legal' : ''}${d.confirmacao === 'simulacao' ? '; código em modo simulação' : ''}.`;
+    // Onda C (migração 30)
+    case 'conversa.recebida': return `Mensagem recebida registrada (${rotulo(s('tipo')).toLowerCase()}).`;
+    case 'financeiro.importar': return `Pendências financeiras importadas: ${s('importadas')} linha(s), ${s('rejeitadas')} rejeitada(s).`;
+    case 'financeiro.negociar': return `Pendência ${s('competencia')}: ${rotulo(s('situacao')).toLowerCase()}.`;
+    case 'financeiro.bloquear_lote': return `Rematrícula ${s('periodo')}: ${s('bloqueadas')} bloqueada(s) por pendência acima de ${s('dias')} dias.`;
+    case 'polo.salvar': return `Unidade atualizada${s('tipo') ? `: ${rotulo(s('tipo')).toLowerCase()}` : ''}${s('parceiro') ? ` (${s('parceiro')})` : ''}.`;
+    case 'egresso.registrar': return `Conclusão de curso registrada${d.consentimento ? ', com consentimento de contato' : ', sem consentimento de contato'}.`;
+    case 'egresso.ofertar': return `Oferta de ${rotulo(s('forma')).toLowerCase()} a egresso${d.duplicada ? ' (oportunidade já existia)' : ''}.`;
     // Banca e aproveitamento (migração 29)
     case 'seletivo.banca': return `Banca configurada: ${s('criterios')} critério(s), ${s('avaliadores')} avaliador(es)${s('divergencia') ? `, divergência máxima ${s('divergencia')}` : ''}.`;
     case 'seletivo.banca_avaliar': return `Avaliação da banca registrada (nota ${s('nota')}).`;

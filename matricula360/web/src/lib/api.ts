@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula, Bolsas, PortalBolsas, Rematricula, PortalRematricula, Casos, Campo, LeadCampo, Pesquisas, PortalPesquisa, CriterioBanca, Banca, Aproveitamento, DisciplinaAproveitamento, DadosAceite, CodigoAceite, ComprovanteAceite,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula, Bolsas, PortalBolsas, Rematricula, PortalRematricula, Casos, Campo, LeadCampo, Pesquisas, PortalPesquisa, CriterioBanca, Banca, Aproveitamento, DisciplinaAproveitamento, Conversas, Financeiro, Polos, Egressos, DadosAceite, CodigoAceite, ComprovanteAceite,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -191,6 +191,18 @@ export const api = {
   avaliarBanca: (candidatura: number, notas: Record<string, number>, parecer: string) => c().rpc('rpc_avaliar_banca', { p_candidatura: candidatura, p_notas: notas, p_parecer: parecer }),
   aproveitamento: (op: number) => c().rpc<Aproveitamento>('rpc_aproveitamento', { p_op: op }),
   salvarAproveitamento: (op: number, dados: Record<string, unknown>, concluir = false) => c().rpc<{ carga_aproveitada: number; status: string }>('rpc_salvar_aproveitamento', { p_op: op, p_dados: dados, p_concluir: concluir }),
+  conversas: (ies: number) => c().rpc<Conversas>('rpc_conversas', { p_ies: ies }),
+  registrarRecebida: (op: number, tipo: string, texto: string, quando?: string) => c().rpc('rpc_registrar_recebida', { p_op: op, p_tipo: tipo, p_texto: texto, p_recebida_em: quando ?? null }),
+  financeiro: (ies: number, dias = 30) => c().rpc<Financeiro>('rpc_financeiro', { p_ies: ies, p_dias: dias }),
+  importarPendencias: (ies: number, linhas: Record<string, string>[]) => c().rpc<{ importadas: number; rejeitadas: { linha: number; motivo: string }[] }>('rpc_importar_pendencias', { p_ies: ies, p_linhas: linhas }),
+  negociarPendencia: (id: number, situacao: string, acordo: string) => c().rpc('rpc_negociar_pendencia', { p_id: id, p_situacao: situacao, p_acordo: acordo }),
+  bloquearInadimplentes: (campanha: number, dias: number) => c().rpc<{ bloqueadas: number }>('rpc_bloquear_inadimplentes', { p_campanha: campanha, p_dias: dias }),
+  polos: (ies: number, coorte?: string) => c().rpc<Polos>('rpc_polos', { p_ies: ies, p_coorte: coorte ?? null }),
+  salvarPolo: (ies: number, campus: number, dados: Record<string, unknown>) => c().rpc('rpc_salvar_polo', { p_ies: ies, p_campus: campus, p_dados: dados }),
+  egressos: (ies: number) => c().rpc<Egressos>('rpc_egressos', { p_ies: ies }),
+  registrarEgresso: (op: number, conclusao: string, consentimento: boolean, interesses: string[], obs?: string) =>
+    c().rpc('rpc_registrar_egresso', { p_op: op, p_conclusao: conclusao, p_consentimento: consentimento, p_interesses: interesses, p_observacao: obs ?? null }),
+  ofertarEgresso: (egresso: number, curso: number, coorte: string, forma: string) => c().rpc<{ id: number; duplicada: boolean }>('rpc_ofertar_egresso', { p_egresso: egresso, p_curso: curso, p_coorte: coorte, p_forma: forma }),
   comprovanteAceite: (op: number) => c().rpc<ComprovanteAceite>('rpc_comprovante_aceite', { p_op: op }),
   enviarDocumento: (op: number, tipo: string, nome: string, base64: string) => c().rpc('rpc_enviar_documento', { p_op: op, p_tipo: tipo, p_nome: nome, p_base64: base64 }),
   baixarDocumento: (doc: number) => c().rpc<{ nome_arquivo: string; mime: string; base64: string }>('rpc_baixar_documento', { p_documento: doc }),

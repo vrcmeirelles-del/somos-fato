@@ -1819,6 +1819,257 @@ end $$ $x$;
   execute $x$ select teste.ok((select count(*) = 2 from public.auditoria where acao = 'seguranca.2fa'), 'mudanças de exigência auditadas') $x$;
   execute $x$ delete from auth.mfa_factors $x$;
   execute $x$ reset role $x$;
+  execute $x$ create temp table cmp (chave text primary key, v text) $x$;
+  execute $x$ grant all on cmp to anon, authenticated $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_escola(1, '{"nome":"Escola X","rede":"publica","cidade":"Campo Grande","uf":"MS"}')$q$, '42501', 'secretaria não cadastra escola') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_escola(1, '{"nome":"Escola X","rede":"publica","cidade":"Campo Grande","uf":"ms1"}')$q$, '23514', 'UF inválida recusada') $x$;
+  execute $x$ insert into cmp select 'esc', public.rpc_salvar_escola(1, '{"nome":"Escola Estadual Sintética","rede":"publica","cidade":"Campo Grande","uf":"ms","inep":"50000001"}')->>'id' $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_escola(1, '{"nome":"Escola Estadual Sintética","rede":"publica","cidade":"Campo Grande","uf":"MS"}')$q$, '22023', 'escola repetida na mesma cidade recusada') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_visita(1, '{"titulo":"Feira","tipo":"feira","data":"2026-12-01","campanha":"nao-existe"}')$q$, '22023', 'campanha inexistente recusada') $x$;
+  execute $x$ insert into cmp select 'vis', public.rpc_salvar_visita(1, jsonb_build_object('escola_id', (select v from cmp where chave = 'esc'), 'titulo', 'Palestra 3º ano', 'tipo', 'palestra',
+  'data', current_date, 'publico_estimado', 120, 'codigo', 'eesint-2026'))->>'id' $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_visita(1, '{"titulo":"Outra","tipo":"visita","data":"2026-12-01","codigo":"eesint-2026"}')$q$, '22023', 'código de visita repetido recusado') $x$;
+  execute $x$ select teste.ok((select (r->>'recebidos')::int = 2 and (r->>'contatos_existentes')::int = 1 and jsonb_array_length(r->'rejeitados') = 2
+                 from (select public.rpc_captar_campo((select v::bigint from cmp where chave = 'vis'), jsonb_build_array(
+    jsonb_build_object('id_local','11111111-1111-4111-8111-111111111111','nome','Aluna Feira Um','telefone','67999990001','curso_id',1,'coorte','2027.1',
+      'consentimento',true,'consentimento_hash',repeat('a',64),'capturado_em', now() - interval '2 hours'),
+    jsonb_build_object('id_local','22222222-2222-4222-8222-222222222222','nome','Ingressante Um','email','ingressante.um@exemplo.invalid','curso_id',1,'coorte','2027.1',
+      'consentimento',true,'consentimento_hash',repeat('a',64)),
+    jsonb_build_object('id_local','33333333-3333-4333-8333-333333333333','nome','Sem Consentimento','telefone','67999990003','curso_id',1,'coorte','2027.1','consentimento',false),
+    jsonb_build_object('id_local','44444444-4444-4444-8444-444444444444','nome','Sem Contato','curso_id',1,'coorte','2027.1','consentimento',true,'consentimento_hash',repeat('a',64))
+  )) r) x), 'lote: 2 recebidos (1 contato já existente), 2 rejeitados com motivo') $x$;
+  execute $x$ select teste.ok((select (r->>'recebidos')::int = 0 and (r->>'ja_sincronizados')::int = 1
+                 from (select public.rpc_captar_campo((select v::bigint from cmp where chave = 'vis'), jsonb_build_array(
+    jsonb_build_object('id_local','11111111-1111-4111-8111-111111111111','nome','Aluna Feira Um','telefone','67999990001','curso_id',1,'coorte','2027.1','consentimento',true,'consentimento_hash',repeat('a',64))
+  )) r) x), 'reenvio do mesmo cadastro (sincronização repetida) é ignorado') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select o.visita_id = (select v::bigint from cmp where chave = 'vis') and o.forma_ingresso = 'visita_escolar' and o.responsavel_id = teste.id('comercial_a') and p.base_legal = 'consentimento'
+                 from public.oportunidades o join public.pessoas p on p.id = o.pessoa_id where p.telefone = '67999990001'), 'lead criado com a visita, forma de ingresso e responsável') $x$;
+  execute $x$ select teste.ok((select visita_id is null from public.oportunidades where id = (select v from teste.var where k = 'ing1')), 'contato existente não muda de origem') $x$;
+  execute $x$ select teste.ok((select status = 'realizada' from public.visitas_escola where id = (select v::bigint from cmp where chave = 'vis')), 'visita com captação passa a realizada') $x$;
+  execute $x$ select teste.ok((select capturado_em < sincronizado_em - interval '1 hour' from public.captacoes_campo where id_local = '11111111-1111-4111-8111-111111111111'), 'guarda a hora da captura e a da sincronização') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.ok((select (v->>'leads')::int >= 1 and (v->>'capturados')::int = 2 and v->>'escola' like 'Escola Estadual Sintética%'
+                 from jsonb_array_elements(public.rpc_campo(1)->'visitas') v where (v->>'id')::bigint = (select v::bigint from cmp where chave = 'vis')), 'painel por visita') $x$;
+  execute $x$ select teste.ok((select (e->>'visitas')::int = 1 and (e->>'leads')::int >= 1 from jsonb_array_elements(public.rpc_campo(1)->'escolas') e where (e->>'id')::bigint = (select v::bigint from cmp where chave = 'esc')),
+  'painel por escola') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_b')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_captar_campo((select v::bigint from cmp where chave = 'vis'), '[]')$q$, 'P0002', 'outra IES não sincroniza na visita') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ insert into cmp select 'qr_tok', public.rpc_publico_inscrever('vestibular-2027', '{"nome":"Aluna do QR","email":"aluna.qr@exemplo.invalid","curso_id":1,"aceite":true,"versao_consentimento":2,"tempo_ms":12000}'::jsonb)->>'portal' $x$;
+  execute $x$ select teste.ok((public.rpc_publico_vincular_visita((select v from cmp where chave = 'qr_tok'), 'EESINT-2026')->>'vinculadas')::int = 1, 'QR: inscrição vinculada à visita') $x$;
+  execute $x$ select teste.ok((public.rpc_publico_vincular_visita((select v from cmp where chave = 'qr_tok'), 'eesint-2026')->>'vinculadas')::int = 0, 'QR: vínculo não se repete') $x$;
+  execute $x$ select teste.ok((public.rpc_publico_vincular_visita((select v from cmp where chave = 'qr_tok'), 'nao-existe')->>'vinculadas')::int = 0, 'QR: código inexistente não vincula') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select o.visita_id = (select v::bigint from cmp where chave = 'vis') from public.oportunidades o join public.pessoas p on p.id = o.pessoa_id where p.email = 'aluna.qr@exemplo.invalid'),
+  'oportunidade do QR atribuída à visita') $x$;
+  execute $x$ select teste.ok((select count(*) >= 5 from public.auditoria where acao like 'campo.%'), 'captação em campo auditada') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ create temp table psq (chave text primary key, v text) $x$;
+  execute $x$ create temp table psq_tok (op bigint primary key, tok text) $x$;
+  execute $x$ grant all on psq, psq_tok to anon, authenticated $x$;
+  execute $x$ with alvo as (select id from (select distinct on (o.pessoa_id) o.id from public.oportunidades o join public.pessoas p on p.id = o.pessoa_id
+  where o.ies_id = 1 and o.etapa in ('novo','contato') and p.anonimizada_em is null and (select count(*) from public.oportunidades x where x.pessoa_id = o.pessoa_id) = 1 order by o.pessoa_id, o.id) z order by id desc limit 6)
+update public.oportunidades set etapa = 'perdido', motivo_perda = 'Escolheu outra instituição' where id in (select id from alvo) $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('coord_dir_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_pesquisa(1, '{"nome":"X","publico":"perdido","perguntas":[{"id":"p1","tipo":"nps","texto":"Recomendaria?"}]}')$q$, '42501', 'coordenação não cria pesquisa') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_pesquisa(1, '{"nome":"Ruim","publico":"perdido","perguntas":[{"id":"p1","tipo":"nps","texto":"A?"},{"id":"p1","tipo":"texto","texto":"Repetida"}]}')$q$, '22023', 'pergunta com id repetido recusada') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_pesquisa(1, '{"nome":"Ruim","publico":"perdido","perguntas":[{"id":"p1","tipo":"opcao","texto":"Escolha uma","opcoes":["só uma"]}]}')$q$, '22023', 'opção com menos de 2 alternativas recusada') $x$;
+  execute $x$ insert into psq select 'q', public.rpc_salvar_pesquisa(1, '{"nome":"Por que não nos escolheu","publico":"perdido","min_respostas":5,"perguntas":[
+  {"id":"motivo","tipo":"opcao","texto":"Principal motivo","opcoes":["Preço","Horário","Distância","Outra instituição","Desisti de estudar agora"]},
+  {"id":"nps","tipo":"nps","texto":"De 0 a 10, quanto recomendaria nosso atendimento?"},
+  {"id":"atend","tipo":"escala5","texto":"Como avalia o atendimento?"},
+  {"id":"coment","tipo":"texto","texto":"O que poderíamos ter feito diferente?"}]}')->>'id' $x$;
+  execute $x$ insert into psq_tok select o.id, public.rpc_gerar_acesso_portal(o.id)->>'token' from public.oportunidades o where o.ies_id = 1 and o.etapa = 'perdido' and o.motivo_perda = 'Escolheu outra instituição' $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.ok((select count(*) = 0 from psq_tok t, jsonb_array_elements(public.rpc_publico_portal_pesquisas(t.tok)) x), 'pesquisa em rascunho não aparece no portal') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select teste.ok((public.rpc_salvar_pesquisa(1, '{"status":"ativa"}', (select v::bigint from psq where chave = 'q'))->>'id') is not null, 'pesquisa ativada') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_pesquisa(1, '{"nome":"Novo nome"}', (select v::bigint from psq where chave = 'q'))$q$, '22023', 'pesquisa ativa não muda perguntas') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.ok((select count(*) = 1 from jsonb_array_elements(public.rpc_publico_portal_pesquisas((select tok from psq_tok order by op limit 1)))), 'perdido vê a pesquisa no portal') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_responder_pesquisa((select tok from psq_tok order by op limit 1), (select v::bigint from psq where chave = 'q'), (select op from psq_tok order by op limit 1), '{"nps":"11"}')$q$, '22023', 'NPS acima de 10 recusado') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_responder_pesquisa((select tok from psq_tok order by op limit 1), (select v::bigint from psq where chave = 'q'), (select op from psq_tok order by op limit 1), '{"motivo":"Inventado"}')$q$, '22023', 'opção inexistente recusada') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_responder_pesquisa((select tok from psq_tok order by op limit 1), (select v::bigint from psq where chave = 'q'), (select op from psq_tok order by op limit 1), '{}')$q$, '22023', 'resposta vazia recusada') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_responder_pesquisa((select tok from psq_tok order by op limit 1), (select v::bigint from psq where chave = 'q'), (select v from teste.var where k = 'ing1'), '{"nps":"9"}')$q$, 'P0002', 'não responde por oportunidade de outra pessoa') $x$;
+  execute $x$ select public.rpc_publico_responder_pesquisa(t.tok, (select v::bigint from psq where chave = 'q'), t.op,
+  jsonb_build_object('motivo', (array['Preço','Preço','Horário','Outra instituição'])[n], 'nps', (array['10','9','3','6'])[n], 'atend', '4', 'coment', 'Comentário sintético ' || n))
+  from (select op, tok, row_number() over (order by op) n from psq_tok) t where n <= 4 $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_responder_pesquisa((select tok from psq_tok order by op limit 1), (select v::bigint from psq where chave = 'q'), (select op from psq_tok order by op limit 1), '{"nps":"9"}')$q$, '22023', 'resposta repetida recusada') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select teste.ok((select r->>'motivo' like 'N/D%' and not (r->>'suficiente')::boolean and r->'por_pergunta' is null and (r->>'respostas')::int = 4
+                 from (select q->'resultado' r from jsonb_array_elements(public.rpc_pesquisas(1)->'pesquisas') q where (q->>'id')::bigint = (select v::bigint from psq where chave = 'q')) x),
+  'abaixo do mínimo: resultados N/D (protege quem respondeu)') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select public.rpc_publico_responder_pesquisa(t.tok, (select v::bigint from psq where chave = 'q'), t.op, '{"motivo":"Distância","nps":"8","coment":"Muito longe de casa"}')
+  from (select op, tok, row_number() over (order by op) n from psq_tok) t where n = 5 $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('reitoria_a')::text, false) $x$;
+  execute $x$ select teste.ok((select (r->>'suficiente')::boolean and (r->>'nps')::int = 0 and (r->'por_pergunta'->'motivo'->>'Preço')::int = 2
+                   and jsonb_array_length(r->'por_pergunta'->'coment') = 5 and (r->>'elegiveis')::int >= 6 and r::text not like '%@%'
+                 from (select q->'resultado' r from jsonb_array_elements(public.rpc_pesquisas(1)->'pesquisas') q where (q->>'id')::bigint = (select v::bigint from psq where chave = 'q')) x),
+  'com o mínimo: NPS (2 promotores, 2 detratores em 5 = 0), distribuição e comentários sem identificação') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_pesquisas(1)$q$, '42501', 'comercial não vê resultados de pesquisa') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.ok((public.rpc_salvar_pesquisa(1, '{"status":"encerrada"}', (select v::bigint from psq where chave = 'q'))->>'id') is not null, 'pesquisa encerrada') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.ok((select count(*) = 0 from psq_tok t, jsonb_array_elements(public.rpc_publico_portal_pesquisas(t.tok)) x), 'encerrada some do portal') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ reset role $x$;
+  execute $x$ create temp table bca (chave text primary key, v text) $x$;
+  execute $x$ grant all on bca to anon, authenticated $x$;
+  execute $x$ insert into public.processos_seletivos(ies_id, coorte, nome, tipo, inscricoes_ate, criado_por) values (1, '2027.1', 'Análise curricular com banca', 'analise_curricular', current_date + 10, teste.id('gestor_a')) $x$;
+  execute $x$ insert into bca select 'proc', id::text from public.processos_seletivos where nome = 'Análise curricular com banca' $x$;
+  execute $x$ insert into bca select 'op', o.id::text from public.oportunidades o join public.pessoas p on p.id = o.pessoa_id where o.ies_id = 1 and o.curso_id = 1 and o.etapa in ('novo','contato','inscrito') and p.anonimizada_em is null order by o.id limit 1 $x$;
+  execute $x$ insert into public.candidaturas(ies_id, processo_id, oportunidade_id) values (1, (select v::bigint from bca where chave = 'proc'), (select v::bigint from bca where chave = 'op')) $x$;
+  execute $x$ insert into bca select 'cand', id::text from public.candidaturas where processo_id = (select v::bigint from bca where chave = 'proc') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_avaliar_banca((select v::bigint from bca where chave = 'cand'), '{"a":5}', 'Parecer sem banca configurada')$q$, '22023', 'sem banca configurada: recusado') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_configurar_banca((select v::bigint from bca where chave = 'proc'), '[{"id":"hist","texto":"Histórico","peso":0}]', 2)$q$, '22023', 'peso zero recusado') $x$;
+  execute $x$ select teste.ok((public.rpc_configurar_banca((select v::bigint from bca where chave = 'proc'),
+  '[{"id":"hist","texto":"Histórico escolar","peso":2},{"id":"carta","texto":"Carta de intenção","peso":1}]', 2, 150)->>'soma_pesos')::numeric = 3, 'banca: 2 critérios, 2 avaliadores, divergência máxima 150') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_avaliar_candidatura((select v::bigint from bca where chave = 'cand'), '{"resultado":"aprovado","justificativa":"Aprovado sem banca"}')$q$, '22023', 'decidir antes da banca: recusado') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_avaliar_banca((select v::bigint from bca where chave = 'cand'), '{"hist":11,"carta":5}', 'Nota fora da escala de zero a dez')$q$, '22023', 'nota acima de 10 recusada') $x$;
+  execute $x$ select teste.ok((public.rpc_avaliar_banca((select v::bigint from bca where chave = 'cand'), '{"hist":9,"carta":9}', 'Histórico consistente e carta clara')->>'nota_final')::numeric = 900, 'avaliador 1: nota ponderada 900') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_avaliar_banca((select v::bigint from bca where chave = 'cand'), '{"hist":1,"carta":1}', 'Tentando avaliar duas vezes')$q$, '22023', 'mesmo avaliador não avalia duas vezes') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false) $x$;
+  execute $x$ select teste.ok((select r->'avaliacoes' = 'null'::jsonb and (r->'situacao'->>'avaliacoes')::int = 1 and not (r->>'ja_avaliei')::boolean from (select public.rpc_banca((select v::bigint from bca where chave = 'cand')) r) x),
+  'avaliação às cegas: antes da própria nota, não vê as dos outros') $x$;
+  execute $x$ select teste.ok((select (r->'banca'->>'exige_mais_um')::boolean and not (r->'banca'->>'completa')::boolean
+                 from (select public.rpc_avaliar_banca((select v::bigint from bca where chave = 'cand'), '{"hist":5,"carta":6}', 'Histórico mediano, carta genérica') r) x),
+  'avaliador 2 diverge 333 pontos (> 150): exige terceiro avaliador') $x$;
+  execute $x$ select teste.ok((select jsonb_array_length(r->'avaliacoes') = 2 from (select public.rpc_banca((select v::bigint from bca where chave = 'cand')) r) x), 'depois de avaliar, vê as notas da banca') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_avaliar_candidatura((select v::bigint from bca where chave = 'cand'), '{"resultado":"aprovado","justificativa":"Média suficiente"}')$q$, '22023', 'divergência sem terceiro avaliador: decisão recusada') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('coord_dir_a')::text, false) $x$;
+  execute $x$ select public.rpc_avaliar_banca((select v::bigint from bca where chave = 'cand'), '{"hist":8,"carta":7}', 'Terceira leitura: bom histórico') $x$;
+  execute $x$ select teste.ok(((public.rpc_avaliar_candidatura((select v::bigint from bca where chave = 'cand'), '{"resultado":"aprovado","justificativa":"Média da banca 711 com terceira leitura"}'))->>'id') is not null,
+  'banca completa: decisão humana registrada') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_configurar_banca((select v::bigint from bca where chave = 'proc'), '[{"id":"x","texto":"Outro","peso":1}]', 1)$q$, '42501', 'coordenação não muda a rubrica') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_configurar_banca((select v::bigint from bca where chave = 'proc'), '[{"id":"x","texto":"Outro","peso":1}]', 1)$q$, '22023', 'rubrica não muda depois de a banca avaliar') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ update public.oportunidades set forma_ingresso = 'transferencia' where id = (select v::bigint from bca where chave = 'op') $x$;
+  execute $x$ insert into bca select 'op_vest', o.id::text from public.oportunidades o where o.ies_id = 1 and o.curso_id = 1 and o.forma_ingresso = 'vestibular' and o.etapa in ('novo','contato','inscrito') order by o.id limit 1 $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('coord_dir_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_aproveitamento((select v::bigint from bca where chave = 'op_vest'), '{"instituicao_origem":"Universidade X","curso_origem":"Direito"}')$q$, '22023', 'aproveitamento só para transferência e afins') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_aproveitamento((select v::bigint from bca where chave = 'op'), '{"instituicao_origem":"Universidade Sintética","curso_origem":"Direito",
+  "disciplinas":[{"nome":"Teoria Geral do Estado","carga":60,"situacao":"aproveitada"}]}')$q$, '22023', 'aproveitada sem disciplina equivalente: recusado') $x$;
+  execute $x$ select teste.ok((public.rpc_salvar_aproveitamento((select v::bigint from bca where chave = 'op'), '{"instituicao_origem":"Universidade Sintética","curso_origem":"Direito",
+  "disciplinas":[{"nome":"Teoria Geral do Estado","carga":60,"nota":"8,5","situacao":"aproveitada","equivalente":"Ciência Política"},
+                 {"nome":"Introdução ao Direito","carga":80,"situacao":"parcial","equivalente":"Introdução ao Estudo do Direito","carga_aproveitada":40},
+                 {"nome":"Economia","carga":60,"situacao":"pendente"}]}')->>'carga_aproveitada')::int = 100, 'rascunho da análise: 100 h aproveitadas') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_aproveitamento((select v::bigint from bca where chave = 'op'), '{"parecer":"Parecer completo da coordenação","semestre_sugerido":2}', true)$q$, '22023', 'não conclui com disciplina pendente') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ insert into bca select 'tok', null $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ update bca set v = public.rpc_gerar_acesso_portal((select v::bigint from bca where chave = 'op'))->>'token' where chave = 'tok' $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.ok((select x->>'status' = 'em_analise' and x->'disciplinas' = 'null'::jsonb from jsonb_array_elements(public.rpc_publico_portal_aproveitamento((select v from bca where chave = 'tok'))) x),
+  'portal: em análise, sem detalhes') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('coord_dir_a')::text, false) $x$;
+  execute $x$ select teste.ok((public.rpc_salvar_aproveitamento((select v::bigint from bca where chave = 'op'), '{"disciplinas":[{"nome":"Teoria Geral do Estado","carga":60,"situacao":"aproveitada","equivalente":"Ciência Política"},
+                 {"nome":"Introdução ao Direito","carga":80,"situacao":"parcial","equivalente":"Introdução ao Estudo do Direito","carga_aproveitada":40},
+                 {"nome":"Economia","carga":60,"situacao":"nao_aproveitada"}],"parecer":"Aproveitamento parcial conforme ementas comparadas","semestre_sugerido":2}', true)->>'status') = 'concluida',
+  'análise concluída com parecer e semestre sugerido') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_aproveitamento((select v::bigint from bca where chave = 'op'), '{"parecer":"Mudança depois de concluir"}')$q$, '22023', 'análise concluída não muda') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.ok((select (x->>'carga_aproveitada')::int = 100 and (x->>'semestre_sugerido')::int = 2 and jsonb_array_length(x->'disciplinas') = 3
+                 from jsonb_array_elements(public.rpc_publico_portal_aproveitamento((select v from bca where chave = 'tok'))) x), 'portal mostra o resultado concluído') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select count(*) >= 6 from public.auditoria where acao in ('seletivo.banca','seletivo.banca_avaliar','aproveitamento.salvar')), 'banca e aproveitamento auditados') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ create temp table oc (chave text primary key, v text) $x$;
+  execute $x$ grant all on oc to anon, authenticated $x$;
+  execute $x$ insert into oc select 'op_com', o.id::text from public.oportunidades o where o.ies_id = 1 and o.responsavel_id = teste.id('comercial_a') and o.etapa in ('novo','contato','inscrito') order by o.id limit 1 $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_registrar_recebida((select v::bigint from oc where chave = 'op_com'), 'visita', 'Oi, quero saber o valor')$q$, '22023', 'canal inválido recusado') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_registrar_recebida((select v::bigint from oc where chave = 'op_com'), 'whatsapp_manual', 'Futuro', now() + interval '1 day')$q$, '22023', 'data futura recusada') $x$;
+  execute $x$ select public.rpc_registrar_recebida((select v::bigint from oc where chave = 'op_com'), 'whatsapp_manual', 'Oi, qual o valor da mensalidade de Direito?', now() - interval '3 hours') $x$;
+  execute $x$ select teste.ok((select (f->>'horas')::numeric between 2.9 and 3.1 and f->>'texto' like 'Oi, qual o valor%' from jsonb_array_elements(public.rpc_conversas(1)->'fila') f
+                 where (f->>'oportunidade_id')::bigint = (select v::bigint from oc where chave = 'op_com')), 'mensagem recebida entra na fila com o tempo de espera') $x$;
+  execute $x$ select public.rpc_registrar_interacao((select v::bigint from oc where chave = 'op_com'), 'whatsapp_manual', 'Respondi com valores e bolsas vigentes') $x$;
+  execute $x$ select teste.ok((select count(*) = 0 from jsonb_array_elements(public.rpc_conversas(1)->'fila') f where (f->>'oportunidade_id')::bigint = (select v::bigint from oc where chave = 'op_com')),
+  'resposta registrada tira da fila') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_conversas(1)$q$, '42501', 'secretaria não vê a fila comercial') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('financeiro_a')::text, false) $x$;
+  execute $x$ select teste.ok((select (r->>'importadas')::int = 3 and jsonb_array_length(r->'rejeitadas') = 2 from (select public.rpc_importar_pendencias(1, jsonb_build_array(
+  jsonb_build_object('email','ingressante.um@exemplo.invalid','competencia','2026-09','valor','1.290,00','vencimento',(current_date - 70)::text,'situacao','aberta'),
+  jsonb_build_object('email','ingressante.um@exemplo.invalid','competencia','2026-10','valor','1290','vencimento',(current_date - 40)::text),
+  jsonb_build_object('oportunidade_id',(select v from teste.var where k = 'ing2'),'competencia','2026-11','valor','1290','vencimento',(current_date - 5)::text),
+  jsonb_build_object('email','nao.existe@exemplo.invalid','competencia','2026-11','valor','10','vencimento','2026-11-10'),
+  jsonb_build_object('email','ingressante.um@exemplo.invalid','competencia','2026-13','valor','10','vencimento','2026-11-10'))) r) x),
+  'importação: 3 pendências, 2 rejeitadas (aluno inexistente, competência inválida)') $x$;
+  execute $x$ select teste.ok((public.rpc_importar_pendencias(1, jsonb_build_array(jsonb_build_object('email','ingressante.um@exemplo.invalid','competencia','2026-09','valor','1.290,00','vencimento',(current_date - 70)::text)))->>'importadas')::int = 1,
+  'reimportar a mesma competência atualiza (idempotente)') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select count(*) = 3 and sum(valor_centavos) = 387000 from public.pendencias_financeiras), 'valores convertidos para centavos sem duplicar') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select teste.ok((select (i->>'inadimplentes')::int = 1 and (i->>'em_aberto_centavos')::int = 387000 from (select public.rpc_financeiro(1, 30)->'indicadores' i) x), 'inadimplência: 1 aluno com atraso acima de 30 dias') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ insert into public.campanhas_rematricula(ies_id, periodo, abre_em, fecha_em, termo, status) values (1, '2028.2', current_date - 1, current_date + 10, repeat('Termo de rematrícula do período 2028.2. ', 4), 'aberta') $x$;
+  execute $x$ insert into public.rematriculas(ies_id, campanha_id, oportunidade_id) select 1, c.id, x from public.campanhas_rematricula c, unnest(array[(select v from teste.var where k = 'ing1'), (select v from teste.var where k = 'ing2')]) x where c.periodo = '2028.2' and c.ies_id = 1 $x$;
+  execute $x$ insert into oc select 'camp', id::text from public.campanhas_rematricula where periodo = '2028.2' and ies_id = 1 $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_bloquear_inadimplentes((select v::bigint from oc where chave = 'camp'), 30)$q$, '42501', 'secretaria não bloqueia em lote') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('financeiro_a')::text, false) $x$;
+  execute $x$ select teste.ok((public.rpc_bloquear_inadimplentes((select v::bigint from oc where chave = 'camp'), 30)->>'bloqueadas')::int = 1, 'bloqueio em lote só de quem tem atraso acima de 30 dias') $x$;
+  execute $x$ select teste.ok((select (p->>'rematricula_pendente')::boolean is false from jsonb_array_elements(public.rpc_financeiro(1)->'pendencias') p where p->>'competencia' = '2026-09'), 'pendência mostra que a rematrícula não está mais pendente') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ insert into oc select 'pend', id::text from public.pendencias_financeiras where competencia = '2026-09' $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select teste.erro($q$select public.rpc_negociar_pendencia((select v::bigint from oc where chave = 'pend'), 'negociada', 'ok')$q$, '22023', 'negociação sem descrição recusada') $x$;
+  execute $x$ select teste.ok((public.rpc_negociar_pendencia((select v::bigint from oc where chave = 'pend'), 'negociada', 'Acordo em 3 parcelas a partir de dezembro')->>'situacao') = 'negociada', 'negociação registrada') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_polo(1, (select min(id) from public.campus where ies_id = 1), '{"tipo":"polo_parceiro","parceiro":"Parceiro X"}')$q$, '42501', 'comercial não cadastra polo') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_polo(1, (select min(id) from public.campus where ies_id = 1), '{"tipo":"polo_parceiro"}')$q$, '22023', 'polo parceiro exige o parceiro') $x$;
+  execute $x$ select public.rpc_salvar_polo(1, (select min(id) from public.campus where ies_id = 1), '{"tipo":"polo_parceiro","parceiro":"Educa Parceiro Sintético Ltda.","regra_repasse":"Conforme contrato de parceria, cláusula 5","meta_ingressos":40}') $x$;
+  execute $x$ select teste.ok((select u->>'tipo' = 'polo_parceiro' and (u->>'leads')::int > 0 and (u->>'ingressos')::int >= 2 and (u->>'meta_ingressos')::int = 40 and u ? 'receita_mensal_centavos'
+                 from jsonb_array_elements(public.rpc_polos(1)->'unidades') u where (u->>'id')::bigint = (select min(id) from public.campus where ies_id = 1)), 'painel por unidade com parceiro, meta e funil') $x$;
+  execute $x$ select teste.ok((public.rpc_polos(1)->>'aviso') like '%não calcula pagamento%', 'sem cálculo de repasse') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_registrar_egresso((select v::bigint from oc where chave = 'op_com'), current_date, true)$q$, '22023', 'egresso só de quem foi aluno') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_registrar_egresso((select v from teste.var where k = 'ing1'), current_date + 1, true)$q$, '22023', 'conclusão no futuro recusada') $x$;
+  execute $x$ insert into oc select 'eg1', public.rpc_registrar_egresso((select v from teste.var where k = 'ing1'), current_date, true, array['pos_graduacao'], 'Interesse em direito digital')->>'id' $x$;
+  execute $x$ insert into oc select 'eg2', public.rpc_registrar_egresso((select v from teste.var where k = 'ing2'), current_date, false)->>'id' $x$;
+  execute $x$ select teste.erro($q$select public.rpc_ofertar_egresso((select v::bigint from oc where chave = 'eg1'), 1, '2028.1', 'pos_graduacao')$q$, '42501', 'secretaria não oferta') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_ofertar_egresso((select v::bigint from oc where chave = 'eg2'), 1, '2028.1', 'pos_graduacao')$q$, '22023', 'sem consentimento: oferta recusada') $x$;
+  execute $x$ select teste.ok(not (public.rpc_ofertar_egresso((select v::bigint from oc where chave = 'eg1'), 1, '2028.1', 'pos_graduacao')->>'duplicada')::boolean, 'oferta cria nova oportunidade') $x$;
+  execute $x$ select public.rpc_ofertar_egresso((select v::bigint from oc where chave = 'eg1'), 1, '2028.1', 'pos_graduacao') $x$;
+  execute $x$ select teste.ok((select (e->>'ofertas')::int = 1 from jsonb_array_elements(public.rpc_egressos(1)->'egressos') e where (e->>'id')::bigint = (select v::bigint from oc where chave = 'eg1')), 'oferta repetida não duplica: painel conta 1 oferta') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select o.forma_ingresso = 'pos_graduacao' and o.coorte = '2028.1' and o.egresso_origem_id = (select v::bigint from oc where chave = 'eg1')
+                 from public.oportunidades o where o.egresso_origem_id is not null), 'oportunidade de pós ligada ao egresso') $x$;
+  execute $x$ select teste.ok((select count(*) >= 8 from public.auditoria where acao in ('conversa.recebida','financeiro.importar','financeiro.bloquear_lote','financeiro.negociar','polo.salvar','egresso.registrar','egresso.ofertar')), 'Onda C auditada') $x$;
+  execute $x$ reset role $x$;
   select count(*) into n from teste.resultado;
   raise exception 'RESULTADO: % verificações aprovadas, 0 falhas (tudo desfeito; nada ficou gravado)', n;
 end

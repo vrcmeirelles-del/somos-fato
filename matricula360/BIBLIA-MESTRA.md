@@ -198,7 +198,24 @@ Detalhe e fontes em `docs/ANALISE-CONCORRENCIA.md`. Decisão do responsável (26
 | L10 Atendimento conversacional | exclusão deliberada | Proibição de IA generativa |
 | L11 Alerta precoce acadêmico | especificado | Depende da L8 |
 
-Segunda rodada da análise de concorrência (L12 a L22, depois da P4): ver `docs/ANALISE-CONCORRENCIA.md` §4. Aguarda decisão do responsável sobre a ordem de execução.
+### 13.6 Ciclo de vida completo — segunda rodada da concorrência (L12 a L22; migrações 23 a 30)
+Detalhe e fontes em `docs/ANALISE-CONCORRENCIA.md` §4. Decisão do responsável (26/11/2026): "Siga pela onda A sem esquecer da B e C". Na onda C só entram as partes sem custo externo.
+
+| Lacuna | Onda | Estado | Implementação |
+|---|---|---|---|
+| L12 Bolsas e financiamento | A | migração 23 | ProUni (50/100%), FIES, financiamento privado e próprio, convênio e bolsa institucional; vagas, cumulatividade e cursos; pedido pela equipe ou pelo portal (com declaração de veracidade); decisão humana segregada (quem pede não decide) e justificada; etapa externa informada (sem consulta a MEC ou bancos) |
+| L14 Rematrícula ativa | A | migração 24 | Campanha por período com termo versionado, foto dos elegíveis (sem evadidos nem transferidos), bloqueio por categoria e motivo, aceite pelo portal com o CPF da matrícula e o representante do menor, recusa com motivo, taxa sobre elegíveis. Não grava vínculo acadêmico |
+| L15 Sucesso do aluno | A | migração 25 | Trilhas por motivo (padrão editável), roteamento para o papel da trilha com menos casos, prazo pela prioridade, passos, notas, agendamento, encaminhamento e resolução; caso automático quando o aluno recusa a rematrícula no portal; aviso de não registrar dado sensível |
+| L22 2FA e acessibilidade | A | migração 26 e interface | TOTP do Supabase Auth (gratuito); exigência por IES; checagem em todas as RPCs e política restritiva em todas as tabelas. Auditoria axe-core (WCAG 2.1 AA) em 54 telas: a única violação (tabelas roláveis sem acesso por teclado) foi corrigida |
+| L17 Captação em campo | B | migração 27 | Escolas, visitas, palestras e feiras; QR code de inscrição pelo celular do aluno; modo feira sem internet (fila no aparelho, service worker, sincronização idempotente com consentimento por cadastro); painel por visita e por escola |
+| L16 Pesquisas | B | migração 28 | NPS, escala, opção e texto; públicos: candidato, ingressante, aluno e perdido; resposta pelo portal; resultados agregados e sem identificação, N/D abaixo do mínimo |
+| L19 Banca e aproveitamento | B | migração 29 | Rubrica com pesos, avaliadores mínimos, avaliação às cegas e terceiro avaliador quando a divergência passa do limite; decisão só com a banca completa. Aproveitamento de estudos com equivalências, carga, parecer e semestre sugerido, mostrado no portal |
+| L21 Conversas | C (parte interna) | migração 30 | Mensagem recebida colada pela equipe, fila aguardando resposta com o prazo de atendimento (SLA). **WhatsApp e SMS reais: desligados, dependem de fornecedor e custo** |
+| L13 Financeiro | C (parte interna) | migração 30 | Pendências por planilha (idempotente), inadimplência, negociação e bloqueio da rematrícula em lote sob comando. **Cobrança real: desligada** |
+| L18 Polos e parceiros | C (parte interna) | migração 30 | Sede, polo próprio e polo parceiro; meta; funil e receita mensal por unidade; acesso do parceiro pelo escopo de campus. **Repasse: só a regra em texto, sem cálculo de pagamento** |
+| L20 Egressos | C (parte interna) | migração 30 | Conclusão com consentimento e interesses; oferta de pós-graduação ou segunda graduação que cria oportunidade sem duplicar |
+
+**Aplicação:** `supabase/APLICAR-023-A-030-NO-SQL-EDITOR.sql`, aplicação pendente pelo responsável.
 
 Integrações registradas (todas desligadas, com pedido de ativação auditado): e-mail, SMS, WhatsApp, cobrança, assinatura certificada, Meta Ads, Google Ads, TikTok Ads, sistema acadêmico e marketplaces de bolsas.
 
