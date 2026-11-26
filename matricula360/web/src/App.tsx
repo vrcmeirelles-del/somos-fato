@@ -25,6 +25,7 @@ import { CampoCaptacao } from './pages/Campo';
 import { ModoFeira } from './pages/ModoFeira';
 import { Pesquisas } from './pages/Pesquisas';
 import { Automacoes } from './pages/Automacoes';
+import { BiExecutivo } from './pages/BiExecutivo';
 import { Conversas, EgressosPagina, FinanceiroAlunos, Polos } from './pages/OndaC';
 import { Funis } from './pages/Funis';
 import { Intervencoes } from './pages/Intervencoes';
@@ -94,6 +95,7 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
   return (
     <Routes>
       <Route path="/ies/:ies/inteligencia" element={<ExigeIes><Central /></ExigeIes>} />
+      <Route path="/ies/:ies/bi-executivo" element={<ExigeIes><BiExecutivo /></ExigeIes>} />
       <Route path="/ies/:ies/performance" element={<ExigeIes><Performance /></ExigeIes>} />
       <Route path="/ies/:ies/conversas" element={<ExigeIes><Conversas abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/financeiro" element={<ExigeIes><FinanceiroAlunos abrirDetalhe={abrir} /></ExigeIes>} />

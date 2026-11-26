@@ -1,7 +1,7 @@
 // Mapa dos dez ambientes. Itens "planejado" aparecem desabilitados com a fase prevista:
 // não há página de lista fingindo módulo pronto (critério de aceite da Fase 2).
 import {
-  Activity, BarChart3, Bot, Building, MessageCircleReply, Wallet, CalendarClock, CalendarDays, ClipboardList, FileCheck2, Gauge, MessagesSquare, PlugZap, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HandCoins, HeartHandshake, KanbanSquare, KeyRound,
+  Activity, BarChart3, Landmark, Bot, Building, MessageCircleReply, Wallet, CalendarClock, CalendarDays, ClipboardList, FileCheck2, Gauge, MessagesSquare, PlugZap, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HandCoins, HeartHandshake, KanbanSquare, KeyRound,
   LayoutDashboard, LifeBuoy, Megaphone, RefreshCcw, RotateCw, School, ScrollText, Settings, ShieldCheck, Target, Users, Workflow, type LucideIcon,
 } from 'lucide-react';
 import type { Papel } from './tipos';
@@ -13,6 +13,7 @@ const OPERACAO: Papel[] = ['gestor', 'comercial', 'secretaria', 'financeiro'];
 export const AMBIENTES: Ambiente[] = [
   { id: 'inteligencia', rotulo: 'Central de Inteligência', icone: LayoutDashboard, itens: [
     { rotulo: 'Painel executivo', rota: (i) => `/ies/${i}/inteligencia`, icone: BarChart3 },
+    { rotulo: 'BI da alta gestão', rota: (i) => `/ies/${i}/bi-executivo`, icone: Landmark, papeis: ['gestor', 'reitoria'] },
     { rotulo: 'Performance e gargalos (MAIM)', rota: (i) => `/ies/${i}/performance`, icone: Gauge, papeis: ['gestor', 'reitoria', 'coordenador', 'comercial'] },
     { rotulo: 'Polos e parceiros', rota: (i) => `/ies/${i}/polos`, icone: Building, papeis: ['gestor', 'reitoria', 'coordenador', 'comercial'] },
     { rotulo: 'Pesquisas e NPS', rota: (i) => `/ies/${i}/pesquisas`, icone: ClipboardList, papeis: ['gestor', 'reitoria', 'coordenador'] },

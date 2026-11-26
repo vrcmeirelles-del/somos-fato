@@ -29,3 +29,10 @@
   .tabela td { @apply border-t border-linha px-3 py-2.5 align-top; }
 }
 html, body { overflow-x: hidden; }
+
+/* Impressão do BI e de relatórios: só o conteúdo principal. */
+@media print {
+  aside, header, nav[aria-label="Trilha"] { display: none !important; }
+  main { padding: 0 !important; }
+  .cartao-base, .tabela { break-inside: avoid; box-shadow: none !important; }
+}

@@ -219,6 +219,16 @@ Detalhe e fontes em `docs/ANALISE-CONCORRENCIA.md` §4. Decisão do responsável
 
 Integrações registradas (todas desligadas, com pedido de ativação auditado): e-mail, SMS, WhatsApp, cobrança, assinatura certificada, Meta Ads, Google Ads, TikTok Ads, sistema acadêmico e marketplaces de bolsas.
 
+### 13.8 BI da alta gestão (migração 32)
+Para gestor e reitoria com abrangência da instituição. Mostra o consolidado de todas as IES em que a pessoa atua (visão da mantenedora) e cada IES em separado, sempre por coorte e comparado com a coorte anterior.
+- **Captação:** os mesmos cálculos da Central.
+- **Receita e eficiência:** receita mensal dos ingressos, ticket médio, desconto médio ponderado e renúncia estimada com bolsas; payback do custo de aquisição.
+- **Retenção:** permanência em 30 e 90 dias e rematrícula.
+- **Gestão do aluno:** inadimplência, casos do aluno e NPS.
+- **Alertas executivos por regra fixa:** atingimento abaixo de 60% (crítico) ou de 80%; coorte sem meta; inadimplência acima de 10%; casos vencidos; rematrícula abaixo da meta; desconto médio acima de 25%; payback acima de 6 mensalidades; NPS negativo.
+- **Regras de cálculo:** só números agregados, sem dado pessoal. Taxas consolidadas são recalculadas sobre as somas, nunca como média de percentuais. Sem base de cálculo, o indicador aparece como N/D com o motivo.
+- **Saídas:** exportação em CSV e impressão (ou PDF).
+
 ### 13.7 Diretriz de automação e IA (decisão do responsável, 26/11/2026)
 > "Tudo que for feito pode ser feito por algoritmo, automações, você faz. Deixar a IA só para ajuste fino. É por isso que eu travei a IA na Bíblia."
 

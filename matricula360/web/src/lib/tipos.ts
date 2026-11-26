@@ -300,3 +300,17 @@ export interface Egressos { pode_gerir: boolean; pode_ofertar: boolean; egressos
 export interface Automacoes { pode_gerir: boolean; agendador: boolean; aviso: string;
   regras: { codigo: string; ativa: boolean; parametros: Record<string, number>; ultima_execucao: string | null; ultimo_resultado: Record<string, unknown> | null; alterada_por: string | null; alterada_em: string | null }[];
   execucoes: { origem: string; inicio: string; fim: string | null; resultado: Record<string, Record<string, unknown>> | null }[] }
+
+// BI da alta gestão (migração 32)
+export interface BiIes { ies_id: number; nome: string; atual: CentralTotais; anterior: CentralTotais; payback_mensalidades: number | null;
+  permanencia: { marco: string; permanencia: number | null; elegiveis?: number; motivo?: string | null }[] | null; alertas: { nivel: 'critico' | 'atencao'; texto: string }[];
+  receita: { propostas_aceitas: number; ticket_medio_centavos: number | null; desconto_medio_pct: number | null };
+  bolsas: { beneficios_aprovados: number; ingressos_com_beneficio: number; ingressos_com_beneficio_pct: number | null; renuncia_mensal_estimada_centavos: number };
+  inadimplencia: { alunos: number; inadimplentes: number; pct: number | null };
+  rematricula: { periodo: string; status: string; meta_pct: number | null; elegiveis: number; aceitas: number; recusadas: number; taxa_pct: number | null } | null;
+  casos: { abertos: number; vencidos: number; resolvidos: number; horas_medias_resolucao: number | null } | null;
+  nps: { pesquisa: string; publico: string; nps: number; respostas: number } | null }
+export interface BiExecutivo { coorte: string; coorte_anterior: string; ies: BiIes[]; metodos: Record<string, string>;
+  consolidado: { oportunidades: number; matriculas_comerciais: number; ingressantes: number; cancelamentos: number; meta: number | null; atingimento: number | null;
+    receita_mensal_ingressantes_centavos: number; renuncia_mensal_estimada_centavos: number; anterior_oportunidades: number; anterior_ingressantes: number;
+    anterior_receita_mensal_ingressantes_centavos: number; alunos: number; inadimplentes: number; inadimplencia_pct: number | null; casos_abertos: number; casos_vencidos: number; alertas: number } }
