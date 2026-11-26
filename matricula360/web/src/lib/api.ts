@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -99,6 +99,13 @@ export const api = {
   lancarCusto: (campanha: number, data: string, valor: number, descricao: string) =>
     c().rpc<{ id: number; repeticao: boolean }>('rpc_lancar_custo', { p_campanha: campanha, p_data: data, p_valor_centavos: valor, p_descricao: descricao, p_chave: chave() }),
   estornarCusto: (custo: number, motivo: string) => c().rpc('rpc_estornar_custo', { p_custo: custo, p_motivo: motivo }),
+  funis: (ies: number) => c().rpc<Funis>('rpc_funis', { p_ies: ies }),
+  funilOportunidade: (op: number) => c().rpc<FunilOportunidade>('rpc_funil_oportunidade', { p_op: op }),
+  salvarFunil: (ies: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number; versao_id?: number }>('rpc_salvar_funil', { p_ies: ies, p_dados: dados, p_id: id ?? null }),
+  novaVersao: (funil: number) => c().rpc<{ versao_id: number; versao: number }>('rpc_nova_versao', { p_funil: funil }),
+  salvarVersao: (versao: number, dados: Record<string, unknown>) => c().rpc<VersaoFunil>('rpc_salvar_versao', { p_versao: versao, p_dados: dados }),
+  publicarVersao: (versao: number) => c().rpc<{ versao: number; arquivada: number | null }>('rpc_publicar_versao', { p_versao: versao }),
+  moverSubetapa: (op: number, ordem: number, versao: number) => c().rpc<{ versao: number }>('rpc_mover_subetapa', { p_op: op, p_ordem: ordem, p_versao: versao }),
   pendencias: (ies: number) => c().rpc<Pendencia[]>('rpc_pendencias', { p_ies: ies }),
   configurar: (ies: number, v: { sla_horas?: number; max_followups?: number; dias_sem_contato?: number; capacidade_atendente?: number; amostra_minima_forecast?: number }) =>
     c().rpc<Record<string, number>>('rpc_configurar', { p_ies: ies, p_sla_horas: v.sla_horas ?? null, p_max_followups: v.max_followups ?? null,

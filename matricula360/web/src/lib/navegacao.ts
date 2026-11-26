@@ -26,7 +26,7 @@ export const AMBIENTES: Ambiente[] = [
     { rotulo: 'Agenda comercial', rota: (i) => `/ies/${i}/agenda`, icone: CalendarClock, papeis: ['gestor', 'comercial'] },
   ] },
   { id: 'funis', rotulo: 'Funis Comerciais', icone: Workflow, itens: [
-    { rotulo: 'Funis configuráveis', icone: Workflow, fase: 'P1' },
+    { rotulo: 'Funis configuráveis', rota: (i) => `/ies/${i}/funis`, icone: Workflow, papeis: ['gestor', 'reitoria', 'coordenador', 'comercial'] },
   ] },
   { id: 'conversao', rotulo: 'Conversão e Matrículas', icone: ClipboardCheck, itens: [
     { rotulo: 'Matrículas', rota: (i) => `/ies/${i}/matriculas`, icone: ClipboardCheck },

@@ -23,6 +23,7 @@ const ROTULOS: Record<string, string> = {
   aberta: 'Aberta', superada: 'Superada', nao_superada: 'Não superada',
   ies: 'Instituição', campus: 'Campus',
   rascunho: 'Rascunho', em_aprovacao: 'Em aprovação', em_revisao: 'Em revisão', encerrado: 'Encerrado', pendente: 'Pendente', em_andamento: 'Em andamento', concluida: 'Concluída', cancelada: 'Cancelada',
+  publicada: 'Publicada', arquivada: 'Arquivada', telefone: 'Telefone',
   planejada: 'Planejada', ativa: 'Ativa', encerrada: 'Encerrada',
   ingressantes: 'Ingressantes efetivos', oportunidades: 'Oportunidades', matriculas_comerciais: 'Matrículas comerciais', conversao: 'Conversão',
   cpl_centavos: 'Custo por lead', custo_ingressante_centavos: 'Custo por ingressante',

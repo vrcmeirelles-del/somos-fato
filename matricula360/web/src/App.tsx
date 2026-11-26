@@ -13,6 +13,7 @@ import { Planejamento } from './pages/Planejamento';
 import { Central } from './pages/Central';
 import { Configuracoes } from './pages/Configuracoes';
 import { Crm } from './pages/Crm';
+import { Funis } from './pages/Funis';
 import { Intervencoes } from './pages/Intervencoes';
 import { Login } from './pages/Login';
 import { Master } from './pages/Master';
@@ -75,6 +76,7 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
       <Route path="/ies/:ies/intervencoes" element={<ExigeIes><Intervencoes abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/planejamento" element={<ExigeIes><Planejamento /></ExigeIes>} />
       <Route path="/ies/:ies/campanhas" element={<ExigeIes><Campanhas /></ExigeIes>} />
+      <Route path="/ies/:ies/funis" element={<ExigeIes><Funis /></ExigeIes>} />
       <Route path="/ies/:ies/crm" element={<ExigeIes><Crm abrirDetalhe={abrir} versao={versao} /></ExigeIes>} />
       <Route path="/ies/:ies/agenda" element={<ExigeIes><Agenda abrirDetalhe={abrir} versao={versao} /></ExigeIes>} />
       <Route path="/ies/:ies/matriculas" element={<ExigeIes><Matriculas abrirDetalhe={abrir} /></ExigeIes>} />

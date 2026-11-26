@@ -120,3 +120,17 @@ export interface Campanha { id: number; nome: string; codigo: string; canal: str
   orcamento_centavos: number | null; custo_centavos: number | null; cpl_centavos: number | null; custo_ingressante_centavos: number | null; custos: CustoCampanha[] | null }
 export interface Campanhas { coorte: string; ve_custos: boolean; pode_editar: boolean; pode_lancar_custo: boolean; integracoes: Record<string, string>;
   campanhas: Campanha[]; atribuicao_desconhecida: { leads: number; ingressantes: number }; metodos: Record<'atribuicao' | 'cpl' | 'custo_ingressante', string> }
+
+// Funis Comerciais (migração 13)
+export type EtapaBase = 'novo' | 'contato' | 'inscrito' | 'pre_matricula' | 'matricula_comercial';
+export interface EtapaFunil { ordem: number; nome: string; etapa_base: EtapaBase; sla_horas: number | null; roteiro: string | null }
+export interface CadenciaFunil { etapa_ordem: number; passo: number; dia: number; canal: 'telefone' | 'whatsapp' | 'email' | 'presencial'; descricao: string }
+export interface MetaFunil { forma_ingresso: string; conversao_meta: number }
+export interface VersaoFunil { id: number; versao: number; status: 'rascunho' | 'publicada' | 'arquivada'; notas: string | null; criado_por: string | null; criado_em: string;
+  publicada_por: string | null; publicada_em: string | null; oportunidades: number; etapas: EtapaFunil[]; cadencias: CadenciaFunil[]; metas: MetaFunil[] }
+export interface Funil { id: number; nome: string; modalidade: string | null; formas: string[] | null; padrao: boolean; ativo: boolean; versoes: VersaoFunil[];
+  desempenho: { forma_ingresso: string; oportunidades: number; ingressantes: number; conversao: number | null; meta: number | null }[] }
+export interface Funis { pode_editar: boolean; pode_publicar: boolean; regra_selecao: string; funis: Funil[] }
+export interface FunilOportunidade { funil: string | null; versao?: number; versao_status?: string; etapa_ordem?: number | null; versao_op?: number;
+  atual?: { ordem: number; nome: string; sla_horas: number | null; roteiro: string | null } | null; subetapas?: { ordem: number; nome: string }[];
+  cadencia?: { passo: number; dia: number; canal: string; descricao: string }[]; meta_conversao_forma?: number | null }

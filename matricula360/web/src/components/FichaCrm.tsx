@@ -1,10 +1,10 @@
 // Seções do CRM avançado na ficha da oportunidade (migração 10). Só aparecem quando o banco devolve os campos novos.
-import { AlertTriangle, CalendarClock, Gauge, MessageSquarePlus, ShieldQuestion, UserCog } from 'lucide-react';
+import { AlertTriangle, CalendarClock, Gauge, MessageSquarePlus, ShieldQuestion, UserCog, Workflow } from 'lucide-react';
 import { useState } from 'react';
 import { descreverEvento } from '../pages/Auditoria';
 import { api } from '../lib/api';
 import { CATEGORIAS_OBJECAO, TIPOS_INTERACAO, linhaDoTempo, relativo } from '../lib/crm';
-import { dataHora, rotulo } from '../lib/formato';
+import { dataHora, pct, rotulo } from '../lib/formato';
 import { useCarregar } from '../lib/hooks';
 import type { Detalhe } from '../lib/tipos';
 import { useSessao } from './Layout';
@@ -137,6 +137,37 @@ export function LinhaDoTempo({ d }: { d: Detalhe }) {
           <span className="text-xs text-suave">{dataHora(e.em)} · {e.por ?? 'sistema'} · {TIPO[e.tipo]}{e.tipo !== 'auditoria' && e.codigo ? ` (${rotulo(e.codigo)})` : ''}</span>
           <span className="block">{e.titulo}{e.tipo === 'auditoria' && <code className="ml-1.5 text-[10px] text-suave">{e.codigo}</code>}</span>
         </li>))}</ol>
+    </section>
+  );
+}
+
+// Funil da oportunidade (migração 13): versão fixa, subetapa atual, roteiro, SLA, cadência e meta da forma de ingresso.
+export function FunilNaFicha({ op, versaoOp, podeEditar, fazer, enviando }: { op: number; versaoOp: number; podeEditar: boolean; fazer: Fazer; enviando: boolean }) {
+  const f = useCarregar(() => api.funilOportunidade(op).catch(() => null), [op, versaoOp]);
+  const d = f.dados;
+  if (!d?.funil) return null;
+  return (
+    <section aria-label="Funil comercial" className="mt-4 rounded-xl border border-linha p-3">
+      <H icone={Workflow}>Funil comercial</H>
+      <p className="nota mb-1">{d.funil} · versão {d.versao}{d.versao_status === 'arquivada' ? ' (arquivada: a oportunidade segue a versão em que nasceu)' : ''}
+        {d.meta_conversao_forma != null && ` · meta de conversão da forma de ingresso: ${pct(Number(d.meta_conversao_forma))}`}</p>
+      {d.atual ? (
+        <>
+          <p className="text-sm">Etapa atual: <strong>{d.atual.nome}</strong>{d.atual.sla_horas ? <Chip>SLA {d.atual.sla_horas} h</Chip> : null}</p>
+          {(d.subetapas?.length ?? 0) > 1 && (
+            <div className="my-2 flex flex-wrap gap-1.5" role="group" aria-label="Subetapas">
+              {d.subetapas!.map((s) => (
+                <button key={s.ordem} className={`btn btn-peq ${s.ordem === d.etapa_ordem ? '' : 'btn-sec'}`} aria-pressed={s.ordem === d.etapa_ordem}
+                  disabled={!podeEditar || enviando || s.ordem === d.etapa_ordem}
+                  onClick={() => void fazer(async () => { await api.moverSubetapa(op, s.ordem, d.versao_op!); return `Subetapa: ${s.nome}.`; })}>{s.nome}</button>))}
+            </div>)}
+          {d.atual.roteiro && <div className="my-2 rounded-lg bg-tec-50 px-3 py-2 text-sm"><span className="text-xs font-semibold uppercase tracking-wide text-tec-600">Roteiro</span>
+            <p className="whitespace-pre-line">{d.atual.roteiro}</p></div>}
+          {(d.cadencia?.length ?? 0) > 0 && (
+            <ol className="text-xs text-suave">{d.cadencia!.map((c) => <li key={c.passo}>Contato {c.passo} · dia {c.dia} · {rotulo(c.canal)}: {c.descricao}</li>)}</ol>)}
+          {(d.cadencia?.length ?? 0) > 0 && <p className="nota mt-1">Cadência é guia de trabalho: registre cada contato em "Registrar contato"; nada é enviado automaticamente.</p>}
+        </>
+      ) : <p className="nota">Etapa encerrada: sem subetapa.</p>}
     </section>
   );
 }

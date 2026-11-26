@@ -153,6 +153,14 @@ try {
           registrar('gestor', disp, 'P1: Campanhas com atribuição desconhecida e integrações desligadas', camp.includes('Atribuição desconhecida') && camp.includes('desligada'));
           await checar(page, 'gestor', disp, 'campanhas', erros);
         } else console.log('AVISO P1 não verificado: banco sem a migração 12.');
+        // P1 (migração 13): funis configuráveis.
+        await ir(page, 'Funis configuráveis');
+        await page.waitForFunction(() => /migração 13|Funil padrão institucional/.test(document.querySelector('main')?.textContent || ''), null, { timeout: 15000 }).catch(() => null);
+        if (!(await page.textContent('main')).includes('migração 13')) {
+          const fun = await page.textContent('main');
+          registrar('gestor', disp, 'P1: funil padrão publicado replicando as etapas oficiais', fun.includes('Funil padrão institucional') && fun.includes('v1 publicada') && fun.includes('Matrícula comercial'));
+          await checar(page, 'gestor', disp, 'funis', erros);
+        } else console.log('AVISO funis não verificados: banco sem a migração 13.');
         // R09: trocar a instituição pela URL não expõe a outra IES (a interface volta à IES autorizada e o banco recusa a outra).
         for (const rota of ['/ies/2/crm', '/ies/1/inteligencia?ies=2']) {
           await page.goto(`${BASE}${rota}`);
@@ -208,6 +216,7 @@ try {
           await page.waitForSelector('#det-corpo li:has-text("retornar sobre a proposta (E2E)")', { timeout: 15000 });
           registrar('comercial', disp, 'CRM: agendamento aparece na agenda da ficha', true);
           const ficha = await page.textContent('#det-corpo');
+          if (ficha.includes('Funil comercial')) registrar('comercial', disp, 'Funil: ficha mostra o funil e a versão fixada', ficha.includes('Funil padrão institucional') && ficha.includes('versão 1'));
           registrar('comercial', disp, 'CRM: score explicável com aviso de não decisão', ficha.includes('Score de priorização') && ficha.includes('não é usado para decidir ingresso'));
           await page.click('#det-corpo button[aria-label="Fechar"]');
           await page.fill('input[aria-label="Buscar por nome, e-mail ou telefone"]', 'Teste automatizado');
