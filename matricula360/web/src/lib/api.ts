@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -106,6 +106,8 @@ export const api = {
   salvarVersao: (versao: number, dados: Record<string, unknown>) => c().rpc<VersaoFunil>('rpc_salvar_versao', { p_versao: versao, p_dados: dados }),
   publicarVersao: (versao: number) => c().rpc<{ versao: number; arquivada: number | null }>('rpc_publicar_versao', { p_versao: versao }),
   moverSubetapa: (op: number, ordem: number, versao: number) => c().rpc<{ versao: number }>('rpc_mover_subetapa', { p_op: op, p_ordem: ordem, p_versao: versao }),
+  performance: (ies: number, coorte: string, filtros: Record<string, string>) =>
+    c().rpc<Performance>('rpc_performance', { p_ies: ies, p_coorte: coorte, p_filtros: Object.fromEntries(Object.entries(filtros).filter(([k, v]) => v && k !== 'campanha_id')) }),
   pendencias: (ies: number) => c().rpc<Pendencia[]>('rpc_pendencias', { p_ies: ies }),
   configurar: (ies: number, v: { sla_horas?: number; max_followups?: number; dias_sem_contato?: number; capacidade_atendente?: number; amostra_minima_forecast?: number }) =>
     c().rpc<Record<string, number>>('rpc_configurar', { p_ies: ies, p_sla_horas: v.sla_horas ?? null, p_max_followups: v.max_followups ?? null,

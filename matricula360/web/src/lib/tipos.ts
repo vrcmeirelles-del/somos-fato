@@ -134,3 +134,12 @@ export interface Funis { pode_editar: boolean; pode_publicar: boolean; regra_sel
 export interface FunilOportunidade { funil: string | null; versao?: number; versao_status?: string; etapa_ordem?: number | null; versao_op?: number;
   atual?: { ordem: number; nome: string; sla_horas: number | null; roteiro: string | null } | null; subetapas?: { ordem: number; nome: string }[];
   cadencia?: { passo: number; dia: number; canal: string; descricao: string }[]; meta_conversao_forma?: number | null }
+
+// MAIM Performance (migração 14)
+export interface EtapaPerformance { etapa: string; alcancaram: number; avancaram: number; conversao_etapa: number | null; denominador: number; amostra_suficiente: boolean;
+  perdidos_na_etapa: number; horas_mediana_na_etapa: number | null; medicoes_tempo: number; parados: number }
+export interface AtendentePerformance { atendente: string; eu: boolean | null; oportunidades: number; matriculas_comerciais: number; ingressantes: number; conversao: number | null;
+  sla_primeiro_contato: number | null; sla_denominador: number; horas_ate_primeiro_contato: number | null; interacoes: number; tarefas_atrasadas: number }
+export interface Performance { coorte: string; regra: string; amostra_minima_etapa: number; ve_equipe: boolean; etapas: EtapaPerformance[]; gargalo: EtapaPerformance | null;
+  atendentes: AtendentePerformance[]; sla_primeiro_contato_equipe: number | null; recomendacoes: { regra: string; prioridade: number; titulo: string; justificativa: string; proposta: string }[];
+  aviso: string; metodos: Record<'conversao_etapa' | 'permanencia' | 'sla' | 'parados', string> }

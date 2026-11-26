@@ -1,7 +1,7 @@
 // Mapa dos dez ambientes. Itens "planejado" aparecem desabilitados com a fase prevista:
 // não há página de lista fingindo módulo pronto (critério de aceite da Fase 2).
 import {
-  Activity, BarChart3, CalendarClock, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HeartHandshake, KanbanSquare, KeyRound,
+  Activity, BarChart3, CalendarClock, Gauge, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HeartHandshake, KanbanSquare, KeyRound,
   LayoutDashboard, Megaphone, RefreshCcw, ScrollText, Settings, ShieldCheck, Target, Users, Workflow, type LucideIcon,
 } from 'lucide-react';
 import type { Papel } from './tipos';
@@ -13,6 +13,7 @@ const OPERACAO: Papel[] = ['gestor', 'comercial', 'secretaria', 'financeiro'];
 export const AMBIENTES: Ambiente[] = [
   { id: 'inteligencia', rotulo: 'Central de Inteligência', icone: LayoutDashboard, itens: [
     { rotulo: 'Painel executivo', rota: (i) => `/ies/${i}/inteligencia`, icone: BarChart3 },
+    { rotulo: 'Performance e gargalos (MAIM)', rota: (i) => `/ies/${i}/performance`, icone: Gauge, papeis: ['gestor', 'reitoria', 'coordenador', 'comercial'] },
     { rotulo: 'Fila de intervenções (MAIM)', rota: (i) => `/ies/${i}/intervencoes`, icone: Activity, papeis: OPERACAO },
   ] },
   { id: 'planejamento', rotulo: 'Planejamento Estratégico', icone: Target, itens: [

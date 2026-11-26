@@ -18,6 +18,7 @@ import { Intervencoes } from './pages/Intervencoes';
 import { Login } from './pages/Login';
 import { Master } from './pages/Master';
 import { Matriculas } from './pages/Matriculas';
+import { Performance } from './pages/Performance';
 import { Permissoes } from './pages/Permissoes';
 import { Propostas } from './pages/Propostas';
 
@@ -73,6 +74,7 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
   return (
     <Routes>
       <Route path="/ies/:ies/inteligencia" element={<ExigeIes><Central /></ExigeIes>} />
+      <Route path="/ies/:ies/performance" element={<ExigeIes><Performance /></ExigeIes>} />
       <Route path="/ies/:ies/intervencoes" element={<ExigeIes><Intervencoes abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/planejamento" element={<ExigeIes><Planejamento /></ExigeIes>} />
       <Route path="/ies/:ies/campanhas" element={<ExigeIes><Campanhas /></ExigeIes>} />

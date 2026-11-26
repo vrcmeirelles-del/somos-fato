@@ -161,6 +161,14 @@ try {
           registrar('gestor', disp, 'P1: funil padrão publicado replicando as etapas oficiais', fun.includes('Funil padrão institucional') && fun.includes('v1 publicada') && fun.includes('Matrícula comercial'));
           await checar(page, 'gestor', disp, 'funis', erros);
         } else console.log('AVISO funis não verificados: banco sem a migração 13.');
+        // P1 (migração 14): MAIM Performance.
+        await ir(page, 'Performance e gargalos (MAIM)');
+        await page.waitForFunction(() => /migração 14|Etapas do funil/.test(document.querySelector('main')?.textContent || ''), null, { timeout: 15000 }).catch(() => null);
+        if (!(await page.textContent('main')).includes('migração 14')) {
+          const perf = await page.textContent('main');
+          registrar('gestor', disp, 'P1: Performance com etapas, denominadores, equipe e aviso de uso', perf.includes('Etapas do funil') && perf.includes('Equipe comercial') && perf.includes('decisões laborais'));
+          await checar(page, 'gestor', disp, 'performance', erros);
+        } else console.log('AVISO performance não verificada: banco sem a migração 14.');
         // R09: trocar a instituição pela URL não expõe a outra IES (a interface volta à IES autorizada e o banco recusa a outra).
         for (const rota of ['/ies/2/crm', '/ies/1/inteligencia?ies=2']) {
           await page.goto(`${BASE}${rota}`);
