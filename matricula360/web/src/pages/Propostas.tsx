@@ -16,7 +16,7 @@ export function Propostas() {
   if (!tem('gestor', 'comercial')) return <><Titulo titulo="Propostas" /><p>Seu perfil não acessa propostas.</p></>;
   return (
     <>
-      <Titulo titulo="Propostas e bolsas" subtitulo="Uma proposta ativa por oportunidade; descontos acima do limite exigem aprovação." />
+      <Titulo titulo="Propostas" subtitulo="Uma proposta ativa por oportunidade; descontos acima do limite exigem aprovação." />
       <p className="nota mb-3">Descontos acima do limite do curso exigem aprovação de gestor. Quem cria a proposta não pode aprová-la (segregação de funções).</p>
       <label className="mb-3 inline-block text-sm">Status{' '}
         <select className="campo" aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value as StatusProposta)}>

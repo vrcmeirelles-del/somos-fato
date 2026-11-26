@@ -100,6 +100,7 @@ export function Portal() {
       </Secao>
       <PortalDocumentos token={token} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
       <PortalSeletivo token={token} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
+      <PortalBolsas token={token} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
       <PortalMatricula token={token} nome={d.nome} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
       <Secao titulo="Meus dados e privacidade (LGPD)">
         <p className="text-sm">E-mail: {d.email ?? '—'} · Celular: {d.telefone ?? '—'} · Base legal: {rotulo(d.consentimento.base_legal)}{d.consentimento.versao ? ` · termo v${d.consentimento.versao}` : ''}</p>
@@ -188,6 +189,40 @@ function PortalSeletivo({ token, fazer, enviando, recarga }: { token: string; fa
           </div>);
       })}
       {d.eventos.length > 0 && <ul className="mt-2 text-sm">{d.eventos.map((ev, i) => <li key={i}>{ev.titulo} · {rotulo(ev.tipo)} · {new Date(ev.inicio).toLocaleString('pt-BR')}{ev.local ? ` · ${ev.local}` : ''} <Chip>{rotulo(ev.status)}</Chip></li>)}</ul>}
+    </Secao>
+  );
+}
+
+function PortalBolsas({ token, fazer, enviando, recarga }: { token: string; fazer: Fazer; enviando: boolean; recarga: number }) {
+  const b = useCarregar(() => publico.bolsas(token).catch(() => []), [token, recarga]);
+  const [esc, setEsc] = useState<Record<string, { pct: string; decl: string; ok: boolean }>>({});
+  const itens = (b.dados ?? []).filter((x) => x.programas.length || x.solicitacoes.length);
+  if (!itens.length) return null;
+  return (
+    <Secao titulo="Bolsas e financiamento">
+      {itens.map((x) => (
+        <div key={x.oportunidade_id} className="mb-3 text-sm">
+          <p className="font-medium">{x.curso}</p>
+          {x.solicitacoes.length > 0 && <ul className="mt-1 space-y-1">{x.solicitacoes.map((s) => (
+            <li key={s.id}>{s.programa} · {s.percentual}% <Chip tipo={s.status === 'aprovada' ? 'ok' : s.status === 'solicitada' ? 'pend' : undefined}>{rotulo(s.status)}</Chip>
+              {s.etapa_externa && <Chip tipo="tec">{rotulo(s.etapa_externa)}</Chip>}{s.justificativa && <span className="text-xs"> — {s.justificativa}</span>}</li>))}</ul>}
+          {x.programas.filter((g) => !x.solicitacoes.some((s) => s.programa === g.nome && ['solicitada', 'aprovada'].includes(s.status))).map((g) => {
+            const k = `${x.oportunidade_id}-${g.id}`; const e = esc[k] ?? { pct: String(g.percentual_max), decl: '', ok: false };
+            return (
+              <details key={g.id} className="mt-2 rounded-lg border border-linha p-2">
+                <summary className="cursor-pointer">{g.nome} · {rotulo(g.tipo)} · até {g.percentual_max}%</summary>
+                {g.requisitos && <p className="mt-1 whitespace-pre-line text-xs">{g.requisitos}</p>}
+                {g.documentos.length > 0 && <p className="text-xs">Documentos: {g.documentos.join(', ')}</p>}
+                <div className="mt-2 flex flex-wrap items-end gap-2">
+                  <Campo rotulo={g.tipo === 'prouni' ? 'Percentual (50 ou 100)' : 'Percentual pedido'}><input className="campo w-24" inputMode="decimal" value={e.pct} onChange={(v) => setEsc({ ...esc, [k]: { ...e, pct: v.target.value } })} /></Campo>
+                  <Campo rotulo="Conte por que você se enquadra (opcional)" className="grow"><input className="campo" value={e.decl} onChange={(v) => setEsc({ ...esc, [k]: { ...e, decl: v.target.value } })} /></Campo>
+                </div>
+                <label className="mt-1 flex items-start gap-2 text-xs"><input type="checkbox" checked={e.ok} onChange={(v) => setEsc({ ...esc, [k]: { ...e, ok: v.target.checked } })} />Declaro que as informações são verdadeiras e que apresentarei os documentos pedidos.</label>
+                <button className="btn btn-sec btn-peq mt-1" disabled={enviando || !e.ok} onClick={() => void fazer(async () => (await publico.solicitarBolsa(token, x.oportunidade_id, g.id, Number(e.pct.replace(',', '.')), e.decl || undefined)).mensagem)}>Solicitar</button>
+              </details>);
+          })}
+        </div>))}
+      <p className="nota">A decisão é da instituição. ProUni e FIES seguem as regras e o calendário do MEC.</p>
     </Secao>
   );
 }

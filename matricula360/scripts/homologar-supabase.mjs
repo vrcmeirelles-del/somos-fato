@@ -102,7 +102,7 @@ try {
         registrar('gestor', disp, 'proposta acima do limite fica pendente', true);
         await page.screenshot({ path: `${OUT}/${disp}-gestor-detalhe.png` });
         await page.click('#det-corpo button[aria-label="Fechar"]');
-        await ir(page, 'Propostas e bolsas');
+        await ir(page, 'Propostas');
         await page.waitForSelector('main table');
         await page.waitForSelector('main table tbody tr', { timeout: 15000 });
         const propria = page.locator('tr:has-text("Gestora Alfa") button:text("Aprovar")').first();
@@ -334,7 +334,7 @@ try {
     // Gestor aprova a proposta criada pelo comercial nesta rodada (segregação: quem cria não aprova)
     if (disp === 'desktop') {
       const { ctx, page, erros } = await sessao(disp, 'gestor.alfa');
-      await ir(page, 'Propostas e bolsas');
+      await ir(page, 'Propostas');
       await page.waitForSelector('main table tbody tr', { timeout: 15000 });
       const aprovar = page.locator('tr:has-text("Teste automatizado E2E"):has-text("Atendente Alfa") button:text("Aprovar")').first();
       if (await aprovar.count()) {

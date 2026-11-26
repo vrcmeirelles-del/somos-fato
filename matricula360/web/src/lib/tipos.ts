@@ -230,3 +230,15 @@ export interface Seletivo { pode_gerir: boolean; pode_divulgar: boolean; aviso: 
 export interface Comunicacao { modo: string; pode_gerir: boolean; aviso: string;
   modelos: { id: number; nome: string; canal: string; gatilho: string; assunto: string | null; corpo: string; ativo: boolean; simuladas: number; bloqueadas: number; copiadas: number; abertura: null; clique: null }[];
   recentes: { id: number; canal: string; destino: string | null; status: string; motivo: string | null; em: string; nome: string; corpo: string }[] | null }
+
+// Bolsas e financiamento (migração 23)
+export interface ProgramaBolsa { id: number; nome: string; tipo: string; percentual_max: number; cursos: number[] | null; vagas: number | null; cumulativo: boolean;
+  validade_ate: string | null; requisitos: string | null; documentos: string[]; visivel_portal: boolean; ativo: boolean;
+  solicitadas: number; aprovadas: number; confirmados: number; percentual_medio: number | null }
+export interface SolicitacaoBolsa { id: number; oportunidade_id: number; nome: string; curso: string; etapa: string; programa: string; tipo: string; percentual: number;
+  status: string; etapa_externa: string | null; origem: string; declaracao: string | null; solicitado_em: string; solicitado_por: string | null;
+  decidido_por: string | null; decidido_em: string | null; justificativa: string | null; decide_proprio: boolean }
+export interface Bolsas { pode_gerir: boolean; pode_decidir: boolean; pode_solicitar: boolean; aviso: string; programas: ProgramaBolsa[]; solicitacoes: SolicitacaoBolsa[] }
+export interface PortalBolsas { oportunidade_id: number; curso: string;
+  programas: { id: number; nome: string; tipo: string; percentual_max: number; requisitos: string | null; documentos: string[]; validade_ate: string | null }[];
+  solicitacoes: { id: number; programa: string; percentual: number; status: string; etapa_externa: string | null; justificativa: string | null }[] }

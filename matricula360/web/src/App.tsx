@@ -17,6 +17,7 @@ import { Crm } from './pages/Crm';
 import { Eventos, Formularios } from './pages/Captacao';
 import { Comunicacao, Integracoes } from './pages/Comunicacao';
 import { Seletivo } from './pages/Seletivo';
+import { Bolsas } from './pages/Bolsas';
 import { Funis } from './pages/Funis';
 import { Intervencoes } from './pages/Intervencoes';
 import { Login } from './pages/Login';
@@ -102,6 +103,7 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
       <Route path="/ies/:ies/relacionamento" element={<ExigeIes><Relacionamento /></ExigeIes>} />
       <Route path="/ies/:ies/matriculas" element={<ExigeIes><Matriculas abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/propostas" element={<ExigeIes><Propostas /></ExigeIes>} />
+      <Route path="/ies/:ies/bolsas" element={<ExigeIes><Bolsas abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/configuracoes" element={<ExigeIes><Configuracoes /></ExigeIes>} />
       <Route path="/ies/:ies/permissoes" element={<ExigeIes><Permissoes /></ExigeIes>} />
       <Route path="/ies/:ies/auditoria" element={<ExigeIes><Auditoria /></ExigeIes>} />

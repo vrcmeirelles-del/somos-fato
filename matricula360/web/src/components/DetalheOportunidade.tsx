@@ -4,7 +4,7 @@ import { dataHora, moeda, rotulo } from '../lib/formato';
 import { useAcao, useCarregar } from '../lib/hooks';
 import type { Canal, Dimensao } from '../lib/tipos';
 import { useSessao } from './Layout';
-import { AcoesCandidato, AceiteNaFicha, AlertaDuplicidade, DocumentosNaFicha, FunilNaFicha, LinhaDoTempo, PainelScore, Reatribuir, Relacionamento } from './FichaCrm';
+import { AcoesCandidato, AceiteNaFicha, BolsasNaFicha, AlertaDuplicidade, DocumentosNaFicha, FunilNaFicha, LinhaDoTempo, PainelScore, Reatribuir, Relacionamento } from './FichaCrm';
 import { Campo, Chip, Estado, Mensagem } from './ui';
 
 const CANAIS: Canal[] = ['email', 'whatsapp', 'telefone'];
@@ -96,6 +96,7 @@ export function DetalheOportunidade({ id, aoFechar, aoMudar }: { id: number; aoF
               </section>
             </div>
             <DocumentosNaFicha op={id} fazer={fazer} enviando={acao.enviando} />
+            {!p.anonimizada && <BolsasNaFicha op={id} fazer={fazer} enviando={acao.enviando} />}
             {['matricula_comercial', 'confirmado', 'cancelado'].includes(o.etapa) && tem('gestor', 'secretaria', 'financeiro', 'coordenador', 'comercial') && <AceiteNaFicha op={id} fazer={fazer} enviando={acao.enviando} />}
             {tem('gestor', 'comercial') && !p.anonimizada && ies && <AcoesCandidato op={id} ies={ies} fazer={fazer} enviando={acao.enviando} />}
             <FunilNaFicha op={id} versaoOp={o.versao} podeEditar={podeFunil && !p.anonimizada} fazer={fazer} enviando={acao.enviando} />

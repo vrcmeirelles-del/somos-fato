@@ -1,7 +1,7 @@
 // Mapa dos dez ambientes. Itens "planejado" aparecem desabilitados com a fase prevista:
 // não há página de lista fingindo módulo pronto (critério de aceite da Fase 2).
 import {
-  Activity, BarChart3, CalendarClock, CalendarDays, ClipboardList, FileCheck2, Gauge, MessagesSquare, PlugZap, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HeartHandshake, KanbanSquare, KeyRound,
+  Activity, BarChart3, CalendarClock, CalendarDays, ClipboardList, FileCheck2, Gauge, MessagesSquare, PlugZap, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HandCoins, HeartHandshake, KanbanSquare, KeyRound,
   LayoutDashboard, Megaphone, RefreshCcw, ScrollText, Settings, ShieldCheck, Target, Users, Workflow, type LucideIcon,
 } from 'lucide-react';
 import type { Papel } from './tipos';
@@ -35,7 +35,8 @@ export const AMBIENTES: Ambiente[] = [
   { id: 'conversao', rotulo: 'Conversão e Matrículas', icone: ClipboardCheck, itens: [
     { rotulo: 'Processo seletivo', rota: (i) => `/ies/${i}/seletivo`, icone: FileCheck2, papeis: ['gestor', 'secretaria', 'coordenador', 'comercial'] },
     { rotulo: 'Matrículas', rota: (i) => `/ies/${i}/matriculas`, icone: ClipboardCheck },
-    { rotulo: 'Propostas e bolsas', rota: (i) => `/ies/${i}/propostas`, icone: FileText, papeis: ['gestor', 'comercial'] },
+    { rotulo: 'Propostas', rota: (i) => `/ies/${i}/propostas`, icone: FileText, papeis: ['gestor', 'comercial'] },
+    { rotulo: 'Bolsas e financiamento', rota: (i) => `/ies/${i}/bolsas`, icone: HandCoins, papeis: ['gestor', 'financeiro', 'comercial', 'secretaria', 'coordenador', 'reitoria'] },
   ] },
   { id: 'recuperacao', rotulo: 'Recuperação e Aceleração', icone: RefreshCcw, itens: [
     { rotulo: 'Protocolos, reativação e sprints', rota: (i) => `/ies/${i}/recuperacao`, icone: RefreshCcw, papeis: ['gestor', 'reitoria', 'coordenador', 'comercial'] },

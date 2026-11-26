@@ -1,7 +1,8 @@
 // Seções do CRM avançado na ficha da oportunidade (migração 10). Só aparecem quando o banco devolve os campos novos.
-import { AlertTriangle, CalendarClock, FileSignature, FileText, Gauge, Link2, MessageSquarePlus, ShieldQuestion, UserCog, Workflow } from 'lucide-react';
+import { AlertTriangle, CalendarClock, FileSignature, HandCoins, FileText, Gauge, Link2, MessageSquarePlus, ShieldQuestion, UserCog, Workflow } from 'lucide-react';
 import { baixarBase64, lerBase64 } from '../lib/arquivo';
 import { baixarTexto, comprovanteHtml, nomeComprovante } from '../lib/contrato';
+import { LinhaSolicitacao } from '../pages/Bolsas';
 import { useState } from 'react';
 import { descreverEvento } from '../pages/Auditoria';
 import { api } from '../lib/api';
@@ -198,6 +199,34 @@ export function DocumentosNaFicha({ op, fazer, enviando }: { op: number; fazer: 
             <label className="btn btn-sec btn-peq cursor-pointer">Enviar<input type="file" className="sr-only" accept="application/pdf,image/jpeg,image/png" disabled={enviando} onChange={(e) => {
               const arq = e.target.files?.[0]; if (!arq) return; void f2(async () => { await api.enviarDocumento(op, i.tipo, arq.name, await lerBase64(arq)); return 'Documento enviado.'; }); }} /></label>)}
         </li>))}</ul>
+    </section>
+  );
+}
+
+// Bolsas e financiamento da oportunidade (L12): solicitações, decisão segregada e novo pedido.
+export function BolsasNaFicha({ op, fazer, enviando }: { op: number; fazer: Fazer; enviando: boolean }) {
+  const { ies } = useSessao();
+  const [recarga, setRecarga] = useState(0);
+  const b = useCarregar(() => api.bolsas(ies!, op).catch(() => null), [ies, op, recarga]);
+  const [prog, setProg] = useState(''); const [pct, setPct] = useState(''); const [obs, setObs] = useState('');
+  if (!b.dados) return null;
+  const d = b.dados;
+  const f2: Fazer = (fn) => fazer(async () => { const t = await fn(); setRecarga((n) => n + 1); return t; });
+  const ativos = d.programas.filter((p) => p.ativo);
+  if (!d.solicitacoes.length && !(d.pode_solicitar && ativos.length)) return null;
+  return (
+    <section aria-label="Bolsas e financiamento" className="mt-4 rounded-xl border border-linha p-3">
+      <H icone={HandCoins}>Bolsas e financiamento</H>
+      <div className="space-y-2">{d.solicitacoes.map((s) => <LinhaSolicitacao key={s.id} s={s} podeDecidir={d.pode_decidir} fazer={f2} enviando={enviando} />)}</div>
+      {d.pode_solicitar && ativos.length > 0 && (
+        <div className="mt-2 flex flex-wrap items-end gap-2">
+          <Campo rotulo="Programa"><select className="campo" value={prog} onChange={(e) => { setProg(e.target.value); const g = ativos.find((x) => String(x.id) === e.target.value); setPct(g ? String(g.percentual_max) : ''); }}>
+            <option value="">Escolher…</option>{ativos.map((g) => <option key={g.id} value={g.id}>{g.nome} (até {g.percentual_max}%)</option>)}</select></Campo>
+          <Campo rotulo="Percentual"><input className="campo w-20" inputMode="decimal" value={pct} onChange={(e) => setPct(e.target.value)} /></Campo>
+          <Campo rotulo="Observação" className="grow"><input className="campo" value={obs} onChange={(e) => setObs(e.target.value)} /></Campo>
+          <button className="btn btn-sec btn-peq" disabled={enviando || !prog || !pct} onClick={() => void f2(async () => {
+            await api.solicitarBolsa(op, Number(prog), Number(pct.replace(',', '.')), obs || undefined); setProg(''); setPct(''); setObs(''); return 'Solicitação registrada; outra pessoa decide.'; })}>Solicitar</button>
+        </div>)}
     </section>
   );
 }

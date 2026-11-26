@@ -115,6 +115,12 @@ export function descreverEvento(e: Pick<EventoAuditoria, 'acao' | 'dados' | 'ent
     // Matrícula online, comunicação e integrações (migração 21)
     case 'contrato.publicar': return `Contrato de matrícula versão ${s('versao')} publicado.`;
     case 'matricula.aceite': return `Matrícula aceita no portal (contrato versão ${s('contrato_versao')})${d.menor_de_18 ? ' com representante legal' : ''}${d.confirmacao === 'simulacao' ? '; código em modo simulação' : ''}.`;
+    // Bolsas e financiamento (migração 23)
+    case 'bolsa.programa': return `Programa de bolsa ${d.novo ? 'criado' : 'atualizado'}${s('nome') ? `: ${s('nome')}` : ''}.`;
+    case 'bolsa.solicitar': return `Bolsa solicitada (${s('programa')}, ${s('percentual')}%) ${s('origem') === 'portal' ? 'pelo candidato no portal' : 'pela equipe'}.`;
+    case 'bolsa.decidir': return `Bolsa ${s('status') === 'aprovada' ? 'aprovada' : 'indeferida'}: ${s('programa')} (${s('percentual')}%).`;
+    case 'bolsa.etapa': return `Etapa externa de ${s('programa')}: ${rotulo(s('etapa')).toLowerCase()}.`;
+    case 'bolsa.cancelar': return `Benefício cancelado (motivo: ${s('motivo')}).`;
     // Aceite reforçado (migração 22)
     case 'matricula.codigo': return `Código de confirmação da matrícula gerado (${rotulo(s('canal'))}${s('modo') === 'simulacao' ? ', modo simulação' : ''}).`;
     case 'matricula.comprovante_ver': return 'Comprovante do aceite consultado pela equipe.';
