@@ -184,6 +184,14 @@ try {
           registrar('gestor', disp, 'P2: Academia com trilhas, rubrica publicada e aviso de avaliação humana', aca.includes('Ética e LGPD na captação') && aca.includes('Atendimento comercial v1') && aca.includes('Nenhuma nota automática'));
           await checar(page, 'gestor', disp, 'academia', erros);
         } else console.log('AVISO academia não verificada: banco sem a migração 16.');
+        // P3 (migração 17): Relacionamento Estudantil.
+        await ir(page, 'Permanência, indicações e embaixadores');
+        await page.waitForFunction(() => /migração 17|Indicações rastreáveis/.test(document.querySelector('main')?.textContent || ''), null, { timeout: 15000 }).catch(() => null);
+        if (!(await page.textContent('main')).includes('Disponível após a migração 17')) {
+          const rel = await page.textContent('main');
+          registrar('gestor', disp, 'P3: Relacionamento sem presumir evasão, com permanência por marco e indicações', rel.includes('não presume evasão') && rel.includes('Permanência · 30 dias') && rel.includes('Indicações rastreáveis'));
+          await checar(page, 'gestor', disp, 'relacionamento', erros);
+        } else console.log('AVISO relacionamento não verificado: banco sem a migração 17.');
         // R09: trocar a instituição pela URL não expõe a outra IES (a interface volta à IES autorizada e o banco recusa a outra).
         for (const rota of ['/ies/2/crm', '/ies/1/inteligencia?ies=2']) {
           await page.goto(`${BASE}${rota}`);

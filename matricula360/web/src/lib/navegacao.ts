@@ -40,7 +40,7 @@ export const AMBIENTES: Ambiente[] = [
     { rotulo: 'Trilhas, rubricas e PDI', rota: (i) => `/ies/${i}/academia`, icone: BookOpen, papeis: ['gestor', 'reitoria', 'comercial'] },
   ] },
   { id: 'relacionamento', rotulo: 'Relacionamento Estudantil', icone: HeartHandshake, itens: [
-    { rotulo: 'Permanência e rematrícula', icone: HeartHandshake, fase: 'P3' },
+    { rotulo: 'Permanência, indicações e embaixadores', rota: (i) => `/ies/${i}/relacionamento`, icone: HeartHandshake, papeis: ['gestor', 'reitoria', 'coordenador', 'secretaria'] },
   ] },
   { id: 'governanca', rotulo: 'Governança Institucional', icone: ShieldCheck, itens: [
     { rotulo: 'Configurações e metas', rota: (i) => `/ies/${i}/configuracoes`, icone: Settings, papeis: ['gestor'] },

@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -126,6 +126,15 @@ export const api = {
   salvarRubrica: (ies: number, acao: string, rubrica: number, criterios?: unknown[]) =>
     c().rpc<{ id: number }>('rpc_salvar_rubrica', { p_ies: ies, p_acao: acao, p_rubrica: rubrica, p_criterios: criterios ?? null }),
   salvarCenario: (ies: number, dados: Record<string, unknown>) => c().rpc<{ id: number }>('rpc_salvar_cenario', { p_ies: ies, p_dados: dados }),
+  relacionamento: (ies: number, coorte: string) => c().rpc<Relacionamento>('rpc_relacionamento', { p_ies: ies, p_coorte: coorte }),
+  registrarVinculo: (op: number, marco: string, situacao: string, data: string, observacao?: string) =>
+    c().rpc('rpc_registrar_vinculo', { p_op: op, p_marco: marco, p_situacao: situacao, p_data: data, p_observacao: observacao ?? null }),
+  onboardingItem: (op: number, item: string, concluido: boolean) => c().rpc('rpc_onboarding_item', { p_op: op, p_item: item, p_concluido: concluido }),
+  configurarRelacionamento: (ies: number, onboarding: string[] | null, programa: string | null) =>
+    c().rpc('rpc_configurar_relacionamento', { p_ies: ies, p_onboarding: onboarding, p_programa: programa }),
+  salvarEmbaixador: (op: number, aceite: string, status = 'ativo') => c().rpc<{ id: number }>('rpc_salvar_embaixador', { p_op: op, p_aceite_em: aceite, p_status: status }),
+  criarIndicacao: (ies: number, dados: Record<string, unknown>) => c().rpc<{ codigo: string }>('rpc_criar_indicacao', { p_ies: ies, p_dados: dados }),
+  indicacoes: (ies: number) => c().rpc<{ id: number; codigo: string; indicador_tipo: string; indicador_nome: string; leads: number }[]>('rpc_indicacoes', { p_ies: ies }),
   pendencias: (ies: number) => c().rpc<Pendencia[]>('rpc_pendencias', { p_ies: ies }),
   configurar: (ies: number, v: { sla_horas?: number; max_followups?: number; dias_sem_contato?: number; capacidade_atendente?: number; amostra_minima_forecast?: number }) =>
     c().rpc<Record<string, number>>('rpc_configurar', { p_ies: ies, p_sla_horas: v.sla_horas ?? null, p_max_followups: v.max_followups ?? null,

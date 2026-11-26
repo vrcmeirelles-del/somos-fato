@@ -23,6 +23,7 @@ import { Performance } from './pages/Performance';
 import { Permissoes } from './pages/Permissoes';
 import { Propostas } from './pages/Propostas';
 import { Recuperacao } from './pages/Recuperacao';
+import { Relacionamento } from './pages/Relacionamento';
 
 export function App() {
   const [pronto, setPronto] = useState(false);
@@ -85,6 +86,7 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
       <Route path="/ies/:ies/agenda" element={<ExigeIes><Agenda abrirDetalhe={abrir} versao={versao} /></ExigeIes>} />
       <Route path="/ies/:ies/recuperacao" element={<ExigeIes><Recuperacao abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/academia" element={<ExigeIes><Academia /></ExigeIes>} />
+      <Route path="/ies/:ies/relacionamento" element={<ExigeIes><Relacionamento /></ExigeIes>} />
       <Route path="/ies/:ies/matriculas" element={<ExigeIes><Matriculas abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/propostas" element={<ExigeIes><Propostas /></ExigeIes>} />
       <Route path="/ies/:ies/configuracoes" element={<ExigeIes><Configuracoes /></ExigeIes>} />

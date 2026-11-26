@@ -172,3 +172,15 @@ export interface Lacuna { usuario: string; meu: boolean; competencia: Competenci
   recomendados: { modulo_id: number; titulo: string; trilha: string; concluido: boolean }[]; pdi_aberto: boolean }
 export interface Academia { regra: string; ve_equipe: boolean; pode_avaliar: boolean; pode_gerir: boolean; aviso: string; trilhas: Trilha[]; rubricas: Rubrica[];
   cenarios: Cenario[]; equipe: { id: string; nome: string }[] | null; avaliacoes: Avaliacao[]; pdis: Pdi[]; lacunas: Lacuna[] }
+
+// Relacionamento Estudantil (migração 17)
+export type Marco = 'd30' | 'd90' | 'rematricula';
+export interface Permanencia { marco: Marco; elegiveis: number; registrados: number; ativos: number; desconhecidos: number; cobertura: number | null;
+  permanencia: number | null; minimo_observado: number | null; motivo: string | null }
+export interface Ingressante { id: number; nome: string; curso: string; confirmada_em: string; dias_desde_ingresso: number;
+  vinculos: Partial<Record<Marco, { situacao: string; data: string; observacao: string | null; por: string | null }>>; onboarding: string[]; embaixador: boolean }
+export interface Relacionamento { coorte: string; regra: string; pode_registrar: boolean; pode_gerir: boolean; pode_indicar: boolean; marcos: Record<Marco, number>;
+  onboarding_modelo: string[]; programa_embaixadores: string | null; permanencia: Permanencia[];
+  alertas: { regra: string; prioridade: number; titulo: string; quantidade: number; proposta: string }[]; ingressantes: Ingressante[];
+  embaixadores: { id: number; nome: string; curso: string; status: string; aceite_regras_em: string; regras_atuais: boolean; indicacoes: number; ingressantes_indicados: number }[];
+  indicacoes: { id: number; codigo: string; indicador_tipo: string; indicador_nome: string; leads: number; ingressantes: number }[]; metodos: Record<string, string> }

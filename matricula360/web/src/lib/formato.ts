@@ -30,6 +30,8 @@ const ROTULOS: Record<string, string> = {
   comunicacao: 'Comunicação', escuta: 'Escuta', dominio_tecnico: 'Domínio técnico', negociacao_etica: 'Negociação ética', objecoes: 'Objeções', registro: 'Registro',
   disciplina_operacional: 'Disciplina operacional', roleplay: 'Roleplay', observacao_atendimento: 'Observação de atendimento', finalizada: 'Finalizada', aberto: 'Aberto',
   sdr: 'SDR', closer: 'Closer', farmer: 'Farmer', lideranca: 'Liderança', todos: 'Todos',
+  d30: '30 dias', d90: '90 dias', rematricula: 'Rematrícula', ativo: 'Ativo', trancado: 'Trancado', evadido: 'Evadido', transferido: 'Transferido', inativo: 'Inativo',
+  aluno: 'Aluno', embaixador: 'Embaixador', colaborador: 'Colaborador', parceiro: 'Parceiro',
   planejada: 'Planejada', ativa: 'Ativa', encerrada: 'Encerrada',
   ingressantes: 'Ingressantes efetivos', oportunidades: 'Oportunidades', matriculas_comerciais: 'Matrículas comerciais', conversao: 'Conversão',
   cpl_centavos: 'Custo por lead', custo_ingressante_centavos: 'Custo por ingressante',
@@ -46,13 +48,14 @@ export function centavos(texto: string): number {
   return Math.round(v * 100);
 }
 
-// Linha de importação "nome;email;telefone;curso_id;forma;coorte;base_legal;origem[;campanha]" -> objeto da RPC.
+// Linha de importação "nome;email;telefone;curso_id;forma;coorte;base_legal;origem[;campanha[;indicacao]]" -> objeto da RPC.
 export function linhaImportacao(l: string): Record<string, unknown> {
-  const [nome, email, telefone, curso, forma, coorte, base, origem, campanha] = l.split(';').map((x) => x.trim());
+  const [nome, email, telefone, curso, forma, coorte, base, origem, campanha, indicacao] = l.split(';').map((x) => x.trim());
   const o: Record<string, unknown> = { nome, curso_id: Number(curso), forma_ingresso: forma, coorte, base_legal: base, origem };
   if (email) o.email = email;
   if (telefone) o.telefone = telefone;
   if (campanha) o.campanha = campanha;
+  if (indicacao) o.indicacao = indicacao;
   return o;
 }
 
