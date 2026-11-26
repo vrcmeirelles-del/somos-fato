@@ -1,13 +1,15 @@
 // Seções do CRM avançado na ficha da oportunidade (migração 10). Só aparecem quando o banco devolve os campos novos.
-import { AlertTriangle, CalendarClock, FileText, Gauge, Link2, MessageSquarePlus, ShieldQuestion, UserCog, Workflow } from 'lucide-react';
+import { AlertTriangle, CalendarClock, FileSignature, FileText, Gauge, Link2, MessageSquarePlus, ShieldQuestion, UserCog, Workflow } from 'lucide-react';
 import { baixarBase64, lerBase64 } from '../lib/arquivo';
+import { baixarTexto, comprovanteHtml, nomeComprovante } from '../lib/contrato';
 import { useState } from 'react';
 import { descreverEvento } from '../pages/Auditoria';
 import { api } from '../lib/api';
 import { CATEGORIAS_OBJECAO, TIPOS_INTERACAO, linhaDoTempo, relativo } from '../lib/crm';
 import { dataHora, pct, rotulo } from '../lib/formato';
 import { useCarregar } from '../lib/hooks';
-import type { Detalhe } from '../lib/tipos';
+import type { ErroApi } from '../lib/supabase';
+import type { ComprovanteAceite, Detalhe } from '../lib/tipos';
 import { useSessao } from './Layout';
 import { Campo, Chip } from './ui';
 
@@ -196,6 +198,27 @@ export function DocumentosNaFicha({ op, fazer, enviando }: { op: number; fazer: 
             <label className="btn btn-sec btn-peq cursor-pointer">Enviar<input type="file" className="sr-only" accept="application/pdf,image/jpeg,image/png" disabled={enviando} onChange={(e) => {
               const arq = e.target.files?.[0]; if (!arq) return; void f2(async () => { await api.enviarDocumento(op, i.tipo, arq.name, await lerBase64(arq)); return 'Documento enviado.'; }); }} /></label>)}
         </li>))}</ul>
+    </section>
+  );
+}
+
+// Aceite da matrícula online: situação, integridade e comprovante (cada consulta da equipe é auditada, pois contém CPF).
+export function AceiteNaFicha({ op, fazer, enviando }: { op: number; fazer: Fazer; enviando: boolean }) {
+  const [c, setC] = useState<ComprovanteAceite | null>(null);
+  return (
+    <section aria-label="Aceite da matrícula" className="mt-4 rounded-xl border border-linha p-3">
+      <H icone={FileSignature}>Aceite da matrícula online</H>
+      {!c ? <button className="btn btn-sec btn-peq" disabled={enviando} onClick={() => void fazer(async () => {
+        try { setC(await api.comprovanteAceite(op)); } catch (e) { if ((e as ErroApi).codigo === 'PGRST202') throw new Error('Disponível após a migração 22 do banco.'); throw e; }
+        return 'Consulta registrada na auditoria.'; })}>Ver comprovante do aceite</button>
+        : <div className="space-y-1 text-sm">
+            <p>Aceito em {dataHora(c.aceito_em)} · contrato v{c.contrato_versao} · {c.procedimento === 'aceite-v2' ? 'procedimento reforçado' : 'procedimento anterior (só nome)'}</p>
+            <p><Chip tipo={c.evidencia_integra === false || !c.contrato_integro ? 'erro' : 'ok'}>{c.evidencia_integra === false || !c.contrato_integro ? 'hash não confere' : 'íntegro'}</Chip>
+              {c.evidencia && (c.evidencia as { candidato?: { menor_de_18?: boolean } }).candidato?.menor_de_18 && <Chip tipo="pend">com representante legal</Chip>}
+              {(c.evidencia as { confirmacao?: { modo?: string } } | null)?.confirmacao?.modo === 'simulacao' && <Chip tipo="tec">código em simulação</Chip>}
+              {c.desistencia_em && <Chip tipo="erro">desistência em {dataHora(c.desistencia_em)}</Chip>}</p>
+            <button className="btn btn-sec btn-peq" onClick={() => baixarTexto(nomeComprovante(c), 'text/html', comprovanteHtml(c))}>Baixar comprovante</button>
+          </div>}
     </section>
   );
 }

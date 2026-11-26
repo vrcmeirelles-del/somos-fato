@@ -205,8 +205,19 @@ export interface PortalSeletivo {
     redacao_enviada: boolean; resultado: string | null; resultado_divulgado: boolean }[];
   eventos: { titulo: string; tipo: string; inicio: string; local: string | null; online: boolean; status: string }[] }
 export interface PortalMatricula { oportunidade_id: number; curso: string; coorte: string; etapa: string;
+  procedimento?: string; prazo_arrependimento_dias?: number; confirmacao?: { canal: string; destino: string };
   proposta: { id: number; mensalidade_centavos: number; desconto_pct: number; valor_final_centavos: number; validade: string; status: string } | null;
-  contrato: { versao: number; texto: string } | null; aceite: { aceito_em: string; contrato_versao: number } | null; pagamento: string }
+  contrato: { versao: number; texto: string } | null;
+  aceite: { aceito_em: string; contrato_versao: number; evidencia_hash?: string | null; arrependimento_ate?: string; desistencia_em?: string | null; pode_desistir?: boolean } | null;
+  pagamento: string }
+export interface DadosAceite { contrato_versao: number; proposta_id: number; li_contrato: boolean; concordo_condicoes: boolean; ciente_arrependimento: boolean;
+  nome: string; cpf: string; nascimento: string; codigo: string;
+  responsavel?: { nome: string; cpf: string; nascimento: string; vinculo: string; declaro: boolean } }
+export interface CodigoAceite { canal: string; destino: string; expira_em: string; modo: string; codigo_simulacao?: string; aviso: string }
+export interface ComprovanteAceite { instituicao: string; curso: string; coorte: string; aceito_em: string; procedimento: string;
+  evidencia: Record<string, unknown> | null; evidencia_texto: string | null; evidencia_hash: string | null; evidencia_integra: boolean | null;
+  contrato_versao: number; contrato_texto: string; contrato_hash: string; contrato_integro: boolean; nome_confirmado: string;
+  arrependimento_ate: string; desistencia_em: string | null; desistencia_motivo: string | null }
 export interface SolicitacaoTitular { id: number; tipo: string; detalhe: string | null; status: string; resposta: string | null; criado_em: string; nome: string; pessoa_id: number; prazo: string; oportunidade_id: number | null }
 export interface Evento { id: number; titulo: string; tipo: string; inicio: string; fim: string; local: string | null; online: boolean; vagas: number | null; status: string; campanha_id: number | null;
   inscritos: number; presentes: number; ingressantes_presentes: number; inscricoes: { id: number; nome: string; status: string; oportunidade_id: number | null; checkin_em: string | null }[] }

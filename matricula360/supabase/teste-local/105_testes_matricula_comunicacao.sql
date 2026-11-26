@@ -22,15 +22,8 @@ insert into mat_tok select public.rpc_gerar_acesso_portal((select v from teste.v
 reset role; set role anon;
 select teste.ok((select (m->'proposta'->>'valor_final_centavos')::int = 116100 and (m->'contrato'->>'versao')::int = 1 from jsonb_array_elements(public.rpc_publico_portal_matricula((select t from mat_tok))) m),
   'portal mostra proposta aprovada e contrato vigente');
-select teste.erro($q$select public.rpc_publico_aceitar_matricula((select t from mat_tok), (select v from teste.var where k = 'mat_op'), 1, 'Outro Nome Qualquer')$q$, '22023', 'nome divergente do cadastro recusado');
-select teste.erro($q$select public.rpc_publico_aceitar_matricula((select t from mat_tok), (select v from teste.var where k = 'mat_op'), 99, 'Visitante do Open House')$q$, '22023', 'versão de contrato desatualizada recusada');
-select teste.ok((public.rpc_publico_aceitar_matricula((select t from mat_tok), (select v from teste.var where k = 'mat_op'), 1, '  visitante  do open house ')->>'aceito')::boolean, 'aceite eletrônico com nome confirmado');
-select teste.erro($q$select public.rpc_publico_aceitar_matricula((select t from mat_tok), (select v from teste.var where k = 'mat_op'), 1, 'Visitante do Open House')$q$, '22023', 'segundo aceite recusado');
+-- o aceite em si (procedimento reforçado da migração 22) é testado em 106_testes_aceite_reforcado.sql
 reset role;
-select teste.ok((select o.etapa = 'matricula_comercial' and o.matricula_comercial_em is not null from public.oportunidades o where o.id = (select v from teste.var where k = 'mat_op')), 'aceite leva à matrícula comercial (transição oficial)');
-select teste.ok((select a.contrato_hash = encode(sha256(convert_to(k.texto, 'UTF8')), 'hex') from public.aceites_matricula a join public.contratos_modelo k on k.id = a.contrato_id
-                 where a.oportunidade_id = (select v from teste.var where k = 'mat_op')), 'evidência guarda o hash do contrato aceito');
-select teste.ok((select status = 'aceita' from public.propostas where oportunidade_id = (select v from teste.var where k = 'mat_op') order by id desc limit 1), 'proposta marcada como aceita');
 
 -- ---------------------------------------------------------------- comunicação (simulação)
 set role authenticated;

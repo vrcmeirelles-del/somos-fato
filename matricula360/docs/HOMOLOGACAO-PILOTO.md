@@ -331,6 +331,24 @@ Também foram verificadas as páginas novas da equipe: formulários, eventos, pr
 | Ausência de envio externo | `servico.test` › disparo sempre bloqueado e auditado; `api.test` › código sem rede de saída nem SDK de IA |
 | Pessoa contada uma vez no consolidado | `servico.test` › BI com duas matrículas da mesma pessoa = 1 ingressante |
 
+## Aceite eletrônico reforçado (migração 22) — 26/11/2026
+
+Revisão do aceite da migração 21 a partir da análise jurídica. Arquivo para o SQL Editor: `supabase/APLICAR-022-NO-SQL-EDITOR.sql` (**aplicação pendente**).
+
+| Ponto | Implementação |
+|---|---|
+| Menor de idade | Data de nascimento obrigatória. Abaixo de 18 anos, exige o representante legal (mãe, pai ou tutor): nome, CPF diferente do candidato, idade a partir de 18 anos e declaração "represento ou assisto". Idade abaixo de 14 anos é recusada |
+| Autenticação | CPF com dígito verificador e código de 6 dígitos (validade de 15 min, 5 tentativas, 1 pedido por minuto). **Modo simulação:** sem integração de e-mail ou SMS, o código aparece na tela, a evidência registra `modo: simulacao` e o código não acrescenta segurança além da posse do link |
+| Evidência única | JSON canônico com instituição, matrícula, candidato, representante, contrato (versão e SHA-256), condições econômicas, declarações, confirmação, hash da origem, data e prazo de arrependimento. O SHA-256 fica gravado e é recalculado a cada comprovante; adulteração é denunciada |
+| Declarações | Três caixas separadas: li o contrato; concordo com as condições; estou ciente do prazo de 7 dias. Contrato exibido aberto, em fonte de 16 px |
+| Comprovante | Arquivo HTML para guardar ou imprimir, com o texto integral do contrato aceito, as condições, os hashes e o JSON da evidência. Disponível no portal e na ficha da equipe; cada consulta da equipe é auditada, porque contém CPF |
+| Arrependimento | Desistência pelo portal em até 7 dias, sem justificativa: cancela a matrícula, encerra as tarefas e audita. Depois do prazo, o caminho é a secretaria |
+| Destaque | Cláusulas marcadas com `**…**` aparecem em destaque para o candidato e no comprovante. A publicação recusa marcação sem fechamento, e o editor avisa quando o contrato não tem nenhum destaque |
+
+Testes: banco local 603 aprovadas, com 45 novas em `106_testes_aceite_reforcado.sql`; bateria do SQL Editor 615 aprovadas e 0 falhas; unitários 22/22; portal no celular verificado com respostas simuladas, sem rolagem horizontal e sem erros de console. A migração 22 foi aplicada duas vezes sobre um banco que simula o remoto, e o consolidado 1–22 foi aplicado do zero, ambos sem erro.
+
+**[Não verificado]** O enquadramento jurídico precisa ser validado pelo jurídico da instituição: MP 2.200-2/2001, art. 10, §2º; CDC, arts. 46, 49 e 54; Decreto 7.962/2013; CC, arts. 3º a 5º. Também falta definir o contrato que será publicado.
+
 ## Limpeza dos dados de teste (26/11/2026)
 
 Script: `supabase/LIMPAR-DADOS-TESTE.sql`. O usuário rodou a prévia e depois a execução no projeto `jbimijcvvekomovodfze`. A conferência foi feita depois, só com leitura, pelo login gestor.alfa:

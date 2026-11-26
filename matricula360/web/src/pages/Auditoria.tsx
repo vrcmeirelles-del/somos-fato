@@ -114,7 +114,11 @@ export function descreverEvento(e: Pick<EventoAuditoria, 'acao' | 'dados' | 'ent
     case 'seletivo.divulgar': return `Resultado do processo seletivo divulgado (${s('aprovados')} aprovado(s) de ${s('total')}).`;
     // Matrícula online, comunicação e integrações (migração 21)
     case 'contrato.publicar': return `Contrato de matrícula versão ${s('versao')} publicado.`;
-    case 'matricula.aceite': return `Matrícula aceita no portal (contrato versão ${s('contrato_versao')}).`;
+    case 'matricula.aceite': return `Matrícula aceita no portal (contrato versão ${s('contrato_versao')})${d.menor_de_18 ? ' com representante legal' : ''}${d.confirmacao === 'simulacao' ? '; código em modo simulação' : ''}.`;
+    // Aceite reforçado (migração 22)
+    case 'matricula.codigo': return `Código de confirmação da matrícula gerado (${rotulo(s('canal'))}${s('modo') === 'simulacao' ? ', modo simulação' : ''}).`;
+    case 'matricula.comprovante_ver': return 'Comprovante do aceite consultado pela equipe.';
+    case 'matricula.arrependimento': return `Desistência no prazo de arrependimento, pelo portal (motivo: ${s('motivo')}).`;
     case 'comunicacao.modelo': return 'Modelo de mensagem salvo.';
     case 'comunicacao.regua': return `Régua executada em simulação: ${s('simuladas')} simulada(s), ${s('bloqueadas')} bloqueada(s).`;
     case 'integracao.pedido': return `Pedido de ativação registrado: ${rotulo(s('tipo'))}.`;

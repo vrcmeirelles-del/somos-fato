@@ -1,4 +1,4 @@
-import { CheckCircle2, FileUp, GraduationCap, Loader2, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Download, FileUp, GraduationCap, Loader2, ShieldCheck } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import { Campo, Chip, Mensagem } from '../components/ui';
@@ -6,7 +6,9 @@ import { publico } from '../lib/api';
 import { lerBase64 } from '../lib/arquivo';
 import { moeda, rotulo } from '../lib/formato';
 import { useAcao, useCarregar } from '../lib/hooks';
-import type { FormularioPublico as TForm, PortalDados } from '../lib/tipos';
+import { TextoContrato } from '../components/TextoContrato';
+import { baixarTexto, comprovanteHtml, nomeComprovante } from '../lib/contrato';
+import type { CodigoAceite, FormularioPublico as TForm, PortalDados, PortalMatricula } from '../lib/tipos';
 
 // Moldura das páginas públicas: sem menu interno, sem dados da equipe.
 function Moldura({ instituicao, children }: { instituicao?: string; children: ReactNode }) {
@@ -192,26 +194,106 @@ function PortalSeletivo({ token, fazer, enviando, recarga }: { token: string; fa
 
 function PortalMatricula({ token, nome, fazer, enviando, recarga }: { token: string; nome: string; fazer: Fazer; enviando: boolean; recarga: number }) {
   const m = useCarregar(() => publico.matricula(token), [token, recarga]);
-  const [confirma, setConfirma] = useState('');
-  const [lido, setLido] = useState(false);
   if (!m.dados?.length) return null;
   return (
     <Secao titulo="Matrícula online">
-      {m.dados.map((x) => (
-        <div key={x.oportunidade_id} className="text-sm">
-          <p className="font-medium">{x.curso} · {x.coorte}</p>
-          {x.aceite ? <p className="text-ok">Matrícula aceita em {new Date(x.aceite.aceito_em).toLocaleString('pt-BR')} (contrato v{x.aceite.contrato_versao}). Próximo passo: validações pela instituição.</p>
-            : x.etapa === 'pre_matricula' && x.proposta?.status === 'aprovada' && x.contrato ? (
-              <div className="mt-2 space-y-2">
-                <p>Proposta: mensalidade {moeda(x.proposta.mensalidade_centavos)}, desconto {x.proposta.desconto_pct}% → <strong>{moeda(x.proposta.valor_final_centavos)}/mês</strong>, válida até {new Date(x.proposta.validade).toLocaleString('pt-BR')}.</p>
-                <details className="rounded-lg bg-fundo p-2"><summary className="cursor-pointer">Ler o contrato (versão {x.contrato.versao})</summary><p className="mt-2 max-h-64 overflow-y-auto whitespace-pre-line text-xs">{x.contrato.texto}</p></details>
-                <label className="flex items-start gap-2"><input type="checkbox" checked={lido} onChange={(e) => setLido(e.target.checked)} />Li o contrato e concordo com a proposta.</label>
-                <Campo rotulo={`Para confirmar, digite seu nome completo (${nome})`}><input className="campo" value={confirma} onChange={(e) => setConfirma(e.target.value)} /></Campo>
-                <button className="btn" disabled={enviando || !lido || !confirma} onClick={() => void fazer(async () => { const r = await publico.aceitar(token, x.oportunidade_id, x.contrato!.versao, confirma); return `Matrícula aceita. ${r.proximo_passo}`; })}>Aceitar matrícula</button>
-              </div>)
-            : <p className="text-suave">A matrícula online fica disponível com a proposta aprovada, na etapa de pré-matrícula.</p>}
-          <p className="nota mt-1">{x.pagamento}</p>
-        </div>))}
+      {m.dados.map((x) => <MatriculaItem key={x.oportunidade_id} x={x} token={token} nome={nome} fazer={fazer} enviando={enviando} />)}
     </Secao>
+  );
+}
+
+const VAZIO_REP = { nome: '', cpf: '', nascimento: '', vinculo: '', declaro: false };
+function idadeEm(nasc: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(nasc)) return null;
+  const n = new Date(`${nasc}T12:00:00`); const h = new Date();
+  let i = h.getFullYear() - n.getFullYear();
+  if (h.getMonth() < n.getMonth() || (h.getMonth() === n.getMonth() && h.getDate() < n.getDate())) i--;
+  return i;
+}
+const soDigitos = (v: string) => v.replace(/\D/g, '').slice(0, 11);
+
+function MatriculaItem({ x, token, nome, fazer, enviando }: { x: PortalMatricula; token: string; nome: string; fazer: Fazer; enviando: boolean }) {
+  const [f, setF] = useState({ li: false, concordo: false, ciente: false, nome: '', cpf: '', nascimento: '', codigo: '' });
+  const [rep, setRep] = useState(VAZIO_REP);
+  const [codigo, setCodigo] = useState<CodigoAceite | null>(null);
+  const idade = idadeEm(f.nascimento);
+  const menor = idade !== null && idade < 18;
+  const prazo = x.prazo_arrependimento_dias ?? 7;
+  const baixar = () => void fazer(async () => { const c = await publico.comprovante(token, x.oportunidade_id); baixarTexto(nomeComprovante(c), 'text/html', comprovanteHtml(c)); return 'Comprovante baixado. Guarde o arquivo.'; });
+
+  if (x.aceite) return (
+    <div className="text-sm">
+      <p className="font-medium">{x.curso} · {x.coorte}</p>
+      {x.aceite.desistencia_em
+        ? <p className="text-suave">Desistência registrada em {new Date(x.aceite.desistencia_em).toLocaleString('pt-BR')}. A matrícula foi cancelada.</p>
+        : <p className="text-ok">Matrícula aceita em {new Date(x.aceite.aceito_em).toLocaleString('pt-BR')} (contrato v{x.aceite.contrato_versao}). Próximo passo: validações pela instituição.</p>}
+      <div className="mt-2 flex flex-wrap gap-2">
+        {x.procedimento && <button className="btn btn-sec btn-peq" disabled={enviando} onClick={baixar}><Download className="h-3.5 w-3.5" aria-hidden />Baixar comprovante e contrato</button>}
+        {x.aceite.pode_desistir && <button className="btn btn-fantasma btn-peq" disabled={enviando} onClick={() => {
+          const motivo = window.prompt(`Desistir da matrícula? Você pode desistir em até ${prazo} dias após o aceite, sem precisar justificar. Se quiser, conte o motivo (opcional):`);
+          if (motivo === null) return;
+          void fazer(async () => (await publico.desistir(token, x.oportunidade_id, motivo || undefined)).mensagem); }}>Desistir da matrícula</button>}
+      </div>
+      {x.aceite.pode_desistir && x.aceite.arrependimento_ate && <p className="nota mt-1">Prazo para desistir pelo portal: até {new Date(x.aceite.arrependimento_ate).toLocaleString('pt-BR')}.</p>}
+      <p className="nota mt-1">{x.pagamento}</p>
+    </div>);
+
+  if (!(x.etapa === 'pre_matricula' && x.proposta?.status === 'aprovada' && x.contrato)) return (
+    <p className="text-sm text-suave">{x.curso}: a matrícula online fica disponível com a proposta aprovada, na etapa de pré-matrícula.</p>);
+  if (!x.procedimento) return <p className="text-sm text-suave">{x.curso}: matrícula online em atualização. Tente novamente mais tarde.</p>;
+
+  const p = x.proposta; const k = x.contrato;
+  const pronto = f.li && f.concordo && f.ciente && f.nome.trim() && soDigitos(f.cpf).length === 11 && idade !== null && /^\d{6}$/.test(f.codigo)
+    && (!menor || (rep.nome.trim() && soDigitos(rep.cpf).length === 11 && rep.nascimento && rep.vinculo && rep.declaro));
+  return (
+    <div className="space-y-3 text-sm">
+      <p className="font-medium">{x.curso} · {x.coorte}</p>
+      <div className="rounded-lg border border-linha p-3">
+        <p className="font-semibold">Condições da proposta</p>
+        <p>Mensalidade {moeda(p.mensalidade_centavos)}, desconto {p.desconto_pct}% → <strong>{moeda(p.valor_final_centavos)}/mês</strong>. Válida até {new Date(p.validade).toLocaleString('pt-BR')}.</p>
+      </div>
+      <div>
+        <p className="font-semibold">Contrato de prestação de serviços educacionais (versão {k.versao})</p>
+        <p className="nota">As cláusulas que limitam direitos aparecem em destaque.</p>
+        <TextoContrato texto={k.texto} className="mt-1 max-h-96 overflow-y-auto rounded-lg border border-linha bg-fundo p-3" />
+      </div>
+      <fieldset className="space-y-1 rounded-lg bg-fundo p-3"><legend className="font-semibold">Declarações</legend>
+        <label className="flex items-start gap-2"><input type="checkbox" checked={f.li} onChange={(e) => setF({ ...f, li: e.target.checked })} />Li o contrato (versão {k.versao}).</label>
+        <label className="flex items-start gap-2"><input type="checkbox" checked={f.concordo} onChange={(e) => setF({ ...f, concordo: e.target.checked })} />Concordo com as condições da proposta: {moeda(p.valor_final_centavos)}/mês.</label>
+        <label className="flex items-start gap-2"><input type="checkbox" checked={f.ciente} onChange={(e) => setF({ ...f, ciente: e.target.checked })} />Estou ciente de que posso desistir pelo portal em até {prazo} dias após o aceite.</label>
+      </fieldset>
+      <fieldset className="grid gap-2 rounded-lg bg-fundo p-3 sm:grid-cols-3"><legend className="font-semibold">Identificação do candidato</legend>
+        <Campo rotulo={`Nome completo (${nome})`} className="sm:col-span-3"><input className="campo" autoComplete="name" value={f.nome} onChange={(e) => setF({ ...f, nome: e.target.value })} /></Campo>
+        <Campo rotulo="CPF"><input className="campo" inputMode="numeric" autoComplete="off" placeholder="000.000.000-00" value={f.cpf} onChange={(e) => setF({ ...f, cpf: e.target.value })} /></Campo>
+        <Campo rotulo="Data de nascimento"><input className="campo" type="date" value={f.nascimento} onChange={(e) => setF({ ...f, nascimento: e.target.value })} /></Campo>
+      </fieldset>
+      {menor && (
+        <fieldset className="grid gap-2 rounded-lg border border-alerta/40 bg-amber-50 p-3 sm:grid-cols-3"><legend className="font-semibold">Representante legal (candidato menor de 18 anos)</legend>
+          <p className="sm:col-span-3">O aceite de quem tem menos de 18 anos precisa do pai, da mãe ou do tutor legal, que aceita junto com o candidato.</p>
+          <Campo rotulo="Nome completo do representante" className="sm:col-span-3"><input className="campo" value={rep.nome} onChange={(e) => setRep({ ...rep, nome: e.target.value })} /></Campo>
+          <Campo rotulo="CPF do representante"><input className="campo" inputMode="numeric" placeholder="000.000.000-00" value={rep.cpf} onChange={(e) => setRep({ ...rep, cpf: e.target.value })} /></Campo>
+          <Campo rotulo="Nascimento do representante"><input className="campo" type="date" value={rep.nascimento} onChange={(e) => setRep({ ...rep, nascimento: e.target.value })} /></Campo>
+          <Campo rotulo="Vínculo"><select className="campo" value={rep.vinculo} onChange={(e) => setRep({ ...rep, vinculo: e.target.value })}>
+            <option value="">Selecione…</option><option value="mae">Mãe</option><option value="pai">Pai</option><option value="tutor">Tutor(a) legal</option></select></Campo>
+          <label className="flex items-start gap-2 sm:col-span-3"><input type="checkbox" checked={rep.declaro} onChange={(e) => setRep({ ...rep, declaro: e.target.checked })} />
+            Declaro que sou representante legal do candidato e que o represento ou assisto neste aceite.</label>
+        </fieldset>)}
+      <fieldset className="rounded-lg bg-fundo p-3"><legend className="font-semibold">Confirmação</legend>
+        <p>Enviaremos um código de 6 dígitos para {x.confirmacao?.destino ?? 'o contato do cadastro'}.</p>
+        <div className="mt-2 flex flex-wrap items-end gap-2">
+          <button type="button" className="btn btn-sec btn-peq" disabled={enviando} onClick={() => void fazer(async () => {
+            const r = await publico.codigoAceite(token, x.oportunidade_id); setCodigo(r); return `Código gerado; vale por 15 minutos.`; })}>{codigo ? 'Pedir novo código' : 'Receber código'}</button>
+          <Campo rotulo="Código"><input className="campo w-28" inputMode="numeric" maxLength={6} autoComplete="one-time-code" value={f.codigo} onChange={(e) => setF({ ...f, codigo: e.target.value.replace(/\D/g, '') })} /></Campo>
+        </div>
+        {codigo?.codigo_simulacao && <p className="mt-2 rounded bg-amber-50 p-2 text-xs text-alerta" role="status">{codigo.aviso} Código: <strong className="font-mono text-sm">{codigo.codigo_simulacao}</strong></p>}
+      </fieldset>
+      <button className="btn" disabled={enviando || !pronto} onClick={() => void fazer(async () => {
+        const r = await publico.aceitar(token, x.oportunidade_id, { contrato_versao: k.versao, proposta_id: p.id, li_contrato: f.li, concordo_condicoes: f.concordo, ciente_arrependimento: f.ciente,
+          nome: f.nome, cpf: soDigitos(f.cpf), nascimento: f.nascimento, codigo: f.codigo,
+          ...(menor ? { responsavel: { nome: rep.nome, cpf: soDigitos(rep.cpf), nascimento: rep.nascimento, vinculo: rep.vinculo, declaro: rep.declaro } } : {}) });
+        if (!r.aceito) throw new Error(`${r.erro ?? 'Não foi possível aceitar'}. Tentativas restantes: ${r.tentativas_restantes ?? 0}.`);
+        return `Matrícula aceita. ${r.proximo_passo ?? ''} Baixe o comprovante abaixo.`; })}>Aceitar matrícula</button>
+      <p className="nota">{x.pagamento}</p>
+    </div>
   );
 }

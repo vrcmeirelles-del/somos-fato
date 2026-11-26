@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula, DadosAceite, CodigoAceite, ComprovanteAceite,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -143,6 +143,7 @@ export const api = {
   solicitacoesTitular: (ies: number) => c().rpc<SolicitacaoTitular[]>('rpc_solicitacoes_titular', { p_ies: ies }),
   tratarSolicitacao: (id: number, status: string, resposta: string) => c().rpc('rpc_tratar_solicitacao', { p_id: id, p_status: status, p_resposta: resposta }),
   documentos: (op: number) => c().rpc<DocumentosOp>('rpc_documentos', { p_op: op }),
+  comprovanteAceite: (op: number) => c().rpc<ComprovanteAceite>('rpc_comprovante_aceite', { p_op: op }),
   enviarDocumento: (op: number, tipo: string, nome: string, base64: string) => c().rpc('rpc_enviar_documento', { p_op: op, p_tipo: tipo, p_nome: nome, p_base64: base64 }),
   baixarDocumento: (doc: number) => c().rpc<{ nome_arquivo: string; mime: string; base64: string }>('rpc_baixar_documento', { p_documento: doc }),
   revisarDocumento: (doc: number, status: string, motivo?: string) => c().rpc('rpc_revisar_documento', { p_documento: doc, p_status: status, p_motivo: motivo ?? null }),
@@ -205,6 +206,9 @@ export const publico = {
     c().rpcPublico('rpc_publico_candidatar', { p_token: t, p_processo: processo, p_op: op, p_agenda: agenda ?? null, p_nota_enem: enem ?? null }),
   enviarRedacao: (t: string, candidatura: number, texto: string) => c().rpcPublico('rpc_publico_enviar_redacao', { p_token: t, p_candidatura: candidatura, p_texto: texto }),
   matricula: (t: string) => c().rpcPublico<PortalMatricula[]>('rpc_publico_portal_matricula', { p_token: t }),
-  aceitar: (t: string, op: number, versao: number, nome: string) =>
-    c().rpcPublico<{ aceito: boolean; proximo_passo: string }>('rpc_publico_aceitar_matricula', { p_token: t, p_op: op, p_contrato_versao: versao, p_nome: nome }),
+  codigoAceite: (t: string, op: number) => c().rpcPublico<CodigoAceite>('rpc_publico_codigo_aceite', { p_token: t, p_op: op }),
+  aceitar: (t: string, op: number, dados: DadosAceite) =>
+    c().rpcPublico<{ aceito: boolean; erro?: string; tentativas_restantes?: number; proximo_passo?: string; evidencia_hash?: string }>('rpc_publico_aceitar_matricula', { p_token: t, p_op: op, p_dados: dados }),
+  comprovante: (t: string, op: number) => c().rpcPublico<ComprovanteAceite>('rpc_publico_comprovante_aceite', { p_token: t, p_op: op }),
+  desistir: (t: string, op: number, motivo?: string) => c().rpcPublico<{ cancelado: boolean; mensagem: string }>('rpc_publico_desistir_matricula', { p_token: t, p_op: op, p_motivo: motivo ?? null }),
 };

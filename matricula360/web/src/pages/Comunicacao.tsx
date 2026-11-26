@@ -4,6 +4,8 @@ import { useSessao } from '../components/Layout';
 import { Aviso, Campo, Cartao, Chip, Detalhes, Estado, Kpi, Mensagem, Titulo, Vazio } from '../components/ui';
 import { api } from '../lib/api';
 import { lerCsv } from '../lib/arquivo';
+import { contarDestaques } from '../lib/contrato';
+import { TextoContrato } from '../components/TextoContrato';
 import { centavos, rotulo } from '../lib/formato';
 import { useAcao, useCarregar } from '../lib/hooks';
 import type { ErroApi } from '../lib/supabase';
@@ -138,9 +140,15 @@ function Contrato() {
       {c.dados && <p className="mb-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-alerta">{c.dados.aviso}</p>}
       {atual ? <p className="text-sm">Versão vigente: <strong>v{atual.versao}</strong> · {atual.aceites} aceite(s)</p> : <p className="nota">Nenhum contrato publicado: a matrícula online fica indisponível no portal.</p>}
       <Mensagem m={acao.mensagem} />
+      {atual && <Detalhes titulo={`Ler a versão vigente (v${atual.versao})`}><TextoContrato texto={atual.texto} className="max-h-80 overflow-y-auto rounded-lg bg-fundo p-3" /></Detalhes>}
       <Detalhes titulo={atual ? 'Publicar nova versão' : 'Publicar contrato'}>
+        <p className="nota mb-1">Marque entre <code>**</code> e <code>**</code> as cláusulas que limitam direitos (multa, reajuste, cancelamento, desistência): elas aparecem em destaque para o candidato e no comprovante.</p>
         <textarea className="campo min-h-[160px] w-full" placeholder={atual?.texto ?? 'Texto do contrato de prestação de serviços educacionais…'} value={texto} onChange={(e) => setTexto(e.target.value)} />
-        <button className="btn btn-peq mt-2" disabled={acao.enviando || texto.trim().length < 100} onClick={() => void acao.executar(async () => {
+        {texto.trim().length > 0 && (() => { const dz = contarDestaques(texto); return (
+          <p className={`mt-1 text-xs ${dz.balanceado && dz.total > 0 ? 'text-suave' : 'text-alerta'}`}>
+            {!dz.balanceado ? 'Há um ** sem fechamento: a publicação será recusada.' : dz.total === 0 ? 'Nenhuma cláusula em destaque. Confira se o contrato tem cláusulas que limitam direitos.' : `${dz.total} cláusula(s) em destaque.`}</p>); })()}
+        {texto.trim().length >= 100 && <Detalhes titulo="Prévia como o candidato verá"><TextoContrato texto={texto} className="max-h-80 overflow-y-auto rounded-lg bg-fundo p-3" /></Detalhes>}
+        <button className="btn btn-peq mt-2" disabled={acao.enviando || texto.trim().length < 100 || !contarDestaques(texto).balanceado} onClick={() => void acao.executar(async () => {
           const r = await api.salvarContrato(ies!, texto); setTexto(''); setRecarga((n) => n + 1); return `Contrato v${r.versao} publicado; aceites anteriores mantêm a versão aceita.`; })}>Publicar versão</button>
       </Detalhes>
     </Cartao>
