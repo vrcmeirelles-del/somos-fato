@@ -181,6 +181,22 @@ Texto original das divergências, antes da decisão:
 - **D2 — Receita potencial.** Hoje = mensalidade da proposta aceita ou mensalidade cheia, mais pipeline ponderado. A seção 6 define "soma das mensalidades ofertadas válidas, com período e natureza de projeção": alinhar.
 - **D3 — Conversão no card principal.** Hoje o destaque é a taxa sobre decididas. A seção 6 define conversão = ingressantes ÷ oportunidades da coorte: inverter o destaque.
 
+### 13.5 Próxima fase proposta (P4 — ponta a ponta digital), a partir da análise de concorrência de 26/11/2026
+Detalhe e fontes em `docs/ANALISE-CONCORRENCIA.md`. As lacunas abaixo foram identificadas em relação a Slate, Salesforce Education Cloud, Anthology Reach, Ellucian CRM Recruit e ao mercado brasileiro.
+- **L1** Formulários e landing pages públicos de captação, com consentimento LGPD.
+- **L2** Portal do candidato.
+- **L3** Documentos protegidos com checklist.
+- **L4** Inscrição e processo seletivo online.
+- **L5** Matrícula online com assinatura e cobrança.
+- **L6** Comunicação omnicanal com réguas automáticas.
+- **L7** Eventos e visitas com check-in.
+- **L8** Integração acadêmica.
+- **L9** Integrações de mídia e marketplaces.
+- **L10** Atendimento conversacional: exclusão deliberada enquanto vigorar a proibição de IA.
+- **L11** Alerta precoce acadêmico.
+
+Ordem proposta: L1 → L3 → L7 → L4, que não exigem serviço externo. Depois L2 e L6, que exigem autorização de envio externo, e por fim L5, L8 e L9, que exigem contratos e credenciais. **Estado: especificado; aguarda decisão do responsável.**
+
 ---
 
 # Anexo histórico — v0.1 integral
