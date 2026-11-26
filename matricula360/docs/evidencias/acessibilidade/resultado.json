@@ -1,0 +1,88 @@
+{
+  "quando": "2026-11-26T17:11:51.907Z",
+  "base": "http://localhost:4197",
+  "telas": 54,
+  "regras_violadas": {
+    "scrollable-region-focusable": {
+      "impacto": "serious",
+      "ajuda": "Scrollable region must have keyboard access",
+      "telas": [
+        "celular:funis(1)",
+        "celular:academia(1)"
+      ],
+      "exemplo": ".tabela :: <div class=\"tabela my-3\">"
+    }
+  },
+  "por_tela": {
+    "desktop:login": [],
+    "desktop:inteligencia": [],
+    "desktop:performance": [],
+    "desktop:intervencoes": [],
+    "desktop:planejamento": [],
+    "desktop:formularios": [],
+    "desktop:eventos": [],
+    "desktop:comunicacao": [],
+    "desktop:campanhas": [],
+    "desktop:crm": [],
+    "desktop:agenda": [],
+    "desktop:funis": [],
+    "desktop:seletivo": [],
+    "desktop:matriculas": [],
+    "desktop:propostas": [],
+    "desktop:bolsas": [],
+    "desktop:recuperacao": [],
+    "desktop:academia": [],
+    "desktop:relacionamento": [],
+    "desktop:sucesso": [],
+    "desktop:rematricula": [],
+    "desktop:configuracoes": [],
+    "desktop:permissoes": [],
+    "desktop:seguranca": [],
+    "desktop:integracoes": [],
+    "desktop:auditoria": [],
+    "desktop:portal-invalido": [],
+    "celular:login": [],
+    "celular:inteligencia": [],
+    "celular:performance": [],
+    "celular:intervencoes": [],
+    "celular:planejamento": [],
+    "celular:formularios": [],
+    "celular:eventos": [],
+    "celular:comunicacao": [],
+    "celular:campanhas": [],
+    "celular:crm": [],
+    "celular:agenda": [],
+    "celular:funis": [
+      {
+        "id": "scrollable-region-focusable",
+        "impacto": "serious",
+        "ajuda": "Scrollable region must have keyboard access",
+        "nos": 1,
+        "exemplo": ".tabela :: <div class=\"tabela my-3\">"
+      }
+    ],
+    "celular:seletivo": [],
+    "celular:matriculas": [],
+    "celular:propostas": [],
+    "celular:bolsas": [],
+    "celular:recuperacao": [],
+    "celular:academia": [
+      {
+        "id": "scrollable-region-focusable",
+        "impacto": "serious",
+        "ajuda": "Scrollable region must have keyboard access",
+        "nos": 1,
+        "exemplo": ".tabela.mt-1 :: <div class=\"tabela mt-1\">"
+      }
+    ],
+    "celular:relacionamento": [],
+    "celular:sucesso": [],
+    "celular:rematricula": [],
+    "celular:configuracoes": [],
+    "celular:permissoes": [],
+    "celular:seguranca": [],
+    "celular:integracoes": [],
+    "celular:auditoria": [],
+    "celular:portal-invalido": []
+  }
+}
