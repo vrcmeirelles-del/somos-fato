@@ -222,6 +222,27 @@ As 7 verificações novas do navegador:
 
 **Observação de rede:** nesta rodada, o domínio `matricula360.somosfato.com.br` falhou no handshake TLS a partir do ambiente de testes, enquanto o endereço do Render respondeu normalmente. Precisa ser conferido num navegador comum.
 
+## Governança (migração 11) e Planejamento e Campanhas (migração 12) — 26/11/2026
+Aplicadas pelo usuário no projeto de homologação, nesta ordem. Conferido no banco real: `rpc_permissoes`, `rpc_exportar_oportunidades`, `rpc_planejamento` e `rpc_campanhas` existem e recusam acesso anônimo (42501).
+
+| Teste | Resultado |
+|---|---|
+| Banco local (migrações 1–12) | 317/317; RLS e `search_path` em 100% |
+| Bateria remota gerada | 320/320, tudo desfeito ao final |
+| Aplicação | 011 e 012 aplicadas duas vezes sobre o estado anterior do banco, sem erro |
+| Navegador no site publicado (build idêntica ao repositório) | **104/104** |
+
+Verificações novas no navegador:
+- matriz de permissões visível;
+- exportação CSV do gestor com contato e registro na auditoria;
+- exportação da coordenação só do seu curso e com contato mascarado;
+- atendente vê só as oportunidades atribuídas a si;
+- R09: `/ies/2/crm` e `?ies=2` sem dados da Beta;
+- página de Planejamento com concorrência;
+- Campanhas com atribuição desconhecida e integrações desligadas.
+
+Decisão do responsável do produto (26/11/2026): o atendente comercial vê apenas as oportunidades atribuídas a ele; o chefe do setor (gestor) vê as da equipe.
+
 ## Critérios de aceite da Bíblia-Mestra
 
 | Critério | Onde está provado |

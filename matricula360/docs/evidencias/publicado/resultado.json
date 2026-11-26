@@ -1,7 +1,7 @@
 {
-  "em": "2026-11-26T11:23:05.601Z",
+  "em": "2026-11-26T12:31:11.828Z",
   "projeto": "https://jbimijcvvekomovodfze.supabase.co",
-  "total": 90,
+  "total": 104,
   "falhas": 0,
   "resultados": [
     {
@@ -9,7 +9,7 @@
       "dispositivo": "desktop",
       "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
       "ok": true,
-      "detalhe": "Oportunidades32Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte6.3%Decididas: 50.0%"
+      "detalhe": "Oportunidades35Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte5.7%Decididas: 50.0%"
     },
     {
       "perfil": "gestor",
@@ -49,7 +49,7 @@
     {
       "perfil": "gestor",
       "dispositivo": "desktop",
-      "passo": "Central: custo por lead N/D com motivo (sem investimento)",
+      "passo": "Central: custo por lead N/D com motivo",
       "ok": true,
       "detalhe": ""
     },
@@ -180,6 +180,90 @@
       "detalhe": ""
     },
     {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "Governança: matriz de permissões e escopo com abrangência explícita",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "permissoes: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "permissoes: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "Governança: exportação CSV do gestor com contato e registro na auditoria",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P1: página de Planejamento com plano da coorte e concorrência com fonte",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "planejamento: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "planejamento: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P1: Campanhas com atribuição desconhecida e integrações desligadas",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "campanhas: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "campanhas: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "R09: /ies/2/crm não mostra dados da Beta",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "R09: /ies/1/inteligencia?ies=2 não mostra dados da Beta",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
       "perfil": "comercial",
       "dispositivo": "desktop",
       "passo": "sem base legal o banco recusa (LGPD)",
@@ -240,7 +324,7 @@
       "dispositivo": "desktop",
       "passo": "CRM: busca por nome filtra o quadro",
       "ok": true,
-      "detalhe": "9 cartões"
+      "detalhe": "12 cartões"
     },
     {
       "perfil": "comercial",
@@ -255,6 +339,13 @@
       "passo": "CRM: agenda comercial lista o agendamento",
       "ok": true,
       "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "Governança: atendente vê só as oportunidades atribuídas a si",
+      "ok": true,
+      "detalhe": "responsáveis: Atendente Alfa"
     },
     {
       "perfil": "comercial",
@@ -364,6 +455,13 @@
     {
       "perfil": "coordenador",
       "dispositivo": "desktop",
+      "passo": "Governança: exportação da coordenação só do seu curso e com contato mascarado",
+      "ok": true,
+      "detalhe": "8 linhas"
+    },
+    {
+      "perfil": "coordenador",
+      "dispositivo": "desktop",
       "passo": "crm: sem rolagem horizontal",
       "ok": true,
       "detalhe": "excesso 0px"
@@ -443,7 +541,7 @@
       "dispositivo": "celular",
       "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
       "ok": true,
-      "detalhe": "Oportunidades33Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte6.1%Decididas: 50.0%"
+      "detalhe": "Oportunidades36Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte5.6%Decididas: 50.0%"
     },
     {
       "perfil": "gestor",
@@ -483,7 +581,7 @@
     {
       "perfil": "gestor",
       "dispositivo": "celular",
-      "passo": "Central: custo por lead N/D com motivo (sem investimento)",
+      "passo": "Central: custo por lead N/D com motivo",
       "ok": true,
       "detalhe": ""
     },

@@ -101,7 +101,7 @@ Manter GitHub, banco, autenticação e Render independentes de Vértice e Fato &
 | R06 | Agrupamento por curso inclui turno/modalidade | Conferir chave de agrupamento, filtro e totais |
 | R07 | Botão Disparar em modo desativado | Simulação clara, nenhuma entrega externa, registro de tentativa |
 | R08 | Auditoria JSON bruto | Visualização legível sem perder evento original; acesso restrito |
-| R09 | Rotas /ies/1 e ?ies=1 | Alteração de URL, API direta, duas IES, escopo de curso |
+| R09 | **homologado e publicado** | Banco: estrutura, painel, permissões e agenda de outra IES → 404; listas sem cursos da outra IES; coordenação sem outros cursos nem por tabela. Navegador: /ies/2/crm e ?ies=2 não exibem dados da Beta |
 | R10 | Campanhas e Academia informativas | CRUD, persistência, autorização, integração e testes antes de marcar concluído |
 Além destes: testes de regressão v0.1, responsividade, teclado, contraste, loading/error/empty, paginação, limites de volume, cálculos, auditoria, transações e rollback. Usar dados sintéticos. Cada entrega exige PR, SHA, testes com saída, evidências de navegador, revisão de segurança e lista de pendências.
 
@@ -118,7 +118,7 @@ Referências conceituais: Scan_20261125_110622.pdf (13 páginas, operação e fu
 | v0.2 | Atualização cumulativa de requisitos | Oito capturas e quatro materiais, análise visual | Inventário remoto, implementação e homologação |
 Esta atualização é exclusivamente documental. Nenhum código remoto, banco, publicação ou configuração foi alterado. Nenhum teste de execução foi realizado nesta atualização.
 
-## 13. Registro de conformidade do repositório (25/11/2026, verificável)
+## 13. Registro de conformidade do repositório (atualizado em 26/11/2026, verificável)
 Estados conforme a seção 11: especificado → implementado → testado localmente → homologado → publicado. Cada estado tem evidência no PR #1 (`vrcmeirelles-del/somos-fato`, branch `ccr-c2153ae4-iykoe6`), em `docs/HOMOLOGACAO-PILOTO.md` e em `docs/DIAGNOSTICO-FASE2.md`.
 
 **Decisão do responsável do produto (25/11/2026):** os quatro materiais de referência são **guia conceitual**. A plataforma desenvolve conteúdo próprio, adaptado ao ensino superior; não reproduz textos, nomes de métodos, valores ou estruturas proprietárias.
@@ -129,13 +129,13 @@ Estados conforme a seção 11: especificado → implementado → testado localme
 | ID | Estado | Evidência / pendência |
 |---|---|---|
 | E01 Central de Inteligência | **publicado (homologação), conforme §6 após a migração 9** | `rpc_central` (migração 8). Dashboard com filtros globais, funil por alcance, evolução semanal, origem, curso, turno, modalidade, atendente, receita, alertas e fila de intervenções. Navegador 83/83 no site publicado. **Divergência D1 em 13.4** |
-| E02 Planejamento Estratégico | especificado | Visível no menu como P1, desabilitado |
-| E03 Marketing e Captação | especificado | Idem; custo por lead e por matrícula N/D com motivo |
+| E02 Planejamento Estratégico | **publicado e homologado (migração 12)** | Plano por coorte (diagnóstico, orçamento, revisão periódica), aprovação com segregação (quem cria não aprova), objetivos com realizado calculado dos dados (N/D sem base), orçamento previsto × alocado × gasto, ações 5W2H travadas após aprovação (só status muda), concorrência com fonte http(s), data de coleta e revisão por outra pessoa. **Pendente:** metas semestrais por curso integradas ao plano (hoje em Configurações) |
+| E03 Marketing e Captação | **publicado e homologado (migração 12)** | Campanhas com canal, vigência, orçamento e código de atribuição; atribuição no cadastro e na importação (código inexistente recusado); atribuição desconhecida explícita; custos idempotentes com estorno motivado; CPL e custo por ingressante com método e N/D; filtro global de campanha na Central. Integrações Meta/Google/TikTok/WhatsApp desligadas. **Pendente:** landing pages |
 | E04 CRM Educacional | **publicado e homologado (migração 10)** | Kanban com arrastar validado no servidor (transição inválida recusada, cartão permanece; perda exige motivo), busca (nome; e-mail/telefone só para perfil pleno), filtros combinados (coorte, curso, forma, somente meus, SLA vencido), cartão com score/SLA/último contato, ficha com linha do tempo única (auditoria legível + interações + objeções), objeções com tratamento, agenda comercial, reatribuição pelo gestor com motivo e transferência de tarefas, alerta de possível duplicidade sem mesclagem. Banco 213/213; navegador no site publicado 90/90. **Pendentes:** funis configuráveis (E05, P1), mesclagem assistida de duplicidades |
 | E05 Funis Comerciais | especificado | P1 |
 | E06 Conversão e Matrículas | **publicado** | Validações por papel, confirmação atômica, cancelamento auditado, proposta ativa única (migração 7), segregação. Pendente: memória de cálculo e moeda explícitas na proposta |
 | E07–E09 | especificado | P2/P3; no menu como planejados |
-| E10 Governança Institucional | **publicado (parcial)** | Master, escopos por IES e curso, configurações, metas, auditoria legível com registro técnico. **Pendentes (P0):** RBAC por operação e campus, exportação |
+| E10 Governança Institucional | **publicado e homologado (migração 11)** | Abrangência explícita do escopo (instituição, campus ou curso; nulo não é curinga), escopo por campus, matriz de permissões por operação conferida por teste contra as RPCs, página Perfis e permissões, exportação CSV com contato só para gestor e auditoria sem PII, visibilidade por atribuição (atendente vê só as suas; gestor vê a equipe — decisão de 26/11/2026), Master com abrangência. **Pendente:** planos comerciais e integrações |
 
 ### 13.2 Backlog de investigação (seção 10)
 | ID | Estado | Resultado |
@@ -160,7 +160,8 @@ Estados conforme a seção 11: especificado → implementado → testado localme
 | Pricing | publicado (limite, validade, aprovação por terceiro, proposta ativa única). Pendente: custo e memória de cálculo |
 | Quality | parcial (alertas de pendência de validação) |
 | Score | publicado: regra determinística `score-v1` (0–100) com razões ponto a ponto; nunca usada para decidir ingresso; visível só a comercial/gestor |
-| Performance, Strategy, Recovery, Learning, Retention | especificados |
+| Strategy | publicado (parcial): ações 5W2H vinculadas a objetivos com indicador e realizado calculado |
+| Performance, Recovery, Learning, Retention | especificados |
 
 ### 13.4 Divergências — decididas em 25/11/2026; migração 9 aplicada, homologada e publicada (local 184/184; navegador no site publicado 83/83)
 - **D1:** indicador oficial pela §6 com aritmética exata (cenário R03 = 168). O método por pipeline aparece como "cenário complementar", identificado. Amostra mínima **configurável por IES, padrão 30**: abaixo dela, N/D com motivo.
