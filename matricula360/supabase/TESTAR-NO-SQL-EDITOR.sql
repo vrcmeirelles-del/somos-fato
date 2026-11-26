@@ -1092,6 +1092,331 @@ end $$ $x$;
   execute $x$ select teste.erro('select count(*) from public.vinculos', '42501', 'vínculos sem leitura direta') $x$;
   execute $x$ reset role $x$;
   execute $x$ select teste.ok(true, 'fim da bateria de relacionamento') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_formulario(1, '{"slug":"x"}'::jsonb)$q$, '42501', 'comercial não cria formulário público') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_formulario(1, '{"slug":"vestibular-2027","titulo":"Vestibular 2027","cursos":[1,3],"coorte":"2027.1","texto_consentimento":"Autorizo a Faculdade Alfa a usar meus dados para contato sobre o processo seletivo, conforme a LGPD."}'::jsonb)$q$,
+  '22023', 'formulário com curso de outra IES recusado') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_formulario(1, '{"slug":"vestibular-2027","titulo":"Vestibular 2027","cursos":[1,2],"coorte":"2027.1","texto_consentimento":"curto"}'::jsonb)$q$,
+  '22023', 'termo de consentimento curto recusado') $x$;
+  execute $x$ insert into teste.var values ('form', (public.rpc_salvar_formulario(1, '{"slug":"vestibular-2027","titulo":"Vestibular 2027","cursos":[1,2],"coorte":"2027.1","texto_consentimento":"Autorizo a Faculdade Alfa a usar meus dados para contato sobre o processo seletivo, conforme a LGPD."}'::jsonb)->>'id')::bigint) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_formulario(1, '{"slug":"vestibular-2027","titulo":"Outro","cursos":[1],"coorte":"2027.1","texto_consentimento":"Autorizo a Faculdade Alfa a usar meus dados para contato sobre o processo seletivo."}'::jsonb)$q$,
+  '23505', 'endereço repetido: conflito') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', '', false) $x$;
+  execute $x$ select teste.ok((select jsonb_array_length(r->'cursos') = 2 and (r->>'versao_consentimento')::int = 1 and r->>'instituicao' like 'Faculdade Alfa%'
+                 from (select public.rpc_publico_formulario('vestibular-2027') r) x), 'anônimo lê o formulário público (cursos e termo)') $x$;
+  execute $x$ select teste.erro('select public.rpc_publico_formulario(''nao-existe'')', 'P0002', 'formulário inexistente: 404') $x$;
+  execute $x$ select teste.erro('select count(*) from public.formularios', '42501', 'anônimo não lê tabelas') $x$;
+  execute $x$ select teste.erro('select public.rpc_formularios(1)', '42501', 'anônimo não executa RPC da equipe') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_inscrever('vestibular-2027', '{"nome":"Rápido Demais","email":"rapido@exemplo.invalid","curso_id":1,"aceite":true,"versao_consentimento":1,"tempo_ms":500}'::jsonb)$q$,
+  '22023', 'envio rápido demais recusado') $x$;
+  execute $x$ select teste.ok((public.rpc_publico_inscrever('vestibular-2027', '{"nome":"Robô","email":"robo@exemplo.invalid","curso_id":1,"aceite":true,"versao_consentimento":1,"tempo_ms":9000,"site":"http://spam"}'::jsonb)->>'portal') is null,
+  'campo-isca: resposta neutra, nada criado') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_inscrever('vestibular-2027', '{"nome":"Sem Aceite","email":"sem.aceite@exemplo.invalid","curso_id":1,"aceite":false,"versao_consentimento":1,"tempo_ms":9000}'::jsonb)$q$,
+  '22023', 'sem aceite do termo vigente: recusado') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_inscrever('vestibular-2027', '{"nome":"Curso Errado","email":"curso.errado@exemplo.invalid","curso_id":3,"aceite":true,"versao_consentimento":1,"tempo_ms":9000}'::jsonb)$q$,
+  '22023', 'curso fora do formulário recusado') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ create temp table portal_tok (t text) $x$;
+  execute $x$ grant all on portal_tok to anon $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ insert into portal_tok select public.rpc_publico_inscrever('vestibular-2027', '{"nome":"Candidata Pública","email":"candidata.publica@exemplo.invalid","telefone":"(11) 98888-7777","curso_id":1,"aceite":true,"versao_consentimento":1,"tempo_ms":15000}'::jsonb)->>'portal' $x$;
+  execute $x$ select teste.ok((select length(t) = 64 from portal_tok), 'inscrição nova devolve link do portal (token de 64 caracteres)') $x$;
+  execute $x$ select teste.ok((public.rpc_publico_inscrever('vestibular-2027', '{"nome":"Outra Pessoa Tentando","email":"candidata.publica@exemplo.invalid","curso_id":2,"aceite":true,"versao_consentimento":1,"tempo_ms":15000}'::jsonb)->>'portal') is null,
+  'e-mail já cadastrado: sem link (terceiro não acessa dados alheios), resposta neutra') $x$;
+  execute $x$ select teste.ok((select (r->>'nome') = 'Candidata Pública' and jsonb_array_length(r->'inscricoes') = 2 and r->'inscricoes'->1->>'situacao' = 'Inscrição recebida'
+                 from (select public.rpc_publico_portal((select t from portal_tok)) r) x), 'portal mostra as inscrições da candidata em linguagem simples') $x$;
+  execute $x$ select teste.erro('select public.rpc_publico_portal(repeat(''a'', 64))', 'P0002', 'token inválido: 404 genérico') $x$;
+  execute $x$ select teste.ok((public.rpc_publico_portal_optout((select t from portal_tok), 'whatsapp')->>'tarefas_suprimidas')::int >= 1, 'opt-out pelo próprio titular suprime tarefas do canal') $x$;
+  execute $x$ select teste.ok((public.rpc_publico_portal_solicitar((select t from portal_tok), 'eliminacao', 'Não quero mais contato')->>'status') = 'aberta', 'titular solicita eliminação') $x$;
+  execute $x$ select teste.erro('select public.rpc_publico_portal_solicitar((select t from portal_tok), ''eliminacao'')', '22023', 'solicitação repetida em análise recusada') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select p.base_legal = 'consentimento' and p.consentimento_versao = 1 and p.consentimento_hash is not null and p.origem like 'formulário:%'
+                 from public.pessoas p where p.email = 'candidata.publica@exemplo.invalid'), 'consentimento registrado com versão e hash do termo') $x$;
+  execute $x$ select teste.ok((select count(*) = 1 from public.acessos_candidato a join public.pessoas p on p.id = a.pessoa_id where p.email = 'candidata.publica@exemplo.invalid'
+                 and a.token_hash <> (select t from portal_tok)), 'só o hash do token fica no banco') $x$;
+  execute $x$ select teste.ok((select bool_and(o.responsavel_id is not null and o.funil_versao_id is not null) from public.oportunidades o join public.pessoas p on p.id = o.pessoa_id
+                 where p.email = 'candidata.publica@exemplo.invalid'), 'lead público distribuído e posicionado no funil') $x$;
+  execute $x$ select teste.ok((select count(*) from public.inscricoes_publicas where resultado = 'isca') = 1, 'tentativa de robô registrada sem dados pessoais') $x$;
+  execute $x$ insert into public.inscricoes_publicas(formulario_id, ies_id, origem_hash, resultado) select (select v from teste.var where k = 'form'), 1, privado.origem_hash(), 'criada' from generate_series(1, 5) $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_inscrever('vestibular-2027', '{"nome":"Muitas Tentativas","email":"muitas@exemplo.invalid","curso_id":1,"aceite":true,"versao_consentimento":1,"tempo_ms":9000}'::jsonb)$q$,
+  '54000', 'limite por origem: 429') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ delete from public.inscricoes_publicas where resultado = 'criada' and oportunidade_id is null $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.ok((select (r->>'validade_dias')::int = 90 and length(r->>'token') = 64 from (select public.rpc_gerar_acesso_portal((select min(id) from public.oportunidades where ies_id = 1 and etapa = 'novo' and responsavel_id is not null)) r) x),
+  'equipe gera link do portal para envio manual') $x$;
+  execute $x$ select public.rpc_salvar_formulario(1, '{"texto_consentimento":"Autorizo a Faculdade Alfa a usar meus dados para contato sobre o processo seletivo e eventos, conforme a LGPD."}'::jsonb, (select v from teste.var where k = 'form')) $x$;
+  execute $x$ select teste.ok((select (f->>'versao_consentimento')::int = 2 from jsonb_array_elements(public.rpc_formularios(1)) f where (f->>'id')::bigint = (select v from teste.var where k = 'form')), 'termo alterado gera nova versão') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_inscrever('vestibular-2027', '{"nome":"Versão Antiga","email":"versao.antiga@exemplo.invalid","curso_id":1,"aceite":true,"versao_consentimento":1,"tempo_ms":9000}'::jsonb)$q$,
+  '22023', 'aceite de versão antiga do termo recusado') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_tratar_solicitacao((select (s->>''id'')::bigint from jsonb_array_elements(public.rpc_solicitacoes_titular(1)) s limit 1), ''atendida'', ''ok'')', '22023', 'resposta ao titular obrigatória') $x$;
+  execute $x$ select teste.ok((public.rpc_tratar_solicitacao((select (s->>'id')::bigint from jsonb_array_elements(public.rpc_solicitacoes_titular(1)) s limit 1), 'atendida', 'Dados anonimizados conforme solicitado.')->>'status') = 'atendida',
+  'gestor trata a solicitação do titular') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_b')::text, false) $x$;
+  execute $x$ select teste.ok(jsonb_array_length(public.rpc_solicitacoes_titular(2)) = 0, 'solicitações isoladas por instituição') $x$;
+  execute $x$ select teste.erro('select public.rpc_salvar_formulario(1, ''{"ativo":false}''::jsonb, (select v from teste.var where k = ''form''))', 'P0002', 'gestor de outra IES não altera o formulário') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok(true, 'fim da bateria de captação pública') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ grant select on teste.var to anon $x$;
+  execute $x$ create temp table doc_tok (t text) $x$;
+  execute $x$ grant all on doc_tok to anon, authenticated $x$;
+  execute $x$ create temp table doc_b64 (k text primary key, b text) $x$;
+  execute $x$ grant all on doc_b64 to anon, authenticated $x$;
+  execute $x$ insert into doc_b64 values ('pdf', encode(convert_to('%PDF-1.4 documento sintético de teste', 'UTF8'), 'base64')),
+  ('png', encode('\x89504e470d0a1a0a0000000d49484452'::bytea, 'base64')),
+  ('exe', encode(convert_to('MZ executável disfarçado', 'UTF8'), 'base64')) $x$;
+  execute $x$ select teste.ok((select count(*) >= 7 from public.documentos_exigidos where ies_id = 1), 'checklist inicial próprio criado') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ insert into teste.var values ('doc_op', (select min(id) from public.oportunidades where ies_id = 1 and etapa = 'novo' and forma_ingresso = 'vestibular')) $x$;
+  execute $x$ insert into doc_tok select public.rpc_gerar_acesso_portal((select v from teste.var where k = 'doc_op'))->>'token' $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.ok((select jsonb_array_length(x->'checklist') >= 3 from jsonb_array_elements(public.rpc_publico_portal_documentos((select t from doc_tok))) x
+                 where (x->>'oportunidade_id')::bigint = (select v from teste.var where k = 'doc_op')), 'candidato vê o checklist da inscrição no portal') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_enviar_documento((select t from doc_tok), (select v from teste.var where k = 'doc_op'), 'identidade', 'rg.exe', (select b from doc_b64 where k = 'exe'))$q$,
+  '22023', 'arquivo que não é PDF/JPG/PNG recusado pelo conteúdo') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_enviar_documento((select t from doc_tok), (select v from teste.var where k = 'doc_op'), 'diploma', 'diploma.pdf', (select b from doc_b64 where k = 'pdf'))$q$,
+  '22023', 'documento fora do checklist recusado') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_enviar_documento((select t from doc_tok), 1, 'identidade', 'rg.pdf', (select b from doc_b64 where k = 'pdf'))$q$,
+  'P0002', 'candidato não envia para inscrição de outra pessoa') $x$;
+  execute $x$ select teste.ok((public.rpc_publico_enviar_documento((select t from doc_tok), (select v from teste.var where k = 'doc_op'), 'identidade', 'rg.pdf', (select b from doc_b64 where k = 'pdf'))->>'mime') = 'application/pdf',
+  'candidato envia PDF pelo portal') $x$;
+  execute $x$ select teste.ok((public.rpc_publico_enviar_documento((select t from doc_tok), (select v from teste.var where k = 'doc_op'), 'ensino_medio', 'historico.png', (select b from doc_b64 where k = 'png'))->>'mime') = 'image/png',
+  'candidato envia PNG pelo portal') $x$;
+  execute $x$ select teste.erro('select count(*) from public.documentos_conteudo', '42501', 'conteúdo sem leitura direta (anon)') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.ok((select (r->>'pode_revisar')::boolean = false and jsonb_array_length(r->'historico') = 2 from (select public.rpc_documentos((select v from teste.var where k = 'doc_op')) r) x)
+  or not exists (select 1 from public.oportunidades where id = (select v from teste.var where k = 'doc_op') and responsavel_id = teste.id('comercial_a')), 'comercial responsável vê a situação, sem revisar') $x$;
+  execute $x$ select teste.erro('select public.rpc_baixar_documento((select (h->>''id'')::bigint from jsonb_array_elements(public.rpc_documentos((select v from teste.var where k = ''doc_op''))->''historico'') h limit 1))', 'P0002',
+  'comercial não baixa documento') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false) $x$;
+  execute $x$ insert into teste.var values ('doc_id', (select (h->>'id')::bigint from jsonb_array_elements(public.rpc_documentos((select v from teste.var where k = 'doc_op'))->'historico') h where h->>'tipo' = 'identidade')) $x$;
+  execute $x$ select teste.ok((select convert_from(decode(r->>'base64', 'base64'), 'UTF8') like '%PDF-1.4%' from (select public.rpc_baixar_documento((select v from teste.var where k = 'doc_id')) r) x), 'secretaria baixa o documento') $x$;
+  execute $x$ select teste.ok((public.rpc_detalhe((select v from teste.var where k = 'doc_op'))->'historico') @? '$[*] ? (@.acao == "documento.baixar")', 'download auditado') $x$;
+  execute $x$ select teste.erro('select public.rpc_revisar_documento((select v from teste.var where k = ''doc_id''), ''recusado'', ''x'')', '22023', 'recusa exige motivo') $x$;
+  execute $x$ select teste.ok((public.rpc_revisar_documento((select v from teste.var where k = 'doc_id'), 'recusado', 'Imagem ilegível, envie novamente')->>'status') = 'recusado', 'secretaria recusa com motivo') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.ok((select (i->'documento'->>'motivo_recusa') = 'Imagem ilegível, envie novamente' from jsonb_array_elements(public.rpc_publico_portal_documentos((select t from doc_tok))) x, jsonb_array_elements(x->'checklist') i
+                 where (x->>'oportunidade_id')::bigint = (select v from teste.var where k = 'doc_op') and i->>'tipo' = 'identidade'), 'candidato vê o motivo da recusa') $x$;
+  execute $x$ select public.rpc_publico_enviar_documento((select t from doc_tok), (select v from teste.var where k = 'doc_op'), 'identidade', 'rg-novo.pdf', (select b from doc_b64 where k = 'pdf')) $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select count(*) = 1 from public.documentos where oportunidade_id = (select v from teste.var where k = 'doc_op') and tipo = 'identidade' and status = 'substituido'), 'versão anterior preservada como substituída') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select public.rpc_configurar_documentos(1, true) $x$;
+  execute $x$ reset role $x$;
+  execute $x$ insert into teste.var values ('doc_mc', (select o.id from public.oportunidades o where o.ies_id = 1 and o.etapa = 'matricula_comercial' and not o.val_documental limit 1)) $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_validar((select v from teste.var where k = 'doc_mc'), 'documental', 'valida', 'conferido', (select versao from public.oportunidades where id = (select v from teste.var where k = 'doc_mc')))$q$,
+  '22023', 'com exigência ligada, validação documental sem checklist aprovado é recusada')
+  where (select v from teste.var where k = 'doc_mc') is not null $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select public.rpc_configurar_documentos(1, false) $x$;
+  execute $x$ select teste.ok((select (r->>'exigir_documentos')::boolean = false and jsonb_array_length(r->'itens') >= 7 from (select public.rpc_configurar_documentos(1, null, '{"tipo":"foto","descricao":"Foto 3x4 recente","obrigatorio":false}'::jsonb) r) x),
+  'gestor configura a exigência e o checklist') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_b')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_baixar_documento((select v from teste.var where k = ''doc_id''))', 'P0002', 'gestor de outra IES não baixa o documento') $x$;
+  execute $x$ select teste.erro('select count(*) from public.documentos', '42501', 'documentos sem leitura direta') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok(true, 'fim da bateria de documentos') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ create temp table sel_tok (t text) $x$;
+  execute $x$ grant all on sel_tok to anon, authenticated $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_evento(1, '{"titulo":"Open house","tipo":"open_house","inicio":"2027-01-10T10:00:00Z","fim":"2027-01-10T12:00:00Z"}'::jsonb)$q$, '42501', 'comercial não cria evento') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_salvar_evento(1, '{"titulo":"Datas invertidas","tipo":"tour","inicio":"2027-01-10T12:00:00Z","fim":"2027-01-10T10:00:00Z"}'::jsonb)$q$, '22023', 'evento com fim antes do início recusado') $x$;
+  execute $x$ insert into teste.var values ('evento', (public.rpc_salvar_evento(1, jsonb_build_object('titulo', 'Open house de Direito', 'tipo', 'open_house', 'inicio', now() + interval '1 hour',
+  'fim', now() + interval '3 hours', 'local', 'Campus Centro', 'vagas', 2))->>'id')::bigint) $x$;
+  execute $x$ select public.rpc_vincular_evento_formulario((select v from teste.var where k = 'form'), (select v from teste.var where k = 'evento')) $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select public.rpc_publico_inscrever('vestibular-2027', '{"nome":"Visitante do Open House","email":"visitante.oh@exemplo.invalid","curso_id":1,"aceite":true,"versao_consentimento":2,"tempo_ms":12000}'::jsonb) $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select count(*) = 1 from public.inscricoes_evento i join public.pessoas p on p.id = i.pessoa_id where p.email = 'visitante.oh@exemplo.invalid'
+                 and i.evento_id = (select v from teste.var where k = 'evento')), 'formulário público vinculado inscreve no evento') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select public.rpc_inscrever_evento((select v from teste.var where k = 'evento'), (select min(id) from public.oportunidades where ies_id = 1 and etapa = 'contato')) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_inscrever_evento((select v from teste.var where k = 'evento'), (select max(id) from public.oportunidades where ies_id = 1 and etapa = 'novo'))$q$, '22023', 'evento sem vagas recusa nova inscrição') $x$;
+  execute $x$ insert into teste.var values ('insc_ev', (select (i->>'id')::bigint from jsonb_array_elements(public.rpc_eventos(1)) e, jsonb_array_elements(e->'inscricoes') i
+                                           where (e->>'id')::bigint = (select v from teste.var where k = 'evento') limit 1)) $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false) $x$;
+  execute $x$ select teste.ok((public.rpc_checkin((select v from teste.var where k = 'insc_ev'), 'presente')->>'status') = 'presente', 'check-in de presença registrado') $x$;
+  execute $x$ select teste.ok((select (e->>'presentes')::int = 1 and (e->>'inscritos')::int = 2 from jsonb_array_elements(public.rpc_eventos(1)) e where (e->>'id')::bigint = (select v from teste.var where k = 'evento')),
+  'evento mostra inscritos e presentes') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_b')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_checkin((select v from teste.var where k = ''insc_ev''), ''ausente'')', 'P0002', 'gestor de outra IES não registra presença') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false) $x$;
+  execute $x$ insert into teste.var values ('proc', (public.rpc_salvar_processo(1, jsonb_build_object('coorte', '2027.1', 'nome', 'Vestibular agendado 2027.1', 'tipo', 'prova_agendada',
+  'inscricoes_ate', current_date + 30, 'nota_minima', 500, 'tema_redacao', 'O papel da educação superior no desenvolvimento regional',
+  'agenda', jsonb_build_object('inicio', now() + interval '1 day', 'local', 'Campus Centro, sala 12', 'vagas', 50)))->>'id')::bigint) $x$;
+  execute $x$ insert into teste.var values ('proc_enem', (public.rpc_salvar_processo(1, jsonb_build_object('coorte', '2027.1', 'nome', 'Seleção ENEM 2027.1', 'tipo', 'enem',
+  'inscricoes_ate', current_date + 30, 'nota_minima', 550))->>'id')::bigint) $x$;
+  execute $x$ insert into teste.var values ('agenda', (select (a->>'id')::bigint from jsonb_array_elements(public.rpc_seletivo(1)->'processos') p, jsonb_array_elements(p->'agendas') a
+                                          where (p->>'id')::bigint = (select v from teste.var where k = 'proc'))) $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ reset role $x$;
+  execute $x$ insert into teste.var values ('sel_op', (select o.id from public.oportunidades o join public.pessoas p on p.id = o.pessoa_id where p.email = 'visitante.oh@exemplo.invalid')) $x$;
+  execute $x$ update public.oportunidades set etapa = 'contato' where id = (select v from teste.var where k = 'sel_op') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ insert into sel_tok select public.rpc_gerar_acesso_portal((select v from teste.var where k = 'sel_op'))->>'token' $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.ok((select jsonb_array_length(r->'processos_abertos') = 2 and jsonb_array_length(r->'eventos') = 1 from (select public.rpc_publico_portal_seletivo((select t from sel_tok)) r) x),
+  'candidato vê processos abertos e o evento em que se inscreveu') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_candidatar((select t from sel_tok), (select v from teste.var where k = 'proc'), (select v from teste.var where k = 'sel_op'))$q$, '22023', 'prova agendada exige escolher data') $x$;
+  execute $x$ select teste.ok((public.rpc_publico_candidatar((select t from sel_tok), (select v from teste.var where k = 'proc'), (select v from teste.var where k = 'sel_op'), (select v from teste.var where k = 'agenda'))->>'id') is not null,
+  'candidato se inscreve no vestibular agendado pelo portal') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_candidatar((select t from sel_tok), (select v from teste.var where k = 'proc'), (select v from teste.var where k = 'sel_op'), (select v from teste.var where k = 'agenda'))$q$, '22023', 'inscrição repetida recusada') $x$;
+  execute $x$ select teste.ok((select (r->'candidaturas'->0->'tema_redacao') = 'null'::jsonb from (select public.rpc_publico_portal_seletivo((select t from sel_tok)) r) x), 'tema da redação só aparece no horário da prova') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_enviar_redacao((select t from sel_tok), (select (c->>'id')::bigint from jsonb_array_elements(public.rpc_publico_portal_seletivo((select t from sel_tok))->'candidaturas') c limit 1), repeat('texto ', 60))$q$,
+  '22023', 'redação fora do horário recusada') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select etapa = 'inscrito' from public.oportunidades where id = (select v from teste.var where k = 'sel_op')), 'inscrição no processo move contato → inscrito (auditado)') $x$;
+  execute $x$ update public.agendas_prova set inicio = now() - interval '10 minutes' where id = (select v from teste.var where k = 'agenda') $x$;
+  execute $x$ insert into teste.var values ('cand', (select id from public.candidaturas where oportunidade_id = (select v from teste.var where k = 'sel_op'))) $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.ok(length((public.rpc_publico_portal_seletivo((select t from sel_tok))->'candidaturas'->0->>'tema_redacao')) > 10, 'no horário da prova o tema aparece') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_enviar_redacao((select t from sel_tok), (select v from teste.var where k = 'cand'), 'curta')$q$, '22023', 'redação curta recusada') $x$;
+  execute $x$ select teste.ok((public.rpc_publico_enviar_redacao((select t from sel_tok), (select v from teste.var where k = 'cand'), repeat('A educação superior amplia oportunidades. ', 10))->>'enviada')::boolean, 'redação enviada no horário') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_enviar_redacao((select t from sel_tok), (select v from teste.var where k = 'cand'), repeat('Outra versão do texto. ', 20))$q$, '22023', 'envio único da redação') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('coord_dir_a')::text, false) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_avaliar_candidatura((select v from teste.var where k = 'cand'), '{"redacao_nota":720}'::jsonb)$q$, '22023', 'correção exige parecer') $x$;
+  execute $x$ select public.rpc_avaliar_candidatura((select v from teste.var where k = 'cand'), '{"redacao_nota":720,"redacao_parecer":"Texto coeso, tese clara, repertório adequado."}'::jsonb) $x$;
+  execute $x$ select teste.ok((select c->>'sugestao' = 'aprovado' and c->>'resultado' = 'pendente' from jsonb_array_elements(public.rpc_seletivo(1)->'processos') p, jsonb_array_elements(p->'candidaturas') c
+                 where (c->>'id')::bigint = (select v from teste.var where k = 'cand')), 'sistema só sugere; resultado continua pendente até decisão humana') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_divulgar_resultado((select v from teste.var where k = ''proc''))', '22023', 'divulgação bloqueada com candidatura pendente') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_avaliar_candidatura((select v from teste.var where k = 'cand'), '{"resultado":"aprovado"}'::jsonb)$q$, '22023', 'resultado exige justificativa') $x$;
+  execute $x$ select public.rpc_avaliar_candidatura((select v from teste.var where k = 'cand'), '{"resultado":"aprovado","justificativa":"Redação 720, acima da nota mínima 500."}'::jsonb) $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.ok((public.rpc_publico_portal_seletivo((select t from sel_tok))->'candidaturas'->0->'resultado') = 'null'::jsonb, 'candidato não vê o resultado antes da divulgação') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false) $x$;
+  execute $x$ select teste.ok((public.rpc_divulgar_resultado((select v from teste.var where k = 'proc'))->>'divulgado')::boolean, 'secretaria divulga o resultado') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_avaliar_candidatura((select v from teste.var where k = 'cand'), '{"resultado":"reprovado","justificativa":"tentativa de mudar após divulgar"}'::jsonb)$q$, '22023', 'resultado divulgado não muda') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.ok((public.rpc_publico_portal_seletivo((select t from sel_tok))->'candidaturas'->0->>'resultado') = 'aprovado', 'candidato vê o resultado após a divulgação') $x$;
+  execute $x$ select public.rpc_publico_candidatar((select t from sel_tok), (select v from teste.var where k = 'proc_enem'), (select v from teste.var where k = 'sel_op'), null, 610) $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false) $x$;
+  execute $x$ insert into teste.var values ('cand_enem', (select (c->>'id')::bigint from jsonb_array_elements(public.rpc_seletivo(1)->'processos') p, jsonb_array_elements(p->'candidaturas') c
+                                             where (p->>'id')::bigint = (select v from teste.var where k = 'proc_enem'))) $x$;
+  execute $x$ select teste.erro($q$select public.rpc_avaliar_candidatura((select v from teste.var where k = 'cand_enem'), '{"resultado":"aprovado","justificativa":"Nota declarada 610"}'::jsonb)$q$, '22023', 'ENEM: aprovar exige nota conferida') $x$;
+  execute $x$ select public.rpc_avaliar_candidatura((select v from teste.var where k = 'cand_enem'), '{"conferir_enem":true,"resultado":"aprovado","justificativa":"Nota 610 conferida no boletim oficial."}'::jsonb) $x$;
+  execute $x$ select teste.ok((select (c->>'enem_conferido')::boolean and c->>'resultado' = 'aprovado' from jsonb_array_elements(public.rpc_seletivo(1)->'processos') p, jsonb_array_elements(p->'candidaturas') c
+                 where (c->>'id')::bigint = (select v from teste.var where k = 'cand_enem')), 'ENEM conferido por pessoa e aprovado com justificativa') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_divulgar_resultado((select v from teste.var where k = ''proc_enem''))', '42501', 'comercial não divulga resultado') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_b')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_avaliar_candidatura((select v from teste.var where k = ''cand_enem''), ''{"nota_objetiva":1}''::jsonb)', 'P0002', 'gestor de outra IES não avalia') $x$;
+  execute $x$ select teste.erro('select count(*) from public.candidaturas', '42501', 'candidaturas sem leitura direta') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok(true, 'fim da bateria de eventos e processo seletivo') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ create temp table mat_tok (t text) $x$;
+  execute $x$ grant all on mat_tok to anon, authenticated $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_salvar_contrato(1, ''curto demais'')', '22023', 'contrato curto recusado') $x$;
+  execute $x$ select teste.ok((public.rpc_salvar_contrato(1, repeat('Cláusula de prestação de serviços educacionais conforme regimento da instituição. ', 3))->>'versao')::int = 1, 'contrato v1 publicado') $x$;
+  execute $x$ select teste.ok((select (r->'versoes'->0->>'ativo')::boolean and r->>'aviso' like '[Não verificado]%' from (select public.rpc_contratos(1) r) x), 'contratos com aviso de validação jurídica') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ insert into teste.var values ('mat_op', (select o.id from public.oportunidades o join public.pessoas p on p.id = o.pessoa_id where p.email = 'visitante.oh@exemplo.invalid')) $x$;
+  execute $x$ update public.oportunidades set etapa = 'pre_matricula' where id = (select v from teste.var where k = 'mat_op') $x$;
+  execute $x$ insert into public.propostas(ies_id, oportunidade_id, desconto_pct, mensalidade_centavos, valor_final_centavos, validade, status, criado_por)
+  select o.ies_id, o.id, 10, 129000, 116100, now() + interval '5 days', 'aprovada', teste.id('comercial_a') from public.oportunidades o where o.id = (select v from teste.var where k = 'mat_op') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ insert into mat_tok select public.rpc_gerar_acesso_portal((select v from teste.var where k = 'mat_op'))->>'token' $x$;
+  execute $x$ reset role $x$;
+  execute $x$ set role anon $x$;
+  execute $x$ select teste.ok((select (m->'proposta'->>'valor_final_centavos')::int = 116100 and (m->'contrato'->>'versao')::int = 1 from jsonb_array_elements(public.rpc_publico_portal_matricula((select t from mat_tok))) m),
+  'portal mostra proposta aprovada e contrato vigente') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_aceitar_matricula((select t from mat_tok), (select v from teste.var where k = 'mat_op'), 1, 'Outro Nome Qualquer')$q$, '22023', 'nome divergente do cadastro recusado') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_aceitar_matricula((select t from mat_tok), (select v from teste.var where k = 'mat_op'), 99, 'Visitante do Open House')$q$, '22023', 'versão de contrato desatualizada recusada') $x$;
+  execute $x$ select teste.ok((public.rpc_publico_aceitar_matricula((select t from mat_tok), (select v from teste.var where k = 'mat_op'), 1, '  visitante  do open house ')->>'aceito')::boolean, 'aceite eletrônico com nome confirmado') $x$;
+  execute $x$ select teste.erro($q$select public.rpc_publico_aceitar_matricula((select t from mat_tok), (select v from teste.var where k = 'mat_op'), 1, 'Visitante do Open House')$q$, '22023', 'segundo aceite recusado') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select o.etapa = 'matricula_comercial' and o.matricula_comercial_em is not null from public.oportunidades o where o.id = (select v from teste.var where k = 'mat_op')), 'aceite leva à matrícula comercial (transição oficial)') $x$;
+  execute $x$ select teste.ok((select a.contrato_hash = encode(sha256(convert_to(k.texto, 'UTF8')), 'hex') from public.aceites_matricula a join public.contratos_modelo k on k.id = a.contrato_id
+                 where a.oportunidade_id = (select v from teste.var where k = 'mat_op')), 'evidência guarda o hash do contrato aceito') $x$;
+  execute $x$ select teste.ok((select status = 'aceita' from public.propostas where oportunidade_id = (select v from teste.var where k = 'mat_op') order by id desc limit 1), 'proposta marcada como aceita') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ insert into teste.var values ('modelo', (public.rpc_salvar_modelo_mensagem(1, '{"nome":"Boas-vindas","canal":"email","gatilho":"etapa_novo","assunto":"Recebemos seu interesse","corpo":"Olá, {{nome}}! Recebemos seu interesse em {{curso}} na {{instituicao}}."}'::jsonb)->>'id')::bigint) $x$;
+  execute $x$ select public.rpc_salvar_modelo_mensagem(1, '{"nome":"Contato manual","canal":"whatsapp","gatilho":"manual","corpo":"Oi, {{nome}}, aqui é da equipe de {{curso}}."}'::jsonb) $x$;
+  execute $x$ select teste.ok((select (r->>'simuladas')::int > 0 and (r->>'enviadas')::int = 0 and r->>'modo' = 'simulação' from (select public.rpc_executar_regua(1) r) x), 'régua gera mensagens só em simulação (nada enviado)') $x$;
+  execute $x$ select teste.ok((select (r->>'simuladas')::int = 0 from (select public.rpc_executar_regua(1) r) x), 'régua não duplica mensagens') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select count(*) = 0 from public.mensagens where status = 'enviada'), 'nenhuma mensagem enviada') $x$;
+  execute $x$ select teste.ok((select bool_and(corpo not like '%{{%') from public.mensagens), 'variáveis substituídas no texto') $x$;
+  execute $x$ select teste.ok((select count(*) >= 1 from public.mensagens g join public.oportunidades o on o.id = g.oportunidade_id join public.pessoas p on p.id = o.pessoa_id
+                 where g.status = 'bloqueada' and (p.optout_email or p.email is null)) or not exists (select 1 from public.pessoas p join public.oportunidades o on o.pessoa_id = p.id
+                 where o.etapa = 'novo' and o.ies_id = 1 and (p.optout_email or p.email is null)), 'opt-out bloqueia a mensagem na régua') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_executar_regua(1)', '42501', 'comercial não executa a régua') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ insert into teste.var values ('msg_op', (select min(o.id) from public.oportunidades o where o.responsavel_id = teste.id('comercial_a') and o.etapa in ('novo','contato'))) $x$;
+  execute $x$ update public.pessoas set telefone = coalesce(telefone, '11977776666'), optout_whatsapp = false
+ where id = (select pessoa_id from public.oportunidades where id = (select v from teste.var where k = 'msg_op')) $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.ok((public.rpc_mensagem_manual((select v from teste.var where k = 'msg_op'),
+                 (select (m->>'id')::bigint from jsonb_array_elements(public.rpc_comunicacao(1)->'modelos') m where m->>'nome' = 'Contato manual'))->>'texto') like 'Oi, %',
+  'atendente gera texto para envio manual') $x$;
+  execute $x$ select teste.ok((select (m->'abertura') = 'null'::jsonb from jsonb_array_elements(public.rpc_comunicacao(1)->'modelos') m limit 1), 'abertura e clique N/D sem provedor') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.ok((select jsonb_array_length(r->'itens') = 10 and bool_and(i->>'status' = 'desligada') from (select public.rpc_integracoes(1) r) x, jsonb_array_elements(r->'itens') i group by r),
+  'dez integrações registradas, todas desligadas') $x$;
+  execute $x$ select teste.erro('select public.rpc_integracoes(1, ''whatsapp'', ''x'')', '22023', 'pedido de ativação exige descrição') $x$;
+  execute $x$ select teste.ok((select i->>'status' = 'pedido_registrado' from jsonb_array_elements(public.rpc_integracoes(1, 'whatsapp', 'WhatsApp Business oficial para confirmações de inscrição')->'itens') i where i->>'tipo' = 'whatsapp'),
+  'pedido registrado não ativa nada') $x$;
+  execute $x$ select teste.ok((select (r->>'importadas')::int = 1 and jsonb_array_length(r->'rejeitadas') = 1 from (select public.rpc_importar_custos(1,
+  '[{"campanha":"verao-2027","data":"2026-11-20","valor_centavos":45000,"descricao":"Meta Ads semana 47"},{"campanha":"nao-existe","data":"2026-11-20","valor_centavos":1}]'::jsonb) r) x),
+  'importação de custos com relatório por linha') $x$;
+  execute $x$ select teste.ok((select (r->>'repetidas')::int = 1 and (r->>'importadas')::int = 0 from (select public.rpc_importar_custos(1, '[{"campanha":"verao-2027","data":"2026-11-20","valor_centavos":45000,"descricao":"Meta Ads semana 47"}]'::jsonb) r) x),
+  'reimportar a mesma linha não duplica custo') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false) $x$;
+  execute $x$ select teste.ok((select (r->>'importadas')::int = 1 and jsonb_array_length(r->'rejeitadas') = 1 from (select public.rpc_importar_vinculos(1, jsonb_build_array(
+    jsonb_build_object('oportunidade_id', (select v from teste.var where k = 'ing2'), 'marco', 'd90', 'situacao', 'ativo', 'data', current_date),
+    jsonb_build_object('email', 'ninguem@exemplo.invalid', 'marco', 'd30', 'situacao', 'ativo', 'data', current_date))) r) x),
+  'importação de vínculos acadêmicos com relatório') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok((select fonte = 'sistema_academico' from public.vinculos where oportunidade_id = (select v from teste.var where k = 'ing2') and marco = 'd90'), 'vínculo importado marcado com a fonte') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_b')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_importar_custos(1, ''[{"campanha":"verao-2027","data":"2026-11-20","valor_centavos":1}]''::jsonb)', 'P0002', 'gestor de outra IES não importa custos na Alfa') $x$;
+  execute $x$ select teste.erro('select count(*) from public.mensagens', '42501', 'mensagens sem leitura direta') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok(true, 'fim da bateria de matrícula online, comunicação e integrações') $x$;
   execute $x$ reset role $x$;
   select count(*) into n from teste.resultado;
   raise exception 'RESULTADO: % verificações aprovadas, 0 falhas (tudo desfeito; nada ficou gravado)', n;

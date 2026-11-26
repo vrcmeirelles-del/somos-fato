@@ -1,4 +1,4 @@
--- Matrícula 360° — migrações 1 a 17 consolidadas (instalação NOVA, banco vazio). Transação única.
+-- Matrícula 360° — migrações 1 a 21 consolidadas (instalação NOVA, banco vazio). Transação única.
 begin;
 
 -- ===================== supabase/migrations/20261125000001_esquema_rls.sql
@@ -5962,5 +5962,1474 @@ grant execute on function
   public.rpc_criar_indicacao(bigint, jsonb), public.rpc_relacionamento(bigint, text), public.rpc_indicacoes(bigint),
   public.rpc_criar_oportunidade(bigint, jsonb, text)
 to authenticated;
+
+-- ===================== supabase/migrations/20261125000018_captacao_publica_portal.sql
+-- Matrícula 360° — migração 18 (P4): captação pública (L1), portal do candidato (L2) e direitos do titular.
+--   * Formulário público por instituição/campanha: o lead se cadastra sozinho, com consentimento LGPD versionado.
+--   * Proteções sem serviço externo: campo-isca, tempo mínimo de preenchimento, limites por origem (IP com hash
+--     diário, sem guardar IP), por formulário e por e-mail; respostas que não revelam se a pessoa já existe.
+--   * Portal do candidato por link secreto (token de 244 bits, só o hash fica no banco), sem envio de e-mail:
+--     o link aparece ao concluir a inscrição ou é gerado pela equipe para envio manual. Validade de 90 dias.
+--   * Titular: vê seus dados, faz opt-out por canal e solicita acesso, correção ou eliminação (fila do gestor).
+--   * Acesso anônimo SOMENTE às funções rpc_publico_*; privado.conceder_publico() reaplica isso ao fim de cada migração.
+-- Idempotente.
+
+insert into public.matriz_permissoes(operacao, modulo, descricao, papeis, abrangencia_minima, rpc) values
+  ('formulario.gerir', 'Marketing e Captação', 'Criar e publicar formulários públicos de captação', array['gestor'], 'ies', 'rpc_salvar_formulario'),
+  ('portal.acesso',    'CRM Educacional',      'Gerar link de acesso do candidato ao portal (envio manual)', array['gestor','comercial'], 'curso', 'rpc_gerar_acesso_portal'),
+  ('titular.tratar',   'Governança Institucional', 'Tratar solicitações de titulares (LGPD)', array['gestor'], 'ies', 'rpc_tratar_solicitacao')
+on conflict (operacao) do update set modulo = excluded.modulo, descricao = excluded.descricao, papeis = excluded.papeis,
+  abrangencia_minima = excluded.abrangencia_minima, rpc = excluded.rpc;
+
+alter table public.pessoas add column if not exists consentimento_versao int;
+alter table public.pessoas add column if not exists consentimento_em timestamptz;
+alter table public.pessoas add column if not exists consentimento_hash text;
+
+create table if not exists public.formularios (
+  id bigint generated always as identity primary key,
+  ies_id bigint not null references public.ies(id),
+  slug text not null unique check (slug ~ '^[a-z0-9][a-z0-9-]{3,60}$'),
+  titulo text not null check (length(titulo) between 3 and 120),
+  descricao text check (length(descricao) <= 1000),
+  cursos bigint[] not null check (cardinality(cursos) between 1 and 100),
+  coorte text not null check (coorte ~ '^\d{4}\.[12]$'),
+  forma_ingresso text not null default 'vestibular' check (forma_ingresso in ('vestibular','enem','transferencia','segunda_graduacao','reingresso','indicacao','convenio','visita_escolar','evento','pos_graduacao')),
+  campanha_id bigint references public.campanhas(id),
+  texto_consentimento text not null check (length(texto_consentimento) between 40 and 3000),
+  versao_consentimento int not null default 1,
+  pede_telefone boolean not null default true,
+  ativo boolean not null default true,
+  criado_por uuid references public.usuarios(id),
+  criado_em timestamptz not null default now()
+);
+create table if not exists public.inscricoes_publicas (
+  id bigint generated always as identity primary key,
+  formulario_id bigint not null references public.formularios(id),
+  ies_id bigint not null references public.ies(id),
+  origem_hash text not null,
+  email_hash text,
+  resultado text not null check (resultado in ('criada','duplicada','isca','rapida','limite','invalida')),
+  oportunidade_id bigint references public.oportunidades(id),
+  criado_em timestamptz not null default now()
+);
+create table if not exists public.acessos_candidato (
+  id bigint generated always as identity primary key,
+  ies_id bigint not null references public.ies(id),
+  pessoa_id bigint not null references public.pessoas(id),
+  token_hash text not null unique,
+  criado_por uuid references public.usuarios(id),
+  criado_em timestamptz not null default now(),
+  expira_em timestamptz not null default now() + interval '90 days',
+  revogado_em timestamptz,
+  ultimo_uso timestamptz
+);
+create table if not exists public.solicitacoes_titular (
+  id bigint generated always as identity primary key,
+  ies_id bigint not null references public.ies(id),
+  pessoa_id bigint not null references public.pessoas(id),
+  tipo text not null check (tipo in ('acesso','correcao','eliminacao')),
+  detalhe text check (length(detalhe) <= 1000),
+  status text not null default 'aberta' check (status in ('aberta','atendida','recusada')),
+  resposta text check (length(resposta) <= 1000),
+  tratado_por uuid references public.usuarios(id),
+  criado_em timestamptz not null default now(),
+  tratado_em timestamptz
+);
+create index if not exists formularios_ies on public.formularios(ies_id);
+create index if not exists formularios_campanha on public.formularios(campanha_id);
+create index if not exists formularios_criado on public.formularios(criado_por);
+create index if not exists inscricoes_publicas_form on public.inscricoes_publicas(formulario_id, criado_em);
+create index if not exists inscricoes_publicas_origem on public.inscricoes_publicas(origem_hash, criado_em);
+create index if not exists inscricoes_publicas_email on public.inscricoes_publicas(email_hash, criado_em);
+create index if not exists inscricoes_publicas_ies on public.inscricoes_publicas(ies_id);
+create index if not exists inscricoes_publicas_op on public.inscricoes_publicas(oportunidade_id);
+create index if not exists acessos_pessoa on public.acessos_candidato(pessoa_id);
+create index if not exists acessos_ies on public.acessos_candidato(ies_id);
+create index if not exists acessos_criado on public.acessos_candidato(criado_por);
+create index if not exists solicitacoes_ies on public.solicitacoes_titular(ies_id);
+create index if not exists solicitacoes_pessoa on public.solicitacoes_titular(pessoa_id);
+create index if not exists solicitacoes_tratado on public.solicitacoes_titular(tratado_por);
+
+alter table public.formularios enable row level security;
+alter table public.inscricoes_publicas enable row level security;
+alter table public.acessos_candidato enable row level security;
+alter table public.solicitacoes_titular enable row level security;
+revoke all on public.formularios, public.inscricoes_publicas, public.acessos_candidato, public.solicitacoes_titular from anon, authenticated;
+
+-- ---------------------------------------------------------------- utilitários
+create or replace function privado.conceder_publico() returns void
+language plpgsql security definer set search_path = '' as $$
+declare f record;
+begin
+  for f in select p.oid::regprocedure as assinatura from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.proname like 'rpc\_publico\_%' loop
+    execute format('grant execute on function %s to anon, authenticated', f.assinatura);
+  end loop;
+end $$;
+revoke execute on function privado.conceder_publico() from public, anon, authenticated;
+
+-- Hash diário da origem (IP do proxy) para limitar abuso sem guardar o IP.
+create or replace function privado.origem_hash() returns text
+language sql stable set search_path = '' as $$
+  select encode(sha256(convert_to(coalesce(split_part(nullif(current_setting('request.headers', true), '')::json->>'x-forwarded-for', ',', 1), 'local')
+                                  || '|m360|' || current_date::text, 'UTF8')), 'hex');
+$$;
+revoke execute on function privado.origem_hash() from public, anon, authenticated;
+
+create or replace function privado.novo_token() returns text
+language sql volatile set search_path = '' as $$
+  select replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
+$$;
+revoke execute on function privado.novo_token() from public, anon, authenticated;
+
+create or replace function privado.hash_token(p_token text) returns text
+language sql immutable set search_path = '' as $$ select encode(sha256(convert_to(coalesce(p_token, ''), 'UTF8')), 'hex'); $$;
+revoke execute on function privado.hash_token(text) from public, anon, authenticated;
+
+-- Pessoa dona de um token válido (atualiza o último uso). Token inválido: 404 genérico.
+create or replace function privado.portal_pessoa(p_token text) returns public.pessoas
+language plpgsql security definer set search_path = '' as $$
+declare a public.acessos_candidato; p public.pessoas;
+begin
+  if p_token is null or length(p_token) <> 64 then perform privado.erro_http(404, 'P0002', 'Link inválido ou expirado'); end if;
+  select * into a from public.acessos_candidato where token_hash = privado.hash_token(p_token) for update;
+  if not found or a.revogado_em is not null or a.expira_em < now() then perform privado.erro_http(404, 'P0002', 'Link inválido ou expirado'); end if;
+  update public.acessos_candidato set ultimo_uso = now() where id = a.id;
+  select * into p from public.pessoas where id = a.pessoa_id;
+  if p.anonimizada_em is not null then perform privado.erro_http(404, 'P0002', 'Link inválido ou expirado'); end if;
+  return p;
+end $$;
+revoke execute on function privado.portal_pessoa(text) from public, anon, authenticated;
+
+create or replace function privado.emitir_acesso(p_pessoa bigint, p_por uuid) returns text
+language plpgsql security definer set search_path = '' as $$
+declare t text := privado.novo_token(); v_ies bigint;
+begin
+  select ies_id into v_ies from public.pessoas where id = p_pessoa;
+  update public.acessos_candidato set revogado_em = now() where pessoa_id = p_pessoa and revogado_em is null;
+  insert into public.acessos_candidato(ies_id, pessoa_id, token_hash, criado_por) values (v_ies, p_pessoa, privado.hash_token(t), p_por);
+  return t;
+end $$;
+revoke execute on function privado.emitir_acesso(bigint, uuid) from public, anon, authenticated;
+
+-- ---------------------------------------------------------------- público (anon): formulário
+create or replace function public.rpc_publico_formulario(p_slug text)
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+declare f public.formularios;
+begin
+  select * into f from public.formularios where slug = lower(p_slug) and ativo;
+  if not found or not exists (select 1 from public.ies where id = f.ies_id and status = 'ativa') then perform privado.erro_http(404, 'P0002', 'Formulário não encontrado'); end if;
+  return jsonb_build_object('titulo', f.titulo, 'descricao', f.descricao, 'instituicao', (select nome from public.ies where id = f.ies_id),
+    'pede_telefone', f.pede_telefone, 'texto_consentimento', f.texto_consentimento, 'versao_consentimento', f.versao_consentimento,
+    'cursos', (select coalesce(jsonb_agg(jsonb_build_object('id', c.id, 'nome', c.nome, 'turno', c.turno, 'modalidade', c.modalidade, 'campus', cp.nome) order by c.nome, c.turno), '[]'::jsonb)
+               from public.cursos c join public.campus cp on cp.id = c.campus_id where c.id = any (f.cursos) and c.ies_id = f.ies_id));
+end $$;
+
+-- Inscrição pública. Resposta sempre neutra (não revela se a pessoa já existe); link do portal só para cadastro novo.
+create or replace function public.rpc_publico_inscrever(p_slug text, p_dados jsonb)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare f public.formularios; v_origem text := privado.origem_hash(); v_email text := nullif(lower(trim(p_dados->>'email')), '');
+  v_tel text := nullif(regexp_replace(coalesce(p_dados->>'telefone', ''), '\D', '', 'g'), ''); v_curso bigint := nullif(p_dados->>'curso_id', '')::bigint;
+  v_nome text := trim(coalesce(p_dados->>'nome', '')); v_pessoa public.pessoas; v_op public.oportunidades; v_resp uuid; v_canal text; v_sla int;
+  v_ehash text; v_token text; neutra constant jsonb := jsonb_build_object('status', 'recebida', 'mensagem', 'Inscrição recebida. A equipe da instituição entrará em contato.');
+begin
+  select * into f from public.formularios where slug = lower(p_slug) and ativo;
+  if not found or not exists (select 1 from public.ies where id = f.ies_id and status = 'ativa') then perform privado.erro_http(404, 'P0002', 'Formulário não encontrado'); end if;
+  v_ehash := case when v_email is null then null else encode(sha256(convert_to(v_email, 'UTF8')), 'hex') end;
+  -- campo-isca preenchido: robô. Resposta neutra, nada é criado.
+  if coalesce(p_dados->>'site', '') <> '' then
+    insert into public.inscricoes_publicas(formulario_id, ies_id, origem_hash, resultado) values (f.id, f.ies_id, v_origem, 'isca');
+    return neutra;
+  end if;
+  if coalesce((p_dados->>'tempo_ms')::bigint, 0) < 3000 then
+    insert into public.inscricoes_publicas(formulario_id, ies_id, origem_hash, resultado) values (f.id, f.ies_id, v_origem, 'rapida');
+    raise exception 'Preenchimento muito rápido. Revise os dados e envie novamente.' using errcode = '22023';
+  end if;
+  if (select count(*) from public.inscricoes_publicas where origem_hash = v_origem and criado_em > now() - interval '10 minutes') >= 5
+     or (select count(*) from public.inscricoes_publicas where formulario_id = f.id and criado_em > now() - interval '1 hour') >= 300
+     or (v_ehash is not null and (select count(*) from public.inscricoes_publicas where email_hash = v_ehash and criado_em > now() - interval '1 day') >= 3) then
+    insert into public.inscricoes_publicas(formulario_id, ies_id, origem_hash, email_hash, resultado) values (f.id, f.ies_id, v_origem, v_ehash, 'limite');
+    perform privado.erro_http(429, '54000', 'Muitas tentativas. Aguarde alguns minutos.');
+  end if;
+  if coalesce((p_dados->>'aceite')::boolean, false) is not true or coalesce((p_dados->>'versao_consentimento')::int, -1) <> f.versao_consentimento then
+    raise exception 'É preciso aceitar o termo de consentimento vigente' using errcode = '22023';
+  end if;
+  if length(v_nome) not between 3 and 120 then raise exception 'Informe seu nome completo' using errcode = '22023'; end if;
+  if v_email is null or v_email !~ '^[^\s@]+@[^\s@]+\.[^\s@]+$' then raise exception 'Informe um e-mail válido' using errcode = '22023'; end if;
+  if v_tel is not null and length(v_tel) not between 10 and 13 then raise exception 'Telefone inválido' using errcode = '22023'; end if;
+  if v_curso is null or not (v_curso = any (f.cursos)) then raise exception 'Escolha um dos cursos do formulário' using errcode = '22023'; end if;
+
+  select * into v_pessoa from public.pessoas where ies_id = f.ies_id and ((email is not null and email = v_email) or (v_tel is not null and telefone = v_tel)) limit 1 for update;
+  if found then
+    -- Pessoa já cadastrada: registra novo consentimento só se ela não tiver opt-out; não emite link (evita acesso por terceiros).
+    update public.pessoas set consentimento_versao = f.versao_consentimento, consentimento_em = now(), consentimento_hash = encode(sha256(convert_to(f.texto_consentimento, 'UTF8')), 'hex')
+     where id = v_pessoa.id and anonimizada_em is null;
+    select * into v_op from public.oportunidades where pessoa_id = v_pessoa.id and curso_id = v_curso and coorte = f.coorte;
+    if found then
+      insert into public.inscricoes_publicas(formulario_id, ies_id, origem_hash, email_hash, resultado, oportunidade_id) values (f.id, f.ies_id, v_origem, v_ehash, 'duplicada', v_op.id);
+      return neutra;
+    end if;
+  else
+    insert into public.pessoas(ies_id, nome, email, telefone, base_legal, origem, consentimento_versao, consentimento_em, consentimento_hash)
+    values (f.ies_id, v_nome, v_email, v_tel, 'consentimento', 'formulário: ' || f.titulo, f.versao_consentimento, now(),
+            encode(sha256(convert_to(f.texto_consentimento, 'UTF8')), 'hex')) returning * into v_pessoa;
+    v_token := privado.emitir_acesso(v_pessoa.id, null);
+  end if;
+  v_resp := privado.distribuir(f.ies_id, v_curso);
+  insert into public.oportunidades(ies_id, curso_id, pessoa_id, forma_ingresso, coorte, responsavel_id, campanha_id)
+  values (f.ies_id, v_curso, v_pessoa.id, f.forma_ingresso, f.coorte, v_resp, f.campanha_id) returning * into v_op;
+  v_canal := case when not v_pessoa.optout_whatsapp and v_pessoa.telefone is not null then 'whatsapp'
+                  when not v_pessoa.optout_email and v_pessoa.email is not null then 'email'
+                  when not v_pessoa.optout_telefone and v_pessoa.telefone is not null then 'telefone' end;
+  if v_canal is not null then
+    select sla_horas into v_sla from public.ies where id = f.ies_id;
+    insert into public.tarefas(ies_id, oportunidade_id, tipo, canal, responsavel_id, vence_em) values (f.ies_id, v_op.id, 'primeiro_contato', v_canal, v_resp, now() + make_interval(hours => v_sla));
+  end if;
+  perform privado.auditar(f.ies_id, 'oportunidade.criar', 'oportunidade', v_op.id::text,
+    jsonb_build_object('curso_id', v_curso, 'forma_ingresso', f.forma_ingresso, 'coorte', f.coorte, 'origem', 'formulário público', 'formulario_id', f.id,
+                       'campanha_id', f.campanha_id, 'consentimento_versao', f.versao_consentimento, 'responsavel_id', v_resp));
+  insert into public.inscricoes_publicas(formulario_id, ies_id, origem_hash, email_hash, resultado, oportunidade_id) values (f.id, f.ies_id, v_origem, v_ehash, 'criada', v_op.id);
+  return neutra || case when v_token is not null then jsonb_build_object('portal', v_token) else '{}'::jsonb end;
+end $$;
+
+-- ---------------------------------------------------------------- público (anon): portal do candidato
+create or replace function privado.etapa_candidato(p_etapa text) returns text
+language sql immutable set search_path = '' as $$
+  select case p_etapa when 'novo' then 'Inscrição recebida' when 'contato' then 'Em atendimento' when 'inscrito' then 'Inscrito no processo seletivo'
+    when 'pre_matricula' then 'Pré-matrícula' when 'matricula_comercial' then 'Matrícula em validação' when 'confirmado' then 'Matrícula confirmada'
+    when 'perdido' then 'Inscrição encerrada' when 'cancelado' then 'Matrícula cancelada' end;
+$$;
+revoke execute on function privado.etapa_candidato(text) from public, anon, authenticated;
+
+create or replace function public.rpc_publico_portal(p_token text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare p public.pessoas;
+begin
+  p := privado.portal_pessoa(p_token);
+  return jsonb_build_object('nome', p.nome, 'email', p.email, 'telefone', p.telefone, 'instituicao', (select nome from public.ies where id = p.ies_id),
+    'optout', jsonb_build_object('email', p.optout_email, 'whatsapp', p.optout_whatsapp, 'telefone', p.optout_telefone),
+    'consentimento', jsonb_build_object('versao', p.consentimento_versao, 'em', p.consentimento_em, 'base_legal', p.base_legal),
+    'inscricoes', (select coalesce(jsonb_agg(jsonb_build_object('id', o.id, 'curso', c.nome, 'turno', c.turno, 'modalidade', c.modalidade, 'coorte', o.coorte,
+        'situacao', privado.etapa_candidato(o.etapa), 'etapa', o.etapa,
+        'validacoes', case when o.etapa in ('matricula_comercial','confirmado') then jsonb_build_object('documental', o.val_documental, 'financeira', o.val_financeira, 'academica', o.val_academica) end,
+        'proposta', (select jsonb_build_object('valor_final_centavos', x.valor_final_centavos, 'validade', x.validade, 'status', x.status)
+                       from public.propostas x where x.oportunidade_id = o.id and x.status in ('aprovada','aceita') order by x.id desc limit 1))
+        order by o.criado_em desc), '[]'::jsonb)
+      from public.oportunidades o join public.cursos c on c.id = o.curso_id where o.pessoa_id = p.id),
+    'solicitacoes', (select coalesce(jsonb_agg(jsonb_build_object('tipo', s.tipo, 'status', s.status, 'resposta', s.resposta, 'criado_em', s.criado_em) order by s.criado_em desc), '[]'::jsonb)
+      from public.solicitacoes_titular s where s.pessoa_id = p.id));
+end $$;
+
+create or replace function public.rpc_publico_portal_optout(p_token text, p_canal text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare p public.pessoas; n int;
+begin
+  p := privado.portal_pessoa(p_token);
+  if p_canal not in ('email','whatsapp','telefone') then raise exception 'Canal inválido' using errcode = '22023'; end if;
+  update public.pessoas set optout_email = optout_email or p_canal = 'email', optout_whatsapp = optout_whatsapp or p_canal = 'whatsapp',
+         optout_telefone = optout_telefone or p_canal = 'telefone' where id = p.id;
+  update public.tarefas t set status = 'suprimida', resultado = 'opt-out pelo titular no portal', encerrada_em = now()
+    from public.oportunidades o where o.id = t.oportunidade_id and o.pessoa_id = p.id and t.status = 'aberta' and t.canal = p_canal;
+  get diagnostics n = row_count;
+  perform privado.auditar(p.ies_id, 'pessoa.optout', 'pessoa', p.id::text, jsonb_build_object('canal', p_canal, 'tarefas_suprimidas', n, 'origem', 'portal do titular'));
+  return jsonb_build_object('canal', p_canal, 'tarefas_suprimidas', n);
+end $$;
+
+create or replace function public.rpc_publico_portal_solicitar(p_token text, p_tipo text, p_detalhe text default null)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare p public.pessoas; v_id bigint;
+begin
+  p := privado.portal_pessoa(p_token);
+  if p_tipo not in ('acesso','correcao','eliminacao') then raise exception 'Tipo inválido' using errcode = '22023'; end if;
+  if exists (select 1 from public.solicitacoes_titular where pessoa_id = p.id and tipo = p_tipo and status = 'aberta') then
+    raise exception 'Já existe solicitação deste tipo em análise' using errcode = '22023';
+  end if;
+  insert into public.solicitacoes_titular(ies_id, pessoa_id, tipo, detalhe) values (p.ies_id, p.id, p_tipo, nullif(trim(p_detalhe), '')) returning id into v_id;
+  perform privado.auditar(p.ies_id, 'titular.solicitar', 'pessoa', p.id::text, jsonb_build_object('tipo', p_tipo, 'solicitacao_id', v_id));
+  return jsonb_build_object('id', v_id, 'status', 'aberta');
+end $$;
+
+-- ---------------------------------------------------------------- equipe
+create or replace function public.rpc_formularios(p_ies bigint)
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+begin
+  perform privado.autorizar(p_ies, 'formulario.gerir');
+  return (select coalesce(jsonb_agg(jsonb_build_object('id', f.id, 'slug', f.slug, 'titulo', f.titulo, 'descricao', f.descricao, 'cursos', f.cursos, 'coorte', f.coorte,
+      'forma_ingresso', f.forma_ingresso, 'campanha_id', f.campanha_id, 'texto_consentimento', f.texto_consentimento, 'versao_consentimento', f.versao_consentimento,
+      'pede_telefone', f.pede_telefone, 'ativo', f.ativo,
+      'resultados', (select jsonb_object_agg(x.resultado, x.n) from (select resultado, count(*) as n from public.inscricoes_publicas where formulario_id = f.id group by 1) x)) order by f.criado_em desc), '[]'::jsonb)
+    from public.formularios f where f.ies_id = p_ies);
+end $$;
+
+create or replace function public.rpc_salvar_formulario(p_ies bigint, p_dados jsonb, p_id bigint default null)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_id bigint; v_cursos bigint[]; v_camp bigint := nullif(p_dados->>'campanha_id', '')::bigint; atual public.formularios;
+begin
+  perform privado.autorizar(p_ies, 'formulario.gerir');
+  if p_dados ? 'cursos' then
+    v_cursos := array(select (jsonb_array_elements_text(p_dados->'cursos'))::bigint);
+    if exists (select 1 from unnest(v_cursos) c where not exists (select 1 from public.cursos x where x.id = c and x.ies_id = p_ies)) then
+      raise exception 'Curso não pertence à IES' using errcode = '22023';
+    end if;
+  end if;
+  if v_camp is not null and not exists (select 1 from public.campanhas where id = v_camp and ies_id = p_ies) then raise exception 'Campanha não pertence à IES' using errcode = '22023'; end if;
+  if p_id is null then
+    insert into public.formularios(ies_id, slug, titulo, descricao, cursos, coorte, forma_ingresso, campanha_id, texto_consentimento, pede_telefone, criado_por)
+    values (p_ies, lower(trim(p_dados->>'slug')), trim(p_dados->>'titulo'), nullif(trim(p_dados->>'descricao'), ''), v_cursos, p_dados->>'coorte',
+            coalesce(p_dados->>'forma_ingresso', 'vestibular'), v_camp, trim(p_dados->>'texto_consentimento'), coalesce((p_dados->>'pede_telefone')::boolean, true), (select auth.uid()))
+    returning id into v_id;
+  else
+    select * into atual from public.formularios where id = p_id and ies_id = p_ies for update;
+    if not found then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+    update public.formularios set titulo = coalesce(trim(p_dados->>'titulo'), titulo), descricao = coalesce(nullif(trim(p_dados->>'descricao'), ''), descricao),
+      cursos = coalesce(v_cursos, cursos), coorte = coalesce(p_dados->>'coorte', coorte), forma_ingresso = coalesce(p_dados->>'forma_ingresso', forma_ingresso),
+      campanha_id = case when p_dados ? 'campanha_id' then v_camp else campanha_id end, pede_telefone = coalesce((p_dados->>'pede_telefone')::boolean, pede_telefone),
+      ativo = coalesce((p_dados->>'ativo')::boolean, ativo),
+      -- termo alterado = nova versão de consentimento (o aceite anterior continua registrado com a versão antiga)
+      texto_consentimento = coalesce(trim(p_dados->>'texto_consentimento'), texto_consentimento),
+      versao_consentimento = versao_consentimento + case when p_dados ? 'texto_consentimento' and trim(p_dados->>'texto_consentimento') <> atual.texto_consentimento then 1 else 0 end
+     where id = p_id returning id into v_id;
+  end if;
+  perform privado.auditar(p_ies, 'formulario.salvar', 'formulario', v_id::text, jsonb_build_object('ativo', p_dados->>'ativo'));
+  return jsonb_build_object('id', v_id);
+exception
+  when unique_violation then perform privado.erro_http(409, '23505', 'Endereço (slug) já usado');
+  when check_violation or not_null_violation then raise exception 'Formulário inválido: endereço (letras minúsculas, números e hífen), título, cursos, coorte e termo de consentimento (40+ caracteres)' using errcode = '22023';
+end $$;
+
+-- Link do portal para envio manual pela equipe (revoga o anterior). O token só aparece nesta resposta.
+create or replace function public.rpc_gerar_acesso_portal(p_op bigint)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare o public.oportunidades; t text;
+begin
+  o := privado.carregar_op(p_op, (select papeis from public.matriz_permissoes where operacao = 'portal.acesso'));
+  if exists (select 1 from public.pessoas where id = o.pessoa_id and anonimizada_em is not null) then raise exception 'Titular anonimizado' using errcode = '22023'; end if;
+  t := privado.emitir_acesso(o.pessoa_id, (select auth.uid()));
+  perform privado.auditar(o.ies_id, 'portal.gerar_acesso', 'oportunidade', p_op::text, jsonb_build_object('validade_dias', 90));
+  return jsonb_build_object('token', t, 'validade_dias', 90);
+end $$;
+
+create or replace function public.rpc_solicitacoes_titular(p_ies bigint)
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+begin
+  perform privado.autorizar(p_ies, 'titular.tratar');
+  return (select coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'tipo', s.tipo, 'detalhe', s.detalhe, 'status', s.status, 'resposta', s.resposta,
+      'criado_em', s.criado_em, 'nome', p.nome, 'pessoa_id', s.pessoa_id, 'prazo', s.criado_em + interval '15 days',
+      'oportunidade_id', (select min(o.id) from public.oportunidades o where o.pessoa_id = s.pessoa_id)) order by s.status = 'aberta' desc, s.criado_em), '[]'::jsonb)
+    from public.solicitacoes_titular s join public.pessoas p on p.id = s.pessoa_id where s.ies_id = p_ies);
+end $$;
+
+create or replace function public.rpc_tratar_solicitacao(p_id bigint, p_status text, p_resposta text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare s public.solicitacoes_titular;
+begin
+  perform privado.exigir_usuario();
+  select * into s from public.solicitacoes_titular where id = p_id for update;
+  if not found or not privado.ve_ies(s.ies_id) then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  perform privado.autorizar(s.ies_id, 'titular.tratar');
+  if s.status <> 'aberta' then raise exception 'Solicitação já tratada' using errcode = '22023'; end if;
+  if p_status not in ('atendida','recusada') or length(coalesce(trim(p_resposta), '')) < 10 then
+    raise exception 'Informe a decisão e uma resposta ao titular (10+ caracteres)' using errcode = '22023';
+  end if;
+  update public.solicitacoes_titular set status = p_status, resposta = trim(p_resposta), tratado_por = (select auth.uid()), tratado_em = now() where id = p_id;
+  perform privado.auditar(s.ies_id, 'titular.tratar', 'pessoa', s.pessoa_id::text, jsonb_build_object('solicitacao_id', p_id, 'tipo', s.tipo, 'status', p_status));
+  return jsonb_build_object('id', p_id, 'status', p_status);
+end $$;
+
+revoke execute on all functions in schema public from public, anon;
+grant execute on function
+  public.rpc_formularios(bigint), public.rpc_salvar_formulario(bigint, jsonb, bigint), public.rpc_gerar_acesso_portal(bigint),
+  public.rpc_solicitacoes_titular(bigint), public.rpc_tratar_solicitacao(bigint, text, text)
+to authenticated;
+select privado.conceder_publico();
+
+-- ===================== supabase/migrations/20261125000019_documentos.sql
+-- Matrícula 360° — migração 19 (P4): documentos protegidos com checklist (L3; Bíblia §4 "documentos protegidos").
+--   * Checklist por forma de ingresso (modelo inicial próprio, editável).
+--   * Envio pelo candidato (portal, por token) ou pela equipe; tipo conferido pelo conteúdo (PDF, JPEG, PNG); até 3 MB;
+--     SHA-256 registrado; nova versão substitui a anterior sem apagá-la.
+--   * Conteúdo em tabela separada, sem leitura direta; download só por RPC, para secretaria/gestão, sempre auditado.
+--   * Revisão (aprovar/recusar com motivo) por secretaria/gestão. Exigência de checklist aprovado antes da validação
+--     documental é LIGÁVEL por instituição (ies.exigir_documentos), para não alterar o fluxo atual sem decisão.
+--   * Trade-off registrado: arquivos no banco (plano Free: 500 MB). Migração futura para o Storage quando houver
+--     autorização para função de servidor.
+-- Idempotente.
+
+insert into public.matriz_permissoes(operacao, modulo, descricao, papeis, abrangencia_minima, rpc) values
+  ('documento.ver',     'Conversão e Matrículas', 'Ver checklist e situação dos documentos',            array['gestor','secretaria','comercial','financeiro'], 'curso', 'rpc_documentos'),
+  ('documento.enviar',  'Conversão e Matrículas', 'Enviar documento em nome do candidato',             array['gestor','secretaria','comercial'], 'curso', 'rpc_enviar_documento'),
+  ('documento.revisar', 'Conversão e Matrículas', 'Baixar, aprovar ou recusar documento (auditado)',   array['gestor','secretaria'], 'curso', 'rpc_revisar_documento'),
+  ('documento.config',  'Governança Institucional', 'Configurar checklist e a exigência de documentos', array['gestor'], 'ies', 'rpc_configurar_documentos')
+on conflict (operacao) do update set modulo = excluded.modulo, descricao = excluded.descricao, papeis = excluded.papeis,
+  abrangencia_minima = excluded.abrangencia_minima, rpc = excluded.rpc;
+
+alter table public.ies add column if not exists exigir_documentos boolean not null default false;
+
+create table if not exists public.documentos_exigidos (
+  id bigint generated always as identity primary key,
+  ies_id bigint not null references public.ies(id),
+  forma_ingresso text check (forma_ingresso in ('vestibular','enem','transferencia','segunda_graduacao','reingresso','indicacao','convenio','visita_escolar','evento','pos_graduacao')),
+  tipo text not null check (tipo ~ '^[a-z0-9_]{3,40}$'),
+  descricao text not null check (length(descricao) between 3 and 200),
+  obrigatorio boolean not null default true,
+  ativo boolean not null default true,
+  unique nulls not distinct (ies_id, forma_ingresso, tipo)
+);
+create table if not exists public.documentos (
+  id bigint generated always as identity primary key,
+  ies_id bigint not null references public.ies(id),
+  oportunidade_id bigint not null references public.oportunidades(id),
+  tipo text not null,
+  nome_arquivo text not null check (length(nome_arquivo) between 1 and 200),
+  mime text not null check (mime in ('application/pdf','image/jpeg','image/png')),
+  tamanho int not null check (tamanho between 1 and 3145728),
+  sha256 text not null,
+  enviado_por_tipo text not null check (enviado_por_tipo in ('candidato','equipe')),
+  enviado_por uuid references public.usuarios(id),
+  enviado_em timestamptz not null default now(),
+  status text not null default 'enviado' check (status in ('enviado','aprovado','recusado','substituido')),
+  motivo_recusa text check (length(motivo_recusa) <= 300),
+  revisado_por uuid references public.usuarios(id),
+  revisado_em timestamptz
+);
+create table if not exists public.documentos_conteudo (
+  documento_id bigint primary key references public.documentos(id),
+  conteudo bytea not null
+);
+create index if not exists doc_exig_ies on public.documentos_exigidos(ies_id);
+create index if not exists documentos_op on public.documentos(oportunidade_id, tipo);
+create index if not exists documentos_ies on public.documentos(ies_id);
+create index if not exists documentos_enviado on public.documentos(enviado_por);
+create index if not exists documentos_revisado on public.documentos(revisado_por);
+alter table public.documentos_exigidos enable row level security;
+alter table public.documentos enable row level security;
+alter table public.documentos_conteudo enable row level security;
+revoke all on public.documentos_exigidos, public.documentos, public.documentos_conteudo from anon, authenticated;
+
+create or replace function privado.criar_documentos_padrao(p_ies bigint) returns void
+language plpgsql security definer set search_path = '' as $$
+begin
+  if exists (select 1 from public.documentos_exigidos where ies_id = p_ies) then return; end if;
+  insert into public.documentos_exigidos(ies_id, forma_ingresso, tipo, descricao, obrigatorio) values
+    (p_ies, null, 'identidade', 'Documento de identidade com foto e CPF', true),
+    (p_ies, null, 'ensino_medio', 'Certificado de conclusão e histórico do ensino médio', true),
+    (p_ies, null, 'residencia', 'Comprovante de residência recente', false),
+    (p_ies, 'enem', 'boletim_enem', 'Boletim de desempenho do ENEM', true),
+    (p_ies, 'transferencia', 'historico_origem', 'Histórico da instituição de origem', true),
+    (p_ies, 'transferencia', 'planos_ensino', 'Planos de ensino das disciplinas cursadas', false),
+    (p_ies, 'segunda_graduacao', 'diploma', 'Diploma de graduação registrado', true);
+end $$;
+revoke execute on function privado.criar_documentos_padrao(bigint) from public, anon, authenticated;
+select privado.criar_documentos_padrao(id) from public.ies;
+create or replace function privado.ies_documentos_padrao() returns trigger
+language plpgsql security definer set search_path = '' as $$ begin perform privado.criar_documentos_padrao(new.id); return new; end $$;
+revoke execute on function privado.ies_documentos_padrao() from public, anon, authenticated;
+drop trigger if exists ies_cria_documentos on public.ies;
+create trigger ies_cria_documentos after insert on public.ies for each row execute function privado.ies_documentos_padrao();
+
+-- Checklist da oportunidade: itens gerais + itens da forma de ingresso, com o documento vigente de cada tipo.
+create or replace function privado.checklist(p_op bigint) returns jsonb
+language sql stable security definer set search_path = '' as $$
+  select coalesce(jsonb_agg(jsonb_build_object('tipo', e.tipo, 'descricao', e.descricao, 'obrigatorio', e.obrigatorio,
+           'documento', (select jsonb_build_object('id', d.id, 'nome_arquivo', d.nome_arquivo, 'mime', d.mime, 'tamanho', d.tamanho, 'status', d.status,
+                            'motivo_recusa', d.motivo_recusa, 'enviado_em', d.enviado_em, 'enviado_por_tipo', d.enviado_por_tipo)
+                          from public.documentos d where d.oportunidade_id = o.id and d.tipo = e.tipo and d.status <> 'substituido' order by d.id desc limit 1))
+           order by e.obrigatorio desc, e.id), '[]'::jsonb)
+    from public.oportunidades o join public.documentos_exigidos e on e.ies_id = o.ies_id and e.ativo and (e.forma_ingresso is null or e.forma_ingresso = o.forma_ingresso)
+   where o.id = p_op;
+$$;
+revoke execute on function privado.checklist(bigint) from public, anon, authenticated;
+
+create or replace function privado.checklist_completo(p_op bigint) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select coalesce(bool_and((i->'documento'->>'status') = 'aprovado'), true)
+    from jsonb_array_elements(privado.checklist(p_op)) i where (i->>'obrigatorio')::boolean;
+$$;
+revoke execute on function privado.checklist_completo(bigint) from public, anon, authenticated;
+
+-- Grava o arquivo (comum a candidato e equipe). Valida tipo pelo conteúdo, tamanho e o item do checklist.
+create or replace function privado.gravar_documento(p_op bigint, p_tipo text, p_nome text, p_base64 text, p_origem text, p_por uuid) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare o public.oportunidades; b bytea; v_mime text; v_id bigint;
+begin
+  select * into o from public.oportunidades where id = p_op;
+  if o.etapa in ('perdido','cancelado') then raise exception 'Inscrição encerrada: não recebe documentos' using errcode = '22023'; end if;
+  if not exists (select 1 from jsonb_array_elements(privado.checklist(p_op)) i where i->>'tipo' = p_tipo) then
+    raise exception 'Documento fora do checklist desta inscrição' using errcode = '22023';
+  end if;
+  begin b := decode(p_base64, 'base64'); exception when others then raise exception 'Arquivo inválido' using errcode = '22023'; end;
+  if length(b) = 0 or length(b) > 3145728 then raise exception 'Arquivo vazio ou acima de 3 MB' using errcode = '22023'; end if;
+  v_mime := case when substring(b from 1 for 4) = '\x25504446'::bytea then 'application/pdf'
+                 when substring(b from 1 for 3) = '\xffd8ff'::bytea then 'image/jpeg'
+                 when substring(b from 1 for 8) = '\x89504e470d0a1a0a'::bytea then 'image/png' end;
+  if v_mime is null then raise exception 'Formato não aceito: envie PDF, JPG ou PNG' using errcode = '22023'; end if;
+  update public.documentos set status = 'substituido' where oportunidade_id = p_op and tipo = p_tipo and status in ('enviado','recusado','aprovado');
+  insert into public.documentos(ies_id, oportunidade_id, tipo, nome_arquivo, mime, tamanho, sha256, enviado_por_tipo, enviado_por)
+  values (o.ies_id, p_op, p_tipo, left(regexp_replace(coalesce(p_nome, 'documento'), '[^\w.\- ]', '_', 'g'), 200), v_mime, length(b), encode(sha256(b), 'hex'), p_origem, p_por)
+  returning id into v_id;
+  insert into public.documentos_conteudo(documento_id, conteudo) values (v_id, b);
+  perform privado.auditar(o.ies_id, 'documento.enviar', 'oportunidade', p_op::text, jsonb_build_object('documento_id', v_id, 'tipo', p_tipo, 'origem', p_origem, 'tamanho', length(b)));
+  return jsonb_build_object('id', v_id, 'status', 'enviado', 'mime', v_mime);
+end $$;
+revoke execute on function privado.gravar_documento(bigint, text, text, text, text, uuid) from public, anon, authenticated;
+
+-- ---------------------------------------------------------------- portal (anon, por token)
+create or replace function public.rpc_publico_portal_documentos(p_token text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare p public.pessoas;
+begin
+  p := privado.portal_pessoa(p_token);
+  return (select coalesce(jsonb_agg(jsonb_build_object('oportunidade_id', o.id, 'curso', c.nome || ' · ' || c.turno, 'coorte', o.coorte, 'checklist', privado.checklist(o.id)) order by o.id), '[]'::jsonb)
+    from public.oportunidades o join public.cursos c on c.id = o.curso_id where o.pessoa_id = p.id and o.etapa not in ('perdido','cancelado'));
+end $$;
+
+create or replace function public.rpc_publico_enviar_documento(p_token text, p_op bigint, p_tipo text, p_nome text, p_base64 text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare p public.pessoas;
+begin
+  p := privado.portal_pessoa(p_token);
+  if not exists (select 1 from public.oportunidades where id = p_op and pessoa_id = p.id) then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  if (select count(*) from public.documentos where oportunidade_id = p_op and enviado_em > now() - interval '1 hour') >= 20 then
+    perform privado.erro_http(429, '54000', 'Muitos envios em pouco tempo. Tente mais tarde.');
+  end if;
+  return privado.gravar_documento(p_op, p_tipo, p_nome, p_base64, 'candidato', null);
+end $$;
+
+-- ---------------------------------------------------------------- equipe
+create or replace function public.rpc_documentos(p_op bigint)
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+declare o public.oportunidades;
+begin
+  perform privado.exigir_usuario();
+  select * into o from public.oportunidades where id = p_op;
+  if not found or not privado.ve_op(o.ies_id, o.curso_id, o.responsavel_id, (select papeis from public.matriz_permissoes where operacao = 'documento.ver')) then
+    perform privado.erro_http(404, 'P0002', 'Não encontrado');
+  end if;
+  return jsonb_build_object('checklist', privado.checklist(p_op), 'completo', privado.checklist_completo(p_op),
+    'exigido_para_validar', (select exigir_documentos from public.ies where id = o.ies_id),
+    'pode_revisar', privado.tem_acesso(o.ies_id, o.curso_id, (select papeis from public.matriz_permissoes where operacao = 'documento.revisar')),
+    'historico', (select coalesce(jsonb_agg(jsonb_build_object('id', d.id, 'tipo', d.tipo, 'nome_arquivo', d.nome_arquivo, 'status', d.status, 'enviado_em', d.enviado_em,
+                    'enviado_por', coalesce(privado.nome_usuario(d.enviado_por), d.enviado_por_tipo), 'revisado_por', privado.nome_usuario(d.revisado_por),
+                    'motivo_recusa', d.motivo_recusa, 'sha256', d.sha256) order by d.id desc), '[]'::jsonb) from public.documentos d where d.oportunidade_id = p_op));
+end $$;
+
+create or replace function public.rpc_enviar_documento(p_op bigint, p_tipo text, p_nome text, p_base64 text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare o public.oportunidades;
+begin
+  o := privado.carregar_op(p_op, (select papeis from public.matriz_permissoes where operacao = 'documento.enviar'));
+  return privado.gravar_documento(p_op, p_tipo, p_nome, p_base64, 'equipe', (select auth.uid()));
+end $$;
+
+create or replace function public.rpc_baixar_documento(p_documento bigint)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare d public.documentos; o public.oportunidades;
+begin
+  perform privado.exigir_usuario();
+  select * into d from public.documentos where id = p_documento;
+  if not found then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  select * into o from public.oportunidades where id = d.oportunidade_id;
+  if not privado.tem_acesso(o.ies_id, o.curso_id, (select papeis from public.matriz_permissoes where operacao = 'documento.revisar')) then
+    perform privado.erro_http(404, 'P0002', 'Não encontrado');
+  end if;
+  perform privado.auditar(o.ies_id, 'documento.baixar', 'oportunidade', o.id::text, jsonb_build_object('documento_id', d.id, 'tipo', d.tipo));
+  return jsonb_build_object('nome_arquivo', d.nome_arquivo, 'mime', d.mime, 'base64', (select encode(conteudo, 'base64') from public.documentos_conteudo where documento_id = d.id));
+end $$;
+
+create or replace function public.rpc_revisar_documento(p_documento bigint, p_status text, p_motivo text default null)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare d public.documentos; o public.oportunidades;
+begin
+  perform privado.exigir_usuario();
+  select * into d from public.documentos where id = p_documento for update;
+  if not found then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  select * into o from public.oportunidades where id = d.oportunidade_id;
+  if not privado.tem_acesso(o.ies_id, o.curso_id, (select papeis from public.matriz_permissoes where operacao = 'documento.revisar')) then
+    perform privado.erro_http(404, 'P0002', 'Não encontrado');
+  end if;
+  if d.status <> 'enviado' then raise exception 'Só documento aguardando revisão pode ser revisado' using errcode = '22023'; end if;
+  if p_status not in ('aprovado','recusado') then raise exception 'Decisão inválida' using errcode = '22023'; end if;
+  if p_status = 'recusado' and length(coalesce(trim(p_motivo), '')) < 5 then raise exception 'Informe ao candidato o motivo da recusa' using errcode = '22023'; end if;
+  update public.documentos set status = p_status, motivo_recusa = case when p_status = 'recusado' then trim(p_motivo) end,
+         revisado_por = (select auth.uid()), revisado_em = now() where id = p_documento;
+  perform privado.auditar(o.ies_id, 'documento.revisar', 'oportunidade', o.id::text, jsonb_build_object('documento_id', d.id, 'tipo', d.tipo, 'status', p_status));
+  return jsonb_build_object('id', p_documento, 'status', p_status, 'checklist_completo', privado.checklist_completo(o.id));
+end $$;
+
+create or replace function public.rpc_configurar_documentos(p_ies bigint, p_exigir boolean default null, p_item jsonb default null)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+begin
+  perform privado.autorizar(p_ies, 'documento.config');
+  if p_exigir is not null then update public.ies set exigir_documentos = p_exigir where id = p_ies; end if;
+  if p_item is not null then
+    insert into public.documentos_exigidos(ies_id, forma_ingresso, tipo, descricao, obrigatorio, ativo)
+    values (p_ies, nullif(p_item->>'forma_ingresso', ''), lower(trim(p_item->>'tipo')), trim(p_item->>'descricao'),
+            coalesce((p_item->>'obrigatorio')::boolean, true), coalesce((p_item->>'ativo')::boolean, true))
+    on conflict (ies_id, forma_ingresso, tipo) do update set descricao = excluded.descricao, obrigatorio = excluded.obrigatorio, ativo = excluded.ativo;
+  end if;
+  perform privado.auditar(p_ies, 'documentos.configurar', 'ies', p_ies::text, jsonb_build_object('exigir', p_exigir, 'item', p_item->>'tipo'));
+  return jsonb_build_object('exigir_documentos', (select exigir_documentos from public.ies where id = p_ies),
+    'itens', (select coalesce(jsonb_agg(jsonb_build_object('tipo', e.tipo, 'forma_ingresso', e.forma_ingresso, 'descricao', e.descricao, 'obrigatorio', e.obrigatorio, 'ativo', e.ativo) order by e.forma_ingresso nulls first, e.id), '[]'::jsonb)
+              from public.documentos_exigidos e where e.ies_id = p_ies));
+exception when check_violation or not_null_violation then
+  raise exception 'Item inválido: tipo (letras minúsculas, números e _), descrição e forma de ingresso válida' using errcode = '22023';
+end $$;
+
+-- Validação documental "válida" exige checklist obrigatório aprovado, quando a instituição liga a exigência.
+create or replace function privado.validacao_exige_documentos() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if new.dimensao = 'documental' and new.resultado = 'valida'
+     and (select i.exigir_documentos from public.oportunidades o join public.ies i on i.id = o.ies_id where o.id = new.oportunidade_id)
+     and not privado.checklist_completo(new.oportunidade_id) then
+    raise exception 'Validação documental exige todos os documentos obrigatórios aprovados' using errcode = '22023';
+  end if;
+  return new;
+end $$;
+revoke execute on function privado.validacao_exige_documentos() from public, anon, authenticated;
+drop trigger if exists validacao_documentos on public.validacoes;
+create trigger validacao_documentos before insert on public.validacoes for each row execute function privado.validacao_exige_documentos();
+
+revoke execute on all functions in schema public from public, anon;
+grant execute on function
+  public.rpc_documentos(bigint), public.rpc_enviar_documento(bigint, text, text, text), public.rpc_baixar_documento(bigint),
+  public.rpc_revisar_documento(bigint, text, text), public.rpc_configurar_documentos(bigint, boolean, jsonb)
+to authenticated;
+select privado.conceder_publico();
+
+-- ===================== supabase/migrations/20261125000020_eventos_seletivo.sql
+-- Matrícula 360° — migração 20 (P4): eventos e visitas (L7) e processo seletivo online (L4).
+--   * Eventos (open house, tour, aula experimental, webinar, feira, visita escolar) com vagas, inscrição pelo formulário
+--     público ou pela equipe, check-in e conversão (presentes que viraram ingressantes).
+--   * Processo seletivo: prova agendada, ENEM, análise curricular ou transferência. Candidatura pelo portal ou pela equipe;
+--     agenda com vagas; nota do ENEM declarada e conferida por pessoa; redação enviada pelo portal e corrigida por pessoa.
+--     O sistema apenas SUGERE o resultado pela nota mínima; a decisão é humana e o candidato só vê após a divulgação.
+-- Idempotente.
+
+insert into public.matriz_permissoes(operacao, modulo, descricao, papeis, abrangencia_minima, rpc) values
+  ('evento.gerir',     'Marketing e Captação',   'Criar eventos e visitas',                                     array['gestor'], 'ies', 'rpc_salvar_evento'),
+  ('evento.operar',    'Marketing e Captação',   'Inscrever oportunidades e registrar presença (check-in)',     array['gestor','comercial','secretaria'], 'curso', 'rpc_checkin'),
+  ('seletivo.gerir',   'Conversão e Matrículas', 'Criar processos seletivos e agendas de prova',                array['gestor','secretaria'], 'ies', 'rpc_salvar_processo'),
+  ('seletivo.avaliar', 'Conversão e Matrículas', 'Conferir ENEM, corrigir redação e decidir o resultado',       array['gestor','secretaria','coordenador'], 'curso', 'rpc_avaliar_candidatura'),
+  ('seletivo.divulgar','Conversão e Matrículas', 'Divulgar o resultado do processo seletivo',                   array['gestor','secretaria'], 'ies', 'rpc_divulgar_resultado')
+on conflict (operacao) do update set modulo = excluded.modulo, descricao = excluded.descricao, papeis = excluded.papeis,
+  abrangencia_minima = excluded.abrangencia_minima, rpc = excluded.rpc;
+
+create table if not exists public.eventos (
+  id bigint generated always as identity primary key,
+  ies_id bigint not null references public.ies(id),
+  titulo text not null check (length(titulo) between 3 and 120),
+  tipo text not null check (tipo in ('open_house','tour','aula_experimental','webinar','feira','visita_escolar','outro')),
+  inicio timestamptz not null,
+  fim timestamptz not null,
+  local text check (length(local) <= 200),
+  online boolean not null default false,
+  vagas int check (vagas between 1 and 100000),
+  campanha_id bigint references public.campanhas(id),
+  status text not null default 'aberto' check (status in ('aberto','encerrado','cancelado')),
+  criado_por uuid references public.usuarios(id),
+  criado_em timestamptz not null default now(),
+  check (fim > inicio)
+);
+create table if not exists public.inscricoes_evento (
+  id bigint generated always as identity primary key,
+  ies_id bigint not null references public.ies(id),
+  evento_id bigint not null references public.eventos(id),
+  pessoa_id bigint not null references public.pessoas(id),
+  oportunidade_id bigint references public.oportunidades(id),
+  status text not null default 'inscrito' check (status in ('inscrito','presente','ausente','cancelado')),
+  inscrito_em timestamptz not null default now(),
+  checkin_em timestamptz,
+  checkin_por uuid references public.usuarios(id),
+  unique (evento_id, pessoa_id)
+);
+alter table public.formularios add column if not exists evento_id bigint references public.eventos(id);
+
+create table if not exists public.processos_seletivos (
+  id bigint generated always as identity primary key,
+  ies_id bigint not null references public.ies(id),
+  coorte text not null check (coorte ~ '^\d{4}\.[12]$'),
+  nome text not null check (length(nome) between 3 and 120),
+  tipo text not null check (tipo in ('prova_agendada','enem','analise_curricular','transferencia')),
+  inscricoes_ate date not null,
+  nota_minima numeric(6,2) check (nota_minima between 0 and 1000),
+  instrucoes text check (length(instrucoes) <= 3000),
+  tema_redacao text check (length(tema_redacao) <= 1000),
+  status text not null default 'aberto' check (status in ('aberto','encerrado')),
+  resultado_divulgado_em timestamptz,
+  criado_por uuid references public.usuarios(id),
+  criado_em timestamptz not null default now(),
+  unique (ies_id, coorte, nome)
+);
+create table if not exists public.agendas_prova (
+  id bigint generated always as identity primary key,
+  ies_id bigint not null references public.ies(id),
+  processo_id bigint not null references public.processos_seletivos(id),
+  inicio timestamptz not null,
+  local text not null check (length(local) between 2 and 200),
+  vagas int not null check (vagas between 1 and 10000)
+);
+create table if not exists public.candidaturas (
+  id bigint generated always as identity primary key,
+  ies_id bigint not null references public.ies(id),
+  processo_id bigint not null references public.processos_seletivos(id),
+  oportunidade_id bigint not null references public.oportunidades(id),
+  agenda_id bigint references public.agendas_prova(id),
+  nota_enem numeric(6,2) check (nota_enem between 0 and 1000),
+  enem_conferido_por uuid references public.usuarios(id),
+  enem_conferido_em timestamptz,
+  nota_objetiva numeric(6,2) check (nota_objetiva between 0 and 1000),
+  redacao text check (length(redacao) <= 12000),
+  redacao_enviada_em timestamptz,
+  redacao_nota numeric(6,2) check (redacao_nota between 0 and 1000),
+  redacao_parecer text check (length(redacao_parecer) <= 2000),
+  corrigida_por uuid references public.usuarios(id),
+  resultado text not null default 'pendente' check (resultado in ('pendente','aprovado','reprovado','ausente')),
+  resultado_justificativa text check (length(resultado_justificativa) <= 1000),
+  resultado_por uuid references public.usuarios(id),
+  resultado_em timestamptz,
+  criado_em timestamptz not null default now(),
+  unique (processo_id, oportunidade_id)
+);
+create index if not exists eventos_ies on public.eventos(ies_id, inicio);
+create index if not exists eventos_campanha on public.eventos(campanha_id);
+create index if not exists eventos_criado on public.eventos(criado_por);
+create index if not exists insc_evento_ies on public.inscricoes_evento(ies_id);
+create index if not exists insc_evento_pessoa on public.inscricoes_evento(pessoa_id);
+create index if not exists insc_evento_op on public.inscricoes_evento(oportunidade_id);
+create index if not exists insc_evento_checkin on public.inscricoes_evento(checkin_por);
+create index if not exists formularios_evento on public.formularios(evento_id);
+create index if not exists processos_ies on public.processos_seletivos(ies_id);
+create index if not exists processos_criado on public.processos_seletivos(criado_por);
+create index if not exists agendas_processo on public.agendas_prova(processo_id);
+create index if not exists agendas_ies on public.agendas_prova(ies_id);
+create index if not exists candidaturas_ies on public.candidaturas(ies_id);
+create index if not exists candidaturas_op on public.candidaturas(oportunidade_id);
+create index if not exists candidaturas_agenda on public.candidaturas(agenda_id);
+create index if not exists candidaturas_enem on public.candidaturas(enem_conferido_por);
+create index if not exists candidaturas_corrigida on public.candidaturas(corrigida_por);
+create index if not exists candidaturas_resultado on public.candidaturas(resultado_por);
+alter table public.eventos enable row level security;
+alter table public.inscricoes_evento enable row level security;
+alter table public.processos_seletivos enable row level security;
+alter table public.agendas_prova enable row level security;
+alter table public.candidaturas enable row level security;
+revoke all on public.eventos, public.inscricoes_evento, public.processos_seletivos, public.agendas_prova, public.candidaturas from anon, authenticated;
+
+-- ---------------------------------------------------------------- eventos
+create or replace function privado.inscrever_em_evento(p_evento bigint, p_pessoa bigint, p_op bigint) returns void
+language plpgsql security definer set search_path = '' as $$
+declare e public.eventos;
+begin
+  if p_evento is null then return; end if;
+  select * into e from public.eventos where id = p_evento for update;
+  if not found or e.status <> 'aberto' or e.fim < now() then return; end if;
+  if e.vagas is not null and (select count(*) from public.inscricoes_evento where evento_id = p_evento and status <> 'cancelado') >= e.vagas then return; end if;
+  insert into public.inscricoes_evento(ies_id, evento_id, pessoa_id, oportunidade_id) values (e.ies_id, p_evento, p_pessoa, p_op)
+  on conflict (evento_id, pessoa_id) do nothing;
+end $$;
+revoke execute on function privado.inscrever_em_evento(bigint, bigint, bigint) from public, anon, authenticated;
+
+create or replace function public.rpc_salvar_evento(p_ies bigint, p_dados jsonb, p_id bigint default null)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_id bigint; v_camp bigint := nullif(p_dados->>'campanha_id', '')::bigint;
+begin
+  perform privado.autorizar(p_ies, 'evento.gerir');
+  if v_camp is not null and not exists (select 1 from public.campanhas where id = v_camp and ies_id = p_ies) then raise exception 'Campanha não pertence à IES' using errcode = '22023'; end if;
+  if p_id is null then
+    insert into public.eventos(ies_id, titulo, tipo, inicio, fim, local, online, vagas, campanha_id, criado_por)
+    values (p_ies, trim(p_dados->>'titulo'), p_dados->>'tipo', (p_dados->>'inicio')::timestamptz, (p_dados->>'fim')::timestamptz, nullif(trim(p_dados->>'local'), ''),
+            coalesce((p_dados->>'online')::boolean, false), nullif(p_dados->>'vagas', '')::int, v_camp, (select auth.uid())) returning id into v_id;
+  else
+    update public.eventos set titulo = coalesce(trim(p_dados->>'titulo'), titulo), status = coalesce(p_dados->>'status', status),
+           local = coalesce(nullif(trim(p_dados->>'local'), ''), local), vagas = coalesce(nullif(p_dados->>'vagas', '')::int, vagas)
+     where id = p_id and ies_id = p_ies returning id into v_id;
+    if v_id is null then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  end if;
+  perform privado.auditar(p_ies, 'evento.salvar', 'evento', v_id::text, jsonb_build_object('status', p_dados->>'status'));
+  return jsonb_build_object('id', v_id);
+exception when check_violation or not_null_violation then
+  raise exception 'Evento inválido: título, tipo, início e fim (fim depois do início) obrigatórios' using errcode = '22023';
+end $$;
+
+create or replace function public.rpc_inscrever_evento(p_evento bigint, p_op bigint)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare o public.oportunidades; e public.eventos;
+begin
+  o := privado.carregar_op(p_op, (select papeis from public.matriz_permissoes where operacao = 'evento.operar'));
+  select * into e from public.eventos where id = p_evento and ies_id = o.ies_id;
+  if not found then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  if e.status <> 'aberto' or e.fim < now() then raise exception 'Evento encerrado' using errcode = '22023'; end if;
+  if e.vagas is not null and (select count(*) from public.inscricoes_evento where evento_id = p_evento and status <> 'cancelado') >= e.vagas then
+    raise exception 'Evento sem vagas' using errcode = '22023';
+  end if;
+  insert into public.inscricoes_evento(ies_id, evento_id, pessoa_id, oportunidade_id) values (o.ies_id, p_evento, o.pessoa_id, p_op) on conflict (evento_id, pessoa_id) do nothing;
+  perform privado.auditar(o.ies_id, 'evento.inscrever', 'oportunidade', p_op::text, jsonb_build_object('evento_id', p_evento));
+  return jsonb_build_object('evento', p_evento, 'oportunidade', p_op);
+end $$;
+
+create or replace function public.rpc_checkin(p_inscricao bigint, p_status text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare i public.inscricoes_evento; e public.eventos;
+begin
+  perform privado.exigir_usuario();
+  select * into i from public.inscricoes_evento where id = p_inscricao for update;
+  if not found or not privado.ve_ies(i.ies_id) then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  perform privado.autorizar(i.ies_id, 'evento.operar');
+  select * into e from public.eventos where id = i.evento_id;
+  if p_status not in ('presente','ausente','cancelado') then raise exception 'Situação inválida' using errcode = '22023'; end if;
+  if p_status in ('presente','ausente') and now() < e.inicio - interval '2 hours' then raise exception 'Presença só a partir do início do evento' using errcode = '22023'; end if;
+  update public.inscricoes_evento set status = p_status, checkin_em = case when p_status = 'presente' then now() end, checkin_por = (select auth.uid()) where id = p_inscricao;
+  perform privado.auditar(i.ies_id, 'evento.checkin', 'evento', i.evento_id::text, jsonb_build_object('inscricao', p_inscricao, 'status', p_status));
+  return jsonb_build_object('id', p_inscricao, 'status', p_status);
+end $$;
+
+create or replace function public.rpc_eventos(p_ies bigint)
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+declare pleno boolean;
+begin
+  perform privado.autorizar(p_ies, 'evento.operar');
+  return (select coalesce(jsonb_agg(jsonb_build_object('id', e.id, 'titulo', e.titulo, 'tipo', e.tipo, 'inicio', e.inicio, 'fim', e.fim, 'local', e.local, 'online', e.online,
+      'vagas', e.vagas, 'status', e.status, 'campanha_id', e.campanha_id,
+      'inscritos', (select count(*) from public.inscricoes_evento i where i.evento_id = e.id and i.status <> 'cancelado'),
+      'presentes', (select count(*) from public.inscricoes_evento i where i.evento_id = e.id and i.status = 'presente'),
+      'ingressantes_presentes', (select count(distinct i.pessoa_id) from public.inscricoes_evento i join public.oportunidades o on o.pessoa_id = i.pessoa_id and o.ies_id = e.ies_id
+                                  where i.evento_id = e.id and i.status = 'presente' and o.etapa = 'confirmado'),
+      'inscricoes', (select coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'nome', p.nome, 'status', i.status, 'oportunidade_id', i.oportunidade_id, 'checkin_em', i.checkin_em) order by p.nome), '[]'::jsonb)
+                     from public.inscricoes_evento i join public.pessoas p on p.id = i.pessoa_id
+                    where i.evento_id = e.id and (i.oportunidade_id is null or exists (select 1 from public.oportunidades o where o.id = i.oportunidade_id
+                          and privado.ve_op(o.ies_id, o.curso_id, o.responsavel_id, array['gestor','comercial','secretaria'])))))
+      order by e.inicio desc), '[]'::jsonb)
+    from public.eventos e where e.ies_id = p_ies);
+end $$;
+
+-- ---------------------------------------------------------------- processo seletivo (equipe)
+create or replace function public.rpc_salvar_processo(p_ies bigint, p_dados jsonb, p_id bigint default null)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_id bigint;
+begin
+  perform privado.autorizar(p_ies, 'seletivo.gerir');
+  if p_id is null then
+    insert into public.processos_seletivos(ies_id, coorte, nome, tipo, inscricoes_ate, nota_minima, instrucoes, tema_redacao, criado_por)
+    values (p_ies, p_dados->>'coorte', trim(p_dados->>'nome'), p_dados->>'tipo', (p_dados->>'inscricoes_ate')::date, nullif(p_dados->>'nota_minima', '')::numeric,
+            nullif(trim(p_dados->>'instrucoes'), ''), nullif(trim(p_dados->>'tema_redacao'), ''), (select auth.uid())) returning id into v_id;
+  else
+    update public.processos_seletivos set status = coalesce(p_dados->>'status', status), inscricoes_ate = coalesce((p_dados->>'inscricoes_ate')::date, inscricoes_ate),
+           instrucoes = coalesce(nullif(trim(p_dados->>'instrucoes'), ''), instrucoes), tema_redacao = coalesce(nullif(trim(p_dados->>'tema_redacao'), ''), tema_redacao)
+     where id = p_id and ies_id = p_ies and resultado_divulgado_em is null returning id into v_id;
+    if v_id is null then raise exception 'Processo inexistente ou com resultado já divulgado' using errcode = '22023'; end if;
+  end if;
+  if p_dados ? 'agenda' then
+    insert into public.agendas_prova(ies_id, processo_id, inicio, local, vagas)
+    values (p_ies, v_id, (p_dados->'agenda'->>'inicio')::timestamptz, trim(p_dados->'agenda'->>'local'), (p_dados->'agenda'->>'vagas')::int);
+  end if;
+  perform privado.auditar(p_ies, 'seletivo.salvar', 'processo', v_id::text, jsonb_build_object('tipo', p_dados->>'tipo'));
+  return jsonb_build_object('id', v_id);
+exception
+  when unique_violation then perform privado.erro_http(409, '23505', 'Já existe processo com este nome na coorte');
+  when check_violation or not_null_violation then raise exception 'Processo inválido: coorte, nome, tipo, prazo de inscrição; nota mínima e notas entre 0 e 1000; agenda com local e vagas' using errcode = '22023';
+end $$;
+
+-- Candidatura (comum a portal e equipe). Coloca a oportunidade em "inscrito" quando ela está em "contato".
+create or replace function privado.candidatar(p_processo bigint, p_op bigint, p_agenda bigint, p_nota_enem numeric, p_origem text) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare pr public.processos_seletivos; o public.oportunidades; ag public.agendas_prova; v_id bigint;
+begin
+  select * into o from public.oportunidades where id = p_op;
+  select * into pr from public.processos_seletivos where id = p_processo and ies_id = o.ies_id;
+  if not found then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  if pr.status <> 'aberto' or pr.inscricoes_ate < current_date then raise exception 'Inscrições encerradas' using errcode = '22023'; end if;
+  if o.etapa in ('perdido','cancelado','confirmado') then raise exception 'Inscrição encerrada ou já confirmada' using errcode = '22023'; end if;
+  if pr.tipo = 'prova_agendada' then
+    select * into ag from public.agendas_prova where id = p_agenda and processo_id = p_processo for update;
+    if not found then raise exception 'Escolha uma data de prova' using errcode = '22023'; end if;
+    if ag.inicio < now() then raise exception 'Data de prova já passou' using errcode = '22023'; end if;
+    if (select count(*) from public.candidaturas where agenda_id = ag.id) >= ag.vagas then raise exception 'Data de prova sem vagas' using errcode = '22023'; end if;
+  end if;
+  if pr.tipo = 'enem' and p_nota_enem is null then raise exception 'Informe a nota do ENEM' using errcode = '22023'; end if;
+  insert into public.candidaturas(ies_id, processo_id, oportunidade_id, agenda_id, nota_enem)
+  values (o.ies_id, p_processo, p_op, case when pr.tipo = 'prova_agendada' then p_agenda end, p_nota_enem) returning id into v_id;
+  if o.etapa = 'contato' then
+    update public.oportunidades set etapa = 'inscrito', versao = versao + 1, atualizado_em = now() where id = p_op;
+    perform privado.auditar(o.ies_id, 'oportunidade.etapa', 'oportunidade', p_op::text, jsonb_build_object('de', 'contato', 'para', 'inscrito', 'motivo', 'Inscrição no processo ' || pr.nome));
+  end if;
+  perform privado.auditar(o.ies_id, 'seletivo.candidatar', 'oportunidade', p_op::text, jsonb_build_object('processo', pr.nome, 'origem', p_origem));
+  return jsonb_build_object('id', v_id);
+exception
+  when unique_violation then raise exception 'Já inscrito neste processo' using errcode = '22023';
+  when check_violation then raise exception 'Nota do ENEM entre 0 e 1000' using errcode = '22023';
+end $$;
+revoke execute on function privado.candidatar(bigint, bigint, bigint, numeric, text) from public, anon, authenticated;
+
+create or replace function public.rpc_candidatar(p_processo bigint, p_op bigint, p_agenda bigint default null, p_nota_enem numeric default null)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+begin
+  perform privado.carregar_op(p_op, array['gestor','comercial','secretaria']);
+  return privado.candidatar(p_processo, p_op, p_agenda, p_nota_enem, 'equipe');
+end $$;
+
+create or replace function public.rpc_avaliar_candidatura(p_candidatura bigint, p_dados jsonb)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare c public.candidaturas; o public.oportunidades; pr public.processos_seletivos;
+begin
+  perform privado.exigir_usuario();
+  select * into c from public.candidaturas where id = p_candidatura for update;
+  if not found then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  select * into o from public.oportunidades where id = c.oportunidade_id;
+  if not privado.tem_acesso(o.ies_id, o.curso_id, (select papeis from public.matriz_permissoes where operacao = 'seletivo.avaliar')) then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  select * into pr from public.processos_seletivos where id = c.processo_id;
+  if pr.resultado_divulgado_em is not null then raise exception 'Resultado já divulgado: avaliação encerrada' using errcode = '22023'; end if;
+  if (p_dados->>'conferir_enem')::boolean then
+    if c.nota_enem is null then raise exception 'Sem nota do ENEM declarada' using errcode = '22023'; end if;
+    update public.candidaturas set enem_conferido_por = (select auth.uid()), enem_conferido_em = now(),
+           nota_enem = coalesce(nullif(p_dados->>'nota_enem', '')::numeric, nota_enem) where id = c.id;
+  end if;
+  if p_dados ? 'nota_objetiva' then update public.candidaturas set nota_objetiva = (p_dados->>'nota_objetiva')::numeric where id = c.id; end if;
+  if p_dados ? 'redacao_nota' then
+    if c.redacao is null then raise exception 'Candidato ainda não enviou a redação' using errcode = '22023'; end if;
+    if length(coalesce(trim(p_dados->>'redacao_parecer'), '')) < 10 then raise exception 'Parecer da correção obrigatório (10+ caracteres)' using errcode = '22023'; end if;
+    update public.candidaturas set redacao_nota = (p_dados->>'redacao_nota')::numeric, redacao_parecer = trim(p_dados->>'redacao_parecer'), corrigida_por = (select auth.uid()) where id = c.id;
+  end if;
+  if p_dados ? 'resultado' then
+    if p_dados->>'resultado' not in ('aprovado','reprovado','ausente') then raise exception 'Resultado inválido' using errcode = '22023'; end if;
+    if length(coalesce(trim(p_dados->>'justificativa'), '')) < 5 then raise exception 'Justificativa do resultado obrigatória' using errcode = '22023'; end if;
+    if pr.tipo = 'enem' and p_dados->>'resultado' = 'aprovado' and (select enem_conferido_em from public.candidaturas where id = c.id) is null then
+      raise exception 'Confira a nota do ENEM antes de aprovar' using errcode = '22023';
+    end if;
+    update public.candidaturas set resultado = p_dados->>'resultado', resultado_justificativa = trim(p_dados->>'justificativa'), resultado_por = (select auth.uid()), resultado_em = now() where id = c.id;
+  end if;
+  perform privado.auditar(o.ies_id, 'seletivo.avaliar', 'oportunidade', o.id::text, jsonb_build_object('candidatura', c.id, 'campos', (select jsonb_agg(k) from jsonb_object_keys(p_dados) k)));
+  return jsonb_build_object('id', c.id);
+exception when check_violation or invalid_text_representation then raise exception 'Notas devem estar entre 0 e 1000' using errcode = '22023';
+end $$;
+
+create or replace function public.rpc_divulgar_resultado(p_processo bigint)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare pr public.processos_seletivos; pend int;
+begin
+  perform privado.exigir_usuario();
+  select * into pr from public.processos_seletivos where id = p_processo for update;
+  if not found or not privado.ve_ies(pr.ies_id) then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  perform privado.autorizar(pr.ies_id, 'seletivo.divulgar');
+  if pr.resultado_divulgado_em is not null then raise exception 'Resultado já divulgado' using errcode = '22023'; end if;
+  select count(*) into pend from public.candidaturas where processo_id = p_processo and resultado = 'pendente';
+  if pend > 0 then raise exception 'Há % candidatura(s) sem resultado decidido', pend using errcode = '22023'; end if;
+  update public.processos_seletivos set resultado_divulgado_em = now(), status = 'encerrado' where id = p_processo;
+  perform privado.auditar(pr.ies_id, 'seletivo.divulgar', 'processo', p_processo::text,
+    jsonb_build_object('aprovados', (select count(*) from public.candidaturas where processo_id = p_processo and resultado = 'aprovado'),
+                       'total', (select count(*) from public.candidaturas where processo_id = p_processo)));
+  return jsonb_build_object('id', p_processo, 'divulgado', true);
+end $$;
+
+create or replace function public.rpc_seletivo(p_ies bigint)
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+begin
+  perform privado.exigir_usuario();
+  if not privado.ve_ies(p_ies) then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  if not exists (select 1 from public.cursos c where c.ies_id = p_ies and privado.tem_acesso(p_ies, c.id, array['gestor','secretaria','coordenador','comercial'])) then
+    raise exception 'Seu perfil não tem permissão para esta operação' using errcode = '42501';
+  end if;
+  return jsonb_build_object('pode_gerir', privado.pode(p_ies, 'seletivo.gerir'), 'pode_divulgar', privado.pode(p_ies, 'seletivo.divulgar'),
+    'aviso', 'O sistema só sugere o resultado pela nota mínima; a decisão é humana e justificada. Redação corrigida por pessoa. O candidato vê o resultado após a divulgação.',
+    'processos', (select coalesce(jsonb_agg(jsonb_build_object('id', pr.id, 'nome', pr.nome, 'tipo', pr.tipo, 'coorte', pr.coorte, 'inscricoes_ate', pr.inscricoes_ate,
+      'nota_minima', pr.nota_minima, 'instrucoes', pr.instrucoes, 'tema_redacao', pr.tema_redacao, 'status', pr.status, 'resultado_divulgado_em', pr.resultado_divulgado_em,
+      'agendas', (select coalesce(jsonb_agg(jsonb_build_object('id', a.id, 'inicio', a.inicio, 'local', a.local, 'vagas', a.vagas,
+                    'ocupadas', (select count(*) from public.candidaturas x where x.agenda_id = a.id)) order by a.inicio), '[]'::jsonb) from public.agendas_prova a where a.processo_id = pr.id),
+      'candidaturas', (select coalesce(jsonb_agg(jsonb_build_object('id', c.id, 'oportunidade_id', c.oportunidade_id, 'nome', p.nome, 'curso', cu.nome,
+          'agenda', (select a.inicio from public.agendas_prova a where a.id = c.agenda_id), 'nota_enem', c.nota_enem, 'enem_conferido', c.enem_conferido_em is not null,
+          'nota_objetiva', c.nota_objetiva, 'redacao_enviada', c.redacao_enviada_em is not null, 'redacao', case when privado.tem_acesso(o.ies_id, o.curso_id, array['gestor','secretaria','coordenador']) then c.redacao end,
+          'redacao_nota', c.redacao_nota, 'redacao_parecer', c.redacao_parecer, 'corrigida_por', privado.nome_usuario(c.corrigida_por),
+          'resultado', c.resultado, 'justificativa', c.resultado_justificativa, 'resultado_por', privado.nome_usuario(c.resultado_por),
+          'sugestao', case when pr.nota_minima is null then null
+                           when pr.tipo = 'enem' then case when c.nota_enem is null then null when c.nota_enem >= pr.nota_minima then 'aprovado' else 'reprovado' end
+                           else case when c.redacao_nota is null and c.nota_objetiva is null then null
+                                     when (coalesce(c.redacao_nota, 0) + coalesce(c.nota_objetiva, 0)) / (case when c.redacao_nota is not null and c.nota_objetiva is not null then 2 else 1 end) >= pr.nota_minima then 'aprovado'
+                                     else 'reprovado' end end) order by p.nome), '[]'::jsonb)
+        from public.candidaturas c join public.oportunidades o on o.id = c.oportunidade_id join public.pessoas p on p.id = o.pessoa_id join public.cursos cu on cu.id = o.curso_id
+       where c.processo_id = pr.id and privado.ve_op(o.ies_id, o.curso_id, o.responsavel_id, array['gestor','secretaria','coordenador','comercial'])))
+      order by pr.criado_em desc), '[]'::jsonb) from public.processos_seletivos pr where pr.ies_id = p_ies));
+end $$;
+
+-- ---------------------------------------------------------------- portal (anon, por token)
+create or replace function public.rpc_publico_portal_seletivo(p_token text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare p public.pessoas;
+begin
+  p := privado.portal_pessoa(p_token);
+  return jsonb_build_object(
+    'processos_abertos', (select coalesce(jsonb_agg(jsonb_build_object('id', pr.id, 'nome', pr.nome, 'tipo', pr.tipo, 'coorte', pr.coorte, 'inscricoes_ate', pr.inscricoes_ate,
+        'instrucoes', pr.instrucoes, 'agendas', (select coalesce(jsonb_agg(jsonb_build_object('id', a.id, 'inicio', a.inicio, 'local', a.local,
+          'vagas_restantes', a.vagas - (select count(*) from public.candidaturas x where x.agenda_id = a.id)) order by a.inicio), '[]'::jsonb)
+          from public.agendas_prova a where a.processo_id = pr.id and a.inicio > now()))), '[]'::jsonb)
+      from public.processos_seletivos pr where pr.ies_id = p.ies_id and pr.status = 'aberto' and pr.inscricoes_ate >= current_date),
+    'candidaturas', (select coalesce(jsonb_agg(jsonb_build_object('id', c.id, 'processo', pr.nome, 'tipo', pr.tipo, 'curso', cu.nome, 'oportunidade_id', o.id,
+        'agenda', (select jsonb_build_object('inicio', a.inicio, 'local', a.local) from public.agendas_prova a where a.id = c.agenda_id),
+        'tema_redacao', case when pr.tipo = 'prova_agendada' and c.redacao_enviada_em is null then
+                          (select case when now() >= a.inicio and now() <= a.inicio + interval '3 hours' then pr.tema_redacao end from public.agendas_prova a where a.id = c.agenda_id) end,
+        'redacao_enviada', c.redacao_enviada_em is not null,
+        'resultado', case when pr.resultado_divulgado_em is not null then c.resultado end,
+        'resultado_divulgado', pr.resultado_divulgado_em is not null)), '[]'::jsonb)
+      from public.candidaturas c join public.processos_seletivos pr on pr.id = c.processo_id join public.oportunidades o on o.id = c.oportunidade_id
+      join public.cursos cu on cu.id = o.curso_id where o.pessoa_id = p.id),
+    'eventos', (select coalesce(jsonb_agg(jsonb_build_object('titulo', e.titulo, 'tipo', e.tipo, 'inicio', e.inicio, 'local', e.local, 'online', e.online, 'status', i.status) order by e.inicio), '[]'::jsonb)
+      from public.inscricoes_evento i join public.eventos e on e.id = i.evento_id where i.pessoa_id = p.id));
+end $$;
+
+create or replace function public.rpc_publico_candidatar(p_token text, p_processo bigint, p_op bigint, p_agenda bigint default null, p_nota_enem numeric default null)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare p public.pessoas;
+begin
+  p := privado.portal_pessoa(p_token);
+  if not exists (select 1 from public.oportunidades where id = p_op and pessoa_id = p.id) then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  return privado.candidatar(p_processo, p_op, p_agenda, p_nota_enem, 'portal');
+end $$;
+
+-- Redação: só dentro da janela de 3 horas a partir do início da prova agendada; envio único.
+create or replace function public.rpc_publico_enviar_redacao(p_token text, p_candidatura bigint, p_texto text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare p public.pessoas; c public.candidaturas; a public.agendas_prova;
+begin
+  p := privado.portal_pessoa(p_token);
+  select c2.* into c from public.candidaturas c2 join public.oportunidades o on o.id = c2.oportunidade_id where c2.id = p_candidatura and o.pessoa_id = p.id for update;
+  if not found then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  if c.redacao_enviada_em is not null then raise exception 'Redação já enviada' using errcode = '22023'; end if;
+  select * into a from public.agendas_prova where id = c.agenda_id;
+  if a.id is null or now() < a.inicio or now() > a.inicio + interval '3 hours' then raise exception 'Fora do horário da prova' using errcode = '22023'; end if;
+  if length(coalesce(trim(p_texto), '')) not between 200 and 12000 then raise exception 'A redação deve ter entre 200 e 12000 caracteres' using errcode = '22023'; end if;
+  update public.candidaturas set redacao = trim(p_texto), redacao_enviada_em = now() where id = c.id;
+  perform privado.auditar(c.ies_id, 'seletivo.redacao', 'oportunidade', c.oportunidade_id::text, jsonb_build_object('candidatura', c.id, 'caracteres', length(trim(p_texto))));
+  return jsonb_build_object('id', c.id, 'enviada', true);
+end $$;
+
+-- ---------------------------------------------------------------- formulário público com evento
+create or replace function public.rpc_publico_inscrever(p_slug text, p_dados jsonb)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare f public.formularios; v_origem text := privado.origem_hash(); v_email text := nullif(lower(trim(p_dados->>'email')), '');
+  v_tel text := nullif(regexp_replace(coalesce(p_dados->>'telefone', ''), '\D', '', 'g'), ''); v_curso bigint := nullif(p_dados->>'curso_id', '')::bigint;
+  v_nome text := trim(coalesce(p_dados->>'nome', '')); v_pessoa public.pessoas; v_op public.oportunidades; v_resp uuid; v_canal text; v_sla int;
+  v_ehash text; v_token text; neutra constant jsonb := jsonb_build_object('status', 'recebida', 'mensagem', 'Inscrição recebida. A equipe da instituição entrará em contato.');
+begin
+  select * into f from public.formularios where slug = lower(p_slug) and ativo;
+  if not found or not exists (select 1 from public.ies where id = f.ies_id and status = 'ativa') then perform privado.erro_http(404, 'P0002', 'Formulário não encontrado'); end if;
+  v_ehash := case when v_email is null then null else encode(sha256(convert_to(v_email, 'UTF8')), 'hex') end;
+  -- campo-isca preenchido: robô. Resposta neutra, nada é criado.
+  if coalesce(p_dados->>'site', '') <> '' then
+    insert into public.inscricoes_publicas(formulario_id, ies_id, origem_hash, resultado) values (f.id, f.ies_id, v_origem, 'isca');
+    return neutra;
+  end if;
+  if coalesce((p_dados->>'tempo_ms')::bigint, 0) < 3000 then
+    insert into public.inscricoes_publicas(formulario_id, ies_id, origem_hash, resultado) values (f.id, f.ies_id, v_origem, 'rapida');
+    raise exception 'Preenchimento muito rápido. Revise os dados e envie novamente.' using errcode = '22023';
+  end if;
+  if (select count(*) from public.inscricoes_publicas where origem_hash = v_origem and criado_em > now() - interval '10 minutes') >= 5
+     or (select count(*) from public.inscricoes_publicas where formulario_id = f.id and criado_em > now() - interval '1 hour') >= 300
+     or (v_ehash is not null and (select count(*) from public.inscricoes_publicas where email_hash = v_ehash and criado_em > now() - interval '1 day') >= 3) then
+    insert into public.inscricoes_publicas(formulario_id, ies_id, origem_hash, email_hash, resultado) values (f.id, f.ies_id, v_origem, v_ehash, 'limite');
+    perform privado.erro_http(429, '54000', 'Muitas tentativas. Aguarde alguns minutos.');
+  end if;
+  if coalesce((p_dados->>'aceite')::boolean, false) is not true or coalesce((p_dados->>'versao_consentimento')::int, -1) <> f.versao_consentimento then
+    raise exception 'É preciso aceitar o termo de consentimento vigente' using errcode = '22023';
+  end if;
+  if length(v_nome) not between 3 and 120 then raise exception 'Informe seu nome completo' using errcode = '22023'; end if;
+  if v_email is null or v_email !~ '^[^\s@]+@[^\s@]+\.[^\s@]+$' then raise exception 'Informe um e-mail válido' using errcode = '22023'; end if;
+  if v_tel is not null and length(v_tel) not between 10 and 13 then raise exception 'Telefone inválido' using errcode = '22023'; end if;
+  if v_curso is null or not (v_curso = any (f.cursos)) then raise exception 'Escolha um dos cursos do formulário' using errcode = '22023'; end if;
+
+  select * into v_pessoa from public.pessoas where ies_id = f.ies_id and ((email is not null and email = v_email) or (v_tel is not null and telefone = v_tel)) limit 1 for update;
+  if found then
+    -- Pessoa já cadastrada: registra novo consentimento só se ela não tiver opt-out; não emite link (evita acesso por terceiros).
+    update public.pessoas set consentimento_versao = f.versao_consentimento, consentimento_em = now(), consentimento_hash = encode(sha256(convert_to(f.texto_consentimento, 'UTF8')), 'hex')
+     where id = v_pessoa.id and anonimizada_em is null;
+    select * into v_op from public.oportunidades where pessoa_id = v_pessoa.id and curso_id = v_curso and coorte = f.coorte;
+    if found then
+      insert into public.inscricoes_publicas(formulario_id, ies_id, origem_hash, email_hash, resultado, oportunidade_id) values (f.id, f.ies_id, v_origem, v_ehash, 'duplicada', v_op.id);
+      perform privado.inscrever_em_evento(f.evento_id, v_pessoa.id, v_op.id);
+      return neutra;
+    end if;
+  else
+    insert into public.pessoas(ies_id, nome, email, telefone, base_legal, origem, consentimento_versao, consentimento_em, consentimento_hash)
+    values (f.ies_id, v_nome, v_email, v_tel, 'consentimento', 'formulário: ' || f.titulo, f.versao_consentimento, now(),
+            encode(sha256(convert_to(f.texto_consentimento, 'UTF8')), 'hex')) returning * into v_pessoa;
+    v_token := privado.emitir_acesso(v_pessoa.id, null);
+  end if;
+  v_resp := privado.distribuir(f.ies_id, v_curso);
+  insert into public.oportunidades(ies_id, curso_id, pessoa_id, forma_ingresso, coorte, responsavel_id, campanha_id)
+  values (f.ies_id, v_curso, v_pessoa.id, f.forma_ingresso, f.coorte, v_resp, f.campanha_id) returning * into v_op;
+  v_canal := case when not v_pessoa.optout_whatsapp and v_pessoa.telefone is not null then 'whatsapp'
+                  when not v_pessoa.optout_email and v_pessoa.email is not null then 'email'
+                  when not v_pessoa.optout_telefone and v_pessoa.telefone is not null then 'telefone' end;
+  if v_canal is not null then
+    select sla_horas into v_sla from public.ies where id = f.ies_id;
+    insert into public.tarefas(ies_id, oportunidade_id, tipo, canal, responsavel_id, vence_em) values (f.ies_id, v_op.id, 'primeiro_contato', v_canal, v_resp, now() + make_interval(hours => v_sla));
+  end if;
+  perform privado.auditar(f.ies_id, 'oportunidade.criar', 'oportunidade', v_op.id::text,
+    jsonb_build_object('curso_id', v_curso, 'forma_ingresso', f.forma_ingresso, 'coorte', f.coorte, 'origem', 'formulário público', 'formulario_id', f.id,
+                       'campanha_id', f.campanha_id, 'consentimento_versao', f.versao_consentimento, 'responsavel_id', v_resp));
+  insert into public.inscricoes_publicas(formulario_id, ies_id, origem_hash, email_hash, resultado, oportunidade_id) values (f.id, f.ies_id, v_origem, v_ehash, 'criada', v_op.id);
+  perform privado.inscrever_em_evento(f.evento_id, v_pessoa.id, v_op.id);
+  return neutra || case when v_token is not null then jsonb_build_object('portal', v_token) else '{}'::jsonb end;
+end $$;
+
+create or replace function public.rpc_vincular_evento_formulario(p_formulario bigint, p_evento bigint)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare f public.formularios;
+begin
+  perform privado.exigir_usuario();
+  select * into f from public.formularios where id = p_formulario;
+  if not found or not privado.ve_ies(f.ies_id) then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  perform privado.autorizar(f.ies_id, 'formulario.gerir');
+  if p_evento is not null and not exists (select 1 from public.eventos where id = p_evento and ies_id = f.ies_id) then raise exception 'Evento não pertence à IES' using errcode = '22023'; end if;
+  update public.formularios set evento_id = p_evento where id = p_formulario;
+  perform privado.auditar(f.ies_id, 'formulario.evento', 'formulario', p_formulario::text, jsonb_build_object('evento_id', p_evento));
+  return jsonb_build_object('id', p_formulario, 'evento_id', p_evento);
+end $$;
+
+
+revoke execute on all functions in schema public from public, anon;
+grant execute on function
+  public.rpc_salvar_evento(bigint, jsonb, bigint), public.rpc_inscrever_evento(bigint, bigint), public.rpc_checkin(bigint, text), public.rpc_eventos(bigint),
+  public.rpc_salvar_processo(bigint, jsonb, bigint), public.rpc_candidatar(bigint, bigint, bigint, numeric), public.rpc_avaliar_candidatura(bigint, jsonb),
+  public.rpc_divulgar_resultado(bigint), public.rpc_seletivo(bigint), public.rpc_vincular_evento_formulario(bigint, bigint)
+to authenticated;
+select privado.conceder_publico();
+
+-- ===================== supabase/migrations/20261125000021_matricula_comunicacao_integracoes.sql
+-- Matrícula 360° — migração 21 (P4): matrícula online (L5), comunicação com réguas (L6) e integrações por arquivo (L8/L9).
+--   * Aceite eletrônico pelo portal: proposta aprovada e vigente, contrato versionado, nome completo confirmado; evidências
+--     (data, versão e hash do contrato, hash da origem). Leva pré-matrícula → matrícula comercial (transição oficial auditada).
+--     [Não verificado] A suficiência jurídica do aceite como assinatura eletrônica simples deve ser validada pelo jurídico.
+--   * Comunicação: modelos por gatilho; régua executada sob comando, em MODO SIMULAÇÃO (nada é enviado); bloqueio por opt-out,
+--     anonimização e base legal; mensagem para cópia e envio manual pela equipe. Abertura/clique: N/D sem provedor.
+--   * Integrações: registro com estado "desligada"; o gestor pode registrar pedido de ativação (não ativa nada).
+--     Importação por planilha de vínculos acadêmicos e de custos de mídia, idempotente.
+-- Idempotente.
+
+insert into public.matriz_permissoes(operacao, modulo, descricao, papeis, abrangencia_minima, rpc) values
+  ('contrato.gerir',     'Conversão e Matrículas',  'Publicar o modelo de contrato (nova versão a cada alteração)', array['gestor'], 'ies', 'rpc_salvar_contrato'),
+  ('comunicacao.gerir',  'Marketing e Captação',    'Criar modelos e executar a régua (simulação)',                 array['gestor'], 'ies', 'rpc_executar_regua'),
+  ('comunicacao.manual', 'CRM Educacional',         'Gerar mensagem para envio manual pela equipe',                 array['gestor','comercial'], 'curso', 'rpc_mensagem_manual'),
+  ('integracao.gerir',   'Governança Institucional','Ver integrações e registrar pedido de ativação',              array['gestor'], 'ies', 'rpc_integracoes'),
+  ('importacao.vinculos','Relacionamento Estudantil','Importar vínculos acadêmicos por planilha',                    array['gestor','secretaria'], 'curso', 'rpc_importar_vinculos'),
+  ('importacao.custos',  'Marketing e Captação',    'Importar custos de mídia por planilha',                        array['gestor','financeiro'], 'ies', 'rpc_importar_custos')
+on conflict (operacao) do update set modulo = excluded.modulo, descricao = excluded.descricao, papeis = excluded.papeis,
+  abrangencia_minima = excluded.abrangencia_minima, rpc = excluded.rpc;
+
+create table if not exists public.contratos_modelo (
+  id bigint generated always as identity primary key,
+  ies_id bigint not null references public.ies(id),
+  versao int not null,
+  texto text not null check (length(texto) between 100 and 20000),
+  ativo boolean not null default true,
+  criado_por uuid references public.usuarios(id),
+  criado_em timestamptz not null default now(),
+  unique (ies_id, versao)
+);
+create unique index if not exists contrato_um_ativo on public.contratos_modelo(ies_id) where ativo;
+create table if not exists public.aceites_matricula (
+  id bigint generated always as identity primary key,
+  ies_id bigint not null references public.ies(id),
+  oportunidade_id bigint not null unique references public.oportunidades(id),
+  proposta_id bigint not null references public.propostas(id),
+  contrato_id bigint not null references public.contratos_modelo(id),
+  contrato_hash text not null,
+  nome_confirmado text not null,
+  origem_hash text not null,
+  aceito_em timestamptz not null default now()
+);
+create table if not exists public.modelos_mensagem (
+  id bigint generated always as identity primary key,
+  ies_id bigint not null references public.ies(id),
+  nome text not null check (length(nome) between 3 and 100),
+  canal text not null check (canal in ('email','whatsapp','sms')),
+  gatilho text not null check (gatilho in ('etapa_novo','etapa_contato','etapa_inscrito','etapa_pre_matricula','documento_pendente','evento_inscrito','manual')),
+  assunto text check (length(assunto) <= 150),
+  corpo text not null check (length(corpo) between 10 and 2000),
+  ativo boolean not null default true,
+  criado_por uuid references public.usuarios(id),
+  unique (ies_id, nome)
+);
+create table if not exists public.mensagens (
+  id bigint generated always as identity primary key,
+  ies_id bigint not null references public.ies(id),
+  oportunidade_id bigint not null references public.oportunidades(id),
+  modelo_id bigint references public.modelos_mensagem(id),
+  canal text not null,
+  destino_mascarado text,
+  corpo text not null,
+  status text not null check (status in ('simulada','bloqueada','copiada_manual','enviada')),
+  motivo text,
+  criado_por uuid references public.usuarios(id),
+  criado_em timestamptz not null default now()
+);
+create unique index if not exists mensagem_regua_unica on public.mensagens(oportunidade_id, modelo_id) where status in ('simulada','enviada');
+create table if not exists public.integracoes (
+  ies_id bigint not null references public.ies(id),
+  tipo text not null check (tipo in ('email','sms','whatsapp','cobranca','assinatura_certificada','meta_ads','google_ads','tiktok_ads','sistema_academico','marketplace_bolsas')),
+  status text not null default 'desligada' check (status in ('desligada','pedido_registrado')),
+  pedido_por uuid references public.usuarios(id),
+  pedido_em timestamptz,
+  observacao text check (length(observacao) <= 1000),
+  primary key (ies_id, tipo)
+);
+create index if not exists contratos_ies on public.contratos_modelo(ies_id);
+create index if not exists contratos_criado on public.contratos_modelo(criado_por);
+create index if not exists aceites_ies on public.aceites_matricula(ies_id);
+create index if not exists aceites_proposta on public.aceites_matricula(proposta_id);
+create index if not exists aceites_contrato on public.aceites_matricula(contrato_id);
+create index if not exists modelos_ies on public.modelos_mensagem(ies_id);
+create index if not exists modelos_criado on public.modelos_mensagem(criado_por);
+create index if not exists mensagens_ies on public.mensagens(ies_id, criado_em);
+create index if not exists mensagens_op on public.mensagens(oportunidade_id);
+create index if not exists mensagens_modelo on public.mensagens(modelo_id);
+create index if not exists mensagens_criado on public.mensagens(criado_por);
+create index if not exists integracoes_pedido on public.integracoes(pedido_por);
+alter table public.contratos_modelo enable row level security;
+alter table public.aceites_matricula enable row level security;
+alter table public.modelos_mensagem enable row level security;
+alter table public.mensagens enable row level security;
+alter table public.integracoes enable row level security;
+revoke all on public.contratos_modelo, public.aceites_matricula, public.modelos_mensagem, public.mensagens, public.integracoes from anon, authenticated;
+
+-- ---------------------------------------------------------------- matrícula online (L5)
+create or replace function public.rpc_salvar_contrato(p_ies bigint, p_texto text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v int; v_id bigint;
+begin
+  perform privado.autorizar(p_ies, 'contrato.gerir');
+  if length(coalesce(trim(p_texto), '')) not between 100 and 20000 then raise exception 'Contrato deve ter entre 100 e 20000 caracteres' using errcode = '22023'; end if;
+  select coalesce(max(versao), 0) + 1 into v from public.contratos_modelo where ies_id = p_ies;
+  update public.contratos_modelo set ativo = false where ies_id = p_ies and ativo;
+  insert into public.contratos_modelo(ies_id, versao, texto, criado_por) values (p_ies, v, trim(p_texto), (select auth.uid())) returning id into v_id;
+  perform privado.auditar(p_ies, 'contrato.publicar', 'ies', p_ies::text, jsonb_build_object('versao', v, 'hash', encode(sha256(convert_to(trim(p_texto), 'UTF8')), 'hex')));
+  return jsonb_build_object('id', v_id, 'versao', v);
+end $$;
+
+create or replace function public.rpc_contratos(p_ies bigint)
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+begin
+  perform privado.autorizar(p_ies, 'contrato.gerir');
+  return jsonb_build_object('aviso', '[Não verificado] A suficiência jurídica do aceite eletrônico simples para o contrato de prestação de serviços educacionais deve ser validada pelo jurídico da instituição.',
+    'versoes', (select coalesce(jsonb_agg(jsonb_build_object('id', c.id, 'versao', c.versao, 'ativo', c.ativo, 'criado_em', c.criado_em, 'texto', c.texto,
+       'aceites', (select count(*) from public.aceites_matricula a where a.contrato_id = c.id)) order by c.versao desc), '[]'::jsonb) from public.contratos_modelo c where c.ies_id = p_ies));
+end $$;
+
+-- Portal: o que falta para a matrícula online (proposta aprovada e vigente + contrato ativo).
+create or replace function public.rpc_publico_portal_matricula(p_token text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare p public.pessoas;
+begin
+  p := privado.portal_pessoa(p_token);
+  return (select coalesce(jsonb_agg(jsonb_build_object('oportunidade_id', o.id, 'curso', c.nome || ' · ' || c.turno, 'coorte', o.coorte, 'etapa', o.etapa,
+      'proposta', (select jsonb_build_object('id', x.id, 'mensalidade_centavos', x.mensalidade_centavos, 'desconto_pct', x.desconto_pct,
+                     'valor_final_centavos', x.valor_final_centavos, 'validade', x.validade, 'status', x.status)
+                   from public.propostas x where x.oportunidade_id = o.id and x.status in ('aprovada','aceita') order by x.id desc limit 1),
+      'contrato', (select jsonb_build_object('versao', k.versao, 'texto', k.texto) from public.contratos_modelo k where k.ies_id = o.ies_id and k.ativo),
+      'aceite', (select jsonb_build_object('aceito_em', a.aceito_em, 'contrato_versao', (select versao from public.contratos_modelo where id = a.contrato_id)) from public.aceites_matricula a where a.oportunidade_id = o.id),
+      'pagamento', 'Integração de cobrança desligada: a instituição informará a forma de pagamento.') order by o.id), '[]'::jsonb)
+    from public.oportunidades o join public.cursos c on c.id = o.curso_id where o.pessoa_id = p.id and o.etapa in ('pre_matricula','matricula_comercial','confirmado'));
+end $$;
+
+create or replace function public.rpc_publico_aceitar_matricula(p_token text, p_op bigint, p_contrato_versao int, p_nome text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare p public.pessoas; o public.oportunidades; pr public.propostas; k public.contratos_modelo;
+begin
+  p := privado.portal_pessoa(p_token);
+  select * into o from public.oportunidades where id = p_op and pessoa_id = p.id for update;
+  if not found then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  if o.etapa <> 'pre_matricula' then raise exception 'A matrícula online está disponível na etapa de pré-matrícula' using errcode = '22023'; end if;
+  select * into pr from public.propostas where oportunidade_id = o.id and status = 'aprovada' order by id desc limit 1 for update;
+  if not found then raise exception 'Não há proposta aprovada para aceitar' using errcode = '22023'; end if;
+  if pr.validade < now() then raise exception 'A proposta expirou: fale com a equipe da instituição' using errcode = '22023'; end if;
+  select * into k from public.contratos_modelo where ies_id = o.ies_id and ativo;
+  if not found or k.versao <> p_contrato_versao then raise exception 'O contrato foi atualizado: leia a versão vigente antes de aceitar' using errcode = '22023'; end if;
+  if lower(regexp_replace(trim(coalesce(p_nome, '')), '\s+', ' ', 'g')) <> lower(regexp_replace(trim(p.nome), '\s+', ' ', 'g')) then
+    raise exception 'Digite seu nome completo exatamente como no cadastro' using errcode = '22023';
+  end if;
+  insert into public.aceites_matricula(ies_id, oportunidade_id, proposta_id, contrato_id, contrato_hash, nome_confirmado, origem_hash)
+  values (o.ies_id, o.id, pr.id, k.id, encode(sha256(convert_to(k.texto, 'UTF8')), 'hex'), trim(p_nome), privado.origem_hash());
+  update public.propostas set status = 'aceita' where id = pr.id;
+  update public.oportunidades set etapa = 'matricula_comercial', matricula_comercial_em = now(), versao = versao + 1, atualizado_em = now() where id = o.id;
+  perform privado.auditar(o.ies_id, 'proposta.aceitar', 'oportunidade', o.id::text, jsonb_build_object('proposta_id', pr.id, 'origem', 'portal'));
+  perform privado.auditar(o.ies_id, 'oportunidade.etapa', 'oportunidade', o.id::text, jsonb_build_object('de', 'pre_matricula', 'para', 'matricula_comercial', 'motivo', 'Aceite eletrônico no portal'));
+  perform privado.auditar(o.ies_id, 'matricula.aceite', 'oportunidade', o.id::text, jsonb_build_object('contrato_versao', k.versao, 'proposta_id', pr.id));
+  return jsonb_build_object('aceito', true, 'contrato_versao', k.versao, 'proximo_passo', 'Validações documental, financeira e acadêmica pela instituição.');
+exception when unique_violation then raise exception 'Matrícula já aceita' using errcode = '22023';
+end $$;
+
+-- ---------------------------------------------------------------- comunicação (L6) — simulação
+create or replace function privado.render(p_corpo text, p_op bigint) returns text
+language sql stable security definer set search_path = '' as $$
+  select replace(replace(replace(p_corpo, '{{nome}}', split_part(p.nome, ' ', 1)), '{{curso}}', c.nome || ' · ' || c.turno), '{{instituicao}}', i.nome)
+    from public.oportunidades o join public.pessoas p on p.id = o.pessoa_id join public.cursos c on c.id = o.curso_id join public.ies i on i.id = o.ies_id where o.id = p_op;
+$$;
+revoke execute on function privado.render(text, bigint) from public, anon, authenticated;
+
+-- Motivo de bloqueio do canal para a oportunidade (null = permitido).
+create or replace function privado.bloqueio_canal(p_op bigint, p_canal text) returns text
+language sql stable security definer set search_path = '' as $$
+  select case when p.anonimizada_em is not null then 'Titular anonimizado'
+              when p.base_legal not in ('consentimento','legitimo_interesse') and o.etapa in ('perdido','cancelado') then 'Base legal não permite contato após o encerramento'
+              when p_canal = 'email' and (p.optout_email or p.email is null) then 'Opt-out ou sem e-mail'
+              when p_canal = 'whatsapp' and (p.optout_whatsapp or p.telefone is null) then 'Opt-out ou sem telefone'
+              when p_canal = 'sms' and (p.optout_telefone or p.telefone is null) then 'Opt-out ou sem telefone' end
+    from public.oportunidades o join public.pessoas p on p.id = o.pessoa_id where o.id = p_op;
+$$;
+revoke execute on function privado.bloqueio_canal(bigint, text) from public, anon, authenticated;
+
+create or replace function public.rpc_salvar_modelo_mensagem(p_ies bigint, p_dados jsonb, p_id bigint default null)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_id bigint;
+begin
+  perform privado.autorizar(p_ies, 'comunicacao.gerir');
+  if p_id is null then
+    insert into public.modelos_mensagem(ies_id, nome, canal, gatilho, assunto, corpo, criado_por)
+    values (p_ies, trim(p_dados->>'nome'), p_dados->>'canal', p_dados->>'gatilho', nullif(trim(p_dados->>'assunto'), ''), trim(p_dados->>'corpo'), (select auth.uid())) returning id into v_id;
+  else
+    update public.modelos_mensagem set corpo = coalesce(trim(p_dados->>'corpo'), corpo), assunto = coalesce(nullif(trim(p_dados->>'assunto'), ''), assunto),
+           ativo = coalesce((p_dados->>'ativo')::boolean, ativo) where id = p_id and ies_id = p_ies returning id into v_id;
+    if v_id is null then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  end if;
+  perform privado.auditar(p_ies, 'comunicacao.modelo', 'ies', p_ies::text, jsonb_build_object('modelo_id', v_id));
+  return jsonb_build_object('id', v_id);
+exception
+  when unique_violation then perform privado.erro_http(409, '23505', 'Já existe modelo com este nome');
+  when check_violation or not_null_violation then raise exception 'Modelo inválido: nome, canal, gatilho e texto (10 a 2000 caracteres)' using errcode = '22023';
+end $$;
+
+-- Régua (simulação): gera uma mensagem por oportunidade elegível e modelo ativo; nunca duplica; nada sai do sistema.
+create or replace function public.rpc_executar_regua(p_ies bigint)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare m public.modelos_mensagem; o record; bloq text; n_sim int := 0; n_bloq int := 0;
+begin
+  perform privado.autorizar(p_ies, 'comunicacao.gerir');
+  for m in select * from public.modelos_mensagem where ies_id = p_ies and ativo and gatilho <> 'manual' loop
+    for o in select x.id from public.oportunidades x where x.ies_id = p_ies
+               and ((m.gatilho like 'etapa_%' and x.etapa = substr(m.gatilho, 7))
+                 or (m.gatilho = 'documento_pendente' and x.etapa in ('pre_matricula','matricula_comercial') and not privado.checklist_completo(x.id))
+                 or (m.gatilho = 'evento_inscrito' and exists (select 1 from public.inscricoes_evento i join public.eventos e on e.id = i.evento_id
+                                                                where i.oportunidade_id = x.id and i.status = 'inscrito' and e.inicio > now())))
+               and not exists (select 1 from public.mensagens g where g.oportunidade_id = x.id and g.modelo_id = m.id) limit 500 loop
+      bloq := privado.bloqueio_canal(o.id, m.canal);
+      insert into public.mensagens(ies_id, oportunidade_id, modelo_id, canal, destino_mascarado, corpo, status, motivo, criado_por)
+      select p_ies, o.id, m.id, m.canal, case when m.canal = 'email' then privado.mascarar_email(p.email) else privado.mascarar_tel(p.telefone) end,
+             privado.render(m.corpo, o.id), case when bloq is null then 'simulada' else 'bloqueada' end,
+             coalesce(bloq, 'Modo simulação: integração de ' || m.canal || ' desligada'), (select auth.uid())
+        from public.oportunidades x join public.pessoas p on p.id = x.pessoa_id where x.id = o.id;
+      if bloq is null then n_sim := n_sim + 1; else n_bloq := n_bloq + 1; end if;
+    end loop;
+  end loop;
+  perform privado.auditar(p_ies, 'comunicacao.regua', 'ies', p_ies::text, jsonb_build_object('simuladas', n_sim, 'bloqueadas', n_bloq));
+  return jsonb_build_object('simuladas', n_sim, 'bloqueadas', n_bloq, 'enviadas', 0, 'modo', 'simulação');
+end $$;
+
+-- Mensagem para envio manual pela equipe (pelo próprio canal da pessoa atendente). Registra a cópia.
+create or replace function public.rpc_mensagem_manual(p_op bigint, p_modelo bigint)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare o public.oportunidades; m public.modelos_mensagem; bloq text; txt text;
+begin
+  o := privado.carregar_op(p_op, (select papeis from public.matriz_permissoes where operacao = 'comunicacao.manual'));
+  select * into m from public.modelos_mensagem where id = p_modelo and ies_id = o.ies_id and ativo;
+  if not found then perform privado.erro_http(404, 'P0002', 'Não encontrado'); end if;
+  bloq := privado.bloqueio_canal(p_op, m.canal);
+  if bloq is not null then raise exception 'Contato bloqueado: %', bloq using errcode = '22023'; end if;
+  txt := privado.render(m.corpo, p_op);
+  insert into public.mensagens(ies_id, oportunidade_id, modelo_id, canal, corpo, status, motivo, criado_por)
+  values (o.ies_id, p_op, m.id, m.canal, txt, 'copiada_manual', 'Texto gerado para envio manual pela equipe', (select auth.uid()));
+  return jsonb_build_object('canal', m.canal, 'assunto', m.assunto, 'texto', txt);
+end $$;
+
+create or replace function public.rpc_comunicacao(p_ies bigint)
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+begin
+  perform privado.autorizar(p_ies, 'comunicacao.manual');
+  return jsonb_build_object('modo', 'simulação', 'pode_gerir', privado.pode(p_ies, 'comunicacao.gerir'),
+    'aviso', 'Envio externo desligado: a régua só simula. Abertura e clique ficam indisponíveis (N/D) até haver provedor autorizado.',
+    'modelos', (select coalesce(jsonb_agg(jsonb_build_object('id', m.id, 'nome', m.nome, 'canal', m.canal, 'gatilho', m.gatilho, 'assunto', m.assunto, 'corpo', m.corpo, 'ativo', m.ativo,
+       'simuladas', (select count(*) from public.mensagens g where g.modelo_id = m.id and g.status = 'simulada'),
+       'bloqueadas', (select count(*) from public.mensagens g where g.modelo_id = m.id and g.status = 'bloqueada'),
+       'copiadas', (select count(*) from public.mensagens g where g.modelo_id = m.id and g.status = 'copiada_manual'),
+       'abertura', null, 'clique', null) order by m.nome), '[]'::jsonb) from public.modelos_mensagem m where m.ies_id = p_ies),
+    'recentes', case when privado.pode(p_ies, 'comunicacao.gerir') then (select coalesce(jsonb_agg(x.j), '[]'::jsonb) from (
+       select jsonb_build_object('id', g.id, 'canal', g.canal, 'destino', g.destino_mascarado, 'status', g.status, 'motivo', g.motivo, 'em', g.criado_em,
+              'nome', p.nome, 'corpo', g.corpo) as j
+         from public.mensagens g join public.oportunidades o on o.id = g.oportunidade_id join public.pessoas p on p.id = o.pessoa_id
+        where g.ies_id = p_ies order by g.criado_em desc limit 50) x) end);
+end $$;
+
+-- ---------------------------------------------------------------- integrações e importações (L8/L9)
+create or replace function public.rpc_integracoes(p_ies bigint, p_tipo text default null, p_observacao text default null)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+begin
+  perform privado.autorizar(p_ies, 'integracao.gerir');
+  insert into public.integracoes(ies_id, tipo)
+    select p_ies, t from unnest(array['email','sms','whatsapp','cobranca','assinatura_certificada','meta_ads','google_ads','tiktok_ads','sistema_academico','marketplace_bolsas']) t
+  on conflict do nothing;
+  if p_tipo is not null then
+    if length(coalesce(trim(p_observacao), '')) < 10 then raise exception 'Descreva o fornecedor e a finalidade do pedido' using errcode = '22023'; end if;
+    update public.integracoes set status = 'pedido_registrado', pedido_por = (select auth.uid()), pedido_em = now(), observacao = trim(p_observacao)
+     where ies_id = p_ies and tipo = p_tipo;
+    if not found then raise exception 'Integração inválida' using errcode = '22023'; end if;
+    perform privado.auditar(p_ies, 'integracao.pedido', 'ies', p_ies::text, jsonb_build_object('tipo', p_tipo));
+  end if;
+  return jsonb_build_object('aviso', 'Nenhuma integração externa está ativa. Ativar exige decisão do responsável, fornecedor, contrato e credenciais. Enquanto isso, use as importações por planilha.',
+    'itens', (select jsonb_agg(jsonb_build_object('tipo', i.tipo, 'status', i.status, 'pedido_por', privado.nome_usuario(i.pedido_por), 'pedido_em', i.pedido_em, 'observacao', i.observacao) order by i.tipo)
+              from public.integracoes i where i.ies_id = p_ies));
+end $$;
+
+-- Planilha de vínculos (exportada do sistema acadêmico): linhas {oportunidade_id | email, marco, situacao, data, observacao}.
+create or replace function public.rpc_importar_vinculos(p_ies bigint, p_linhas jsonb)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare l jsonb; i int := 0; ok int := 0; rej jsonb := '[]'::jsonb; v_op bigint;
+begin
+  perform privado.autorizar(p_ies, 'importacao.vinculos');
+  if jsonb_typeof(p_linhas) <> 'array' or jsonb_array_length(p_linhas) not between 1 and 2000 then raise exception 'Envie de 1 a 2000 linhas' using errcode = '22023'; end if;
+  for l in select * from jsonb_array_elements(p_linhas) loop
+    i := i + 1;
+    begin
+      v_op := coalesce(nullif(l->>'oportunidade_id', '')::bigint,
+        (select o.id from public.oportunidades o join public.pessoas p on p.id = o.pessoa_id
+          where o.ies_id = p_ies and o.etapa = 'confirmado' and p.email = lower(trim(l->>'email')) order by o.confirmada_em desc limit 1));
+      if v_op is null or not exists (select 1 from public.oportunidades where id = v_op and ies_id = p_ies) then raise exception 'Ingressante não encontrado'; end if;
+      perform public.rpc_registrar_vinculo(v_op, l->>'marco', l->>'situacao', (l->>'data')::date, coalesce(nullif(l->>'observacao', ''), 'Importado do sistema acadêmico'));
+      update public.vinculos set fonte = 'sistema_academico' where oportunidade_id = v_op and marco = l->>'marco';
+      ok := ok + 1;
+    exception when others then
+      rej := rej || jsonb_build_object('linha', i, 'motivo', case when sqlstate = 'PGRST' then sqlerrm::jsonb->>'message' else sqlerrm end);
+    end;
+  end loop;
+  perform privado.auditar(p_ies, 'importacao.vinculos', 'ies', p_ies::text, jsonb_build_object('importadas', ok, 'rejeitadas', jsonb_array_length(rej)));
+  return jsonb_build_object('importadas', ok, 'rejeitadas', rej);
+end $$;
+
+-- Planilha de custos (exportada das plataformas de mídia): linhas {campanha, data, valor_centavos, descricao}. Reimportar não duplica.
+create or replace function public.rpc_importar_custos(p_ies bigint, p_linhas jsonb)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare l jsonb; i int := 0; ok int := 0; rep int := 0; rej jsonb := '[]'::jsonb; v_camp bigint; r jsonb;
+begin
+  perform privado.autorizar(p_ies, 'importacao.custos');
+  if jsonb_typeof(p_linhas) <> 'array' or jsonb_array_length(p_linhas) not between 1 and 2000 then raise exception 'Envie de 1 a 2000 linhas' using errcode = '22023'; end if;
+  for l in select * from jsonb_array_elements(p_linhas) loop
+    i := i + 1;
+    begin
+      select id into v_camp from public.campanhas where ies_id = p_ies and codigo = lower(trim(l->>'campanha'));
+      if v_camp is null then raise exception 'Campanha não encontrada: %', l->>'campanha'; end if;
+      r := public.rpc_lancar_custo(v_camp, (l->>'data')::date, (l->>'valor_centavos')::bigint, coalesce(nullif(trim(l->>'descricao'), ''), 'Importação de mídia'),
+                                   'imp-' || encode(sha256(convert_to(l::text, 'UTF8')), 'hex'));
+      if (r->>'repeticao')::boolean then rep := rep + 1; else ok := ok + 1; end if;
+    exception when others then
+      rej := rej || jsonb_build_object('linha', i, 'motivo', case when sqlstate = 'PGRST' then sqlerrm::jsonb->>'message' else sqlerrm end);
+    end;
+  end loop;
+  perform privado.auditar(p_ies, 'importacao.custos', 'ies', p_ies::text, jsonb_build_object('importadas', ok, 'repetidas', rep, 'rejeitadas', jsonb_array_length(rej)));
+  return jsonb_build_object('importadas', ok, 'repetidas', rep, 'rejeitadas', rej);
+end $$;
+
+revoke execute on all functions in schema public from public, anon;
+grant execute on function
+  public.rpc_salvar_contrato(bigint, text), public.rpc_contratos(bigint), public.rpc_salvar_modelo_mensagem(bigint, jsonb, bigint),
+  public.rpc_executar_regua(bigint), public.rpc_mensagem_manual(bigint, bigint), public.rpc_comunicacao(bigint), public.rpc_integracoes(bigint, text, text),
+  public.rpc_importar_vinculos(bigint, jsonb), public.rpc_importar_custos(bigint, jsonb)
+to authenticated;
+select privado.conceder_publico();
 
 commit;
