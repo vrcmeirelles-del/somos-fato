@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Campo, Detalhes, Estado, Mensagem, Titulo } from '../components/ui';
 import { api } from '../lib/api';
-import { centavos, rotulo } from '../lib/formato';
+import { rotulo } from '../lib/formato';
+import { TabelaCursos, linhaVazia } from '../components/TabelaCursos';
+import { errosLinha, paraRpc, type LinhaCurso } from '../lib/cursosPlanilha';
 import { useAcao, useCarregar } from '../lib/hooks';
 import type { IesMaster, Papel } from '../lib/tipos';
 
@@ -11,7 +13,7 @@ export function Master() {
   const lista = useCarregar(() => api.master.ies(), []);
   const acao = useAcao();
   const [aberta, setAberta] = useState<IesMaster | null>(null);
-  const [nome, setNome] = useState(''); const [plano, setPlano] = useState('piloto'); const [campus, setCampus] = useState('Campus Principal'); const [cursos, setCursos] = useState('');
+  const [nome, setNome] = useState(''); const [plano, setPlano] = useState('piloto'); const [campus, setCampus] = useState('Campus Principal'); const [cursos, setCursos] = useState<LinhaCurso[]>([linhaVazia()]);
 
   return (
     <>
@@ -24,15 +26,18 @@ export function Master() {
           <Campo rotulo="Plano"><select className="campo" value={plano} onChange={(e) => setPlano(e.target.value)}>{['piloto', 'essencial', 'completo'].map((p) => <option key={p}>{p}</option>)}</select></Campo>
           <Campo rotulo="Campus"><input className="campo" value={campus} onChange={(e) => setCampus(e.target.value)} /></Campo>
         </div>
-        <p className="nota my-2">Cursos: um por linha — nome;turno;modalidade;mensalidade;desconto máximo %</p>
-        <textarea className="campo min-h-[90px] w-full" aria-label="Cursos" value={cursos} onChange={(e) => setCursos(e.target.value)} placeholder={'Direito;noturno;presencial;1290,00;30\nAdministração;ead;ead;399,00;40'} />
-        <button className="btn mt-2" disabled={acao.enviando} onClick={() => void acao.executar(async () => {
-          const lc = cursos.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
-            const [n, turno, modalidade, mens, desc] = l.split(';').map((x) => x.trim());
-            return { nome: n, turno, modalidade, mensalidade_centavos: centavos(mens ?? ''), desconto_max_pct: Number(desc ?? 30) };
-          });
-          const r = await api.master.provisionar(nome, plano, campus, lc); await lista.recarregar(); return `IES #${r.id} provisionada.`;
-        })}>Provisionar</button>
+        <p className="mb-1 mt-3 text-sm font-medium">Cursos</p>
+        <TabelaCursos linhas={cursos} mudar={setCursos} />
+        {(() => {
+          const validas = cursos.filter((l) => l.nome.trim() || l.mensalidade.trim());
+          const comErro = validas.filter((l) => errosLinha(l, validas, validas.indexOf(l)).length > 0).length;
+          return (<>
+            <p className="nota mt-2">{validas.length} curso(s){comErro ? ` · ${comErro} com erro: corrija antes de provisionar` : ''}.</p>
+            <button className="btn mt-2" disabled={acao.enviando || !nome.trim() || !validas.length || comErro > 0} onClick={() => void acao.executar(async () => {
+              const r = await api.master.provisionar(nome.trim(), plano, campus, validas.map(paraRpc)); await lista.recarregar();
+              setNome(''); setCursos([linhaVazia()]); return `IES #${r.id} provisionada com ${validas.length} curso(s). Agora gere o convite do gestor em Acessos.`;
+        })}>Provisionar</button></>);
+        })()}
       </Detalhes>
       <Detalhes titulo="Ambiente de demonstração e treinamento">
         <p className="nota mb-2">Cria uma instituição fictícia com 5 cursos e carga sintética de 4 coortes (funil, custos, bolsas, rematrícula, permanência, inadimplência, casos, pesquisas, escolas). Depois, em Acessos, gere convites coletivos por perfil para a turma.</p>
