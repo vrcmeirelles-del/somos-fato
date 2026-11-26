@@ -225,8 +225,10 @@ try {
           if (linkPortal) {
             await pp.goto(linkPortal);
             await pp.waitForSelector('text=Minhas inscrições', { timeout: 20000 }).catch(() => null);
+            await pp.waitForSelector('h2:has-text("Documentos")', { timeout: 20000 }).catch(() => null);
             const portal = await pp.textContent('body');
-            registrar('publico', 'celular', 'P4: portal do candidato mostra inscrição, documentos e privacidade', portal.includes('Inscrição recebida') && portal.includes('Documentos') && portal.includes('LGPD'));
+            const partes = { inscricao: portal.includes('Inscrição recebida'), documentos: portal.includes('Documentos'), lgpd: portal.includes('LGPD') };
+            registrar('publico', 'celular', 'P4: portal do candidato mostra inscrição, documentos e privacidade', Object.values(partes).every(Boolean), JSON.stringify(partes));
             await pp.locator('input[type=file]').first().setInputFiles({ name: 'documento.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 documento sintetico de teste E2E') });
             await pp.waitForSelector('text=Documento enviado para análise', { timeout: 20000 }).catch(() => null);
             registrar('publico', 'celular', 'P4: candidato envia documento pelo portal', (await pp.textContent('body')).includes('Documento enviado para análise'));

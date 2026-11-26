@@ -43,6 +43,84 @@ export function descreverEvento(e: Pick<EventoAuditoria, 'acao' | 'dados' | 'ent
     case 'objecao.tratar': return `Objeção #${s('objecao_id')} marcada como ${rotulo(s('status')).toLowerCase()}.`;
     case 'agenda.criar': return `Agendamento criado para ${s('quando') ? new Date(s('quando')).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—'}.`;
     case 'oportunidade.reatribuir': return `Responsável alterado — motivo: ${s('motivo')} (${s('tarefas')} tarefa(s) transferida(s)).`;
+    // Planejamento, campanhas e concorrência (migração 12)
+    case 'plano.criar': return `Plano estratégico criado para a coorte ${s('coorte')}.`;
+    case 'plano.editar': return `Plano estratégico editado (versão ${s('versao')}).`;
+    case 'plano.submeter': return 'Plano submetido para aprovação.';
+    case 'plano.aprovar': return 'Plano aprovado.';
+    case 'plano.devolver': return `Plano devolvido para revisão — ${s('justificativa')}.`;
+    case 'plano.revisar': return `Plano reaberto para revisão — ${s('justificativa')}.`;
+    case 'plano.encerrar': return `Plano encerrado — ${s('justificativa')}.`;
+    case 'objetivo.salvar': return `Objetivo do plano salvo (${rotulo(s('indicador')).toLowerCase()}).`;
+    case 'acao.salvar': return `Ação 5W2H salva${s('status') ? ` (${rotulo(s('status')).toLowerCase()})` : ''}.`;
+    case 'concorrencia.registrar': return 'Oferta concorrente registrada com fonte.';
+    case 'concorrencia.revisar': return 'Registro de concorrência revisado.';
+    case 'campanha.criar': return `Campanha criada (código ${s('codigo')}, canal ${rotulo(s('canal'))}).`;
+    case 'campanha.editar': return `Campanha editada${s('status') ? ` (${rotulo(s('status')).toLowerCase()})` : ''}.`;
+    case 'custo.lancar': return `Custo de campanha lançado (${(Number(s('valor_centavos')) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}).`;
+    case 'custo.estornar': return `Custo estornado — ${s('motivo')}.`;
+    // Funis (migração 13)
+    case 'funil.criar': return 'Funil comercial criado.';
+    case 'funil.editar': return 'Funil comercial editado.';
+    case 'funil.nova_versao': return `Nova versão ${s('versao')} do funil criada em rascunho.`;
+    case 'funil.salvar_versao': return `Rascunho da versão ${s('versao')} do funil salvo.`;
+    case 'funil.publicar': return `Versão ${s('versao')} do funil publicada${s('arquivada') ? `; versão ${s('arquivada')} arquivada` : ''}.`;
+    case 'oportunidade.subetapa': return `Subetapa alterada: ${s('de')} → ${s('para')}.`;
+    // Recuperação e sprints (migração 15)
+    case 'protocolo.criar': return `Protocolo de ${rotulo(s('tipo')).toLowerCase()} criado.`;
+    case 'protocolo.editar': return `Protocolo atualizado${s('status') ? ` (${rotulo(s('status')).toLowerCase()})` : ''}.`;
+    case 'recuperacao.selecionar': return `${s('selecionadas')} oportunidade(s) incluída(s) no protocolo; ${s('recusadas')} recusada(s) pela elegibilidade.`;
+    case 'recuperacao.contatada': return 'Contato de recuperação registrado.';
+    case 'recuperacao.reativar': return 'Oportunidade reativada pelo protocolo de recuperação.';
+    case 'recuperacao.descartada': return 'Item de recuperação descartado.';
+    case 'sprint.criar': return 'Sprint de aceleração criada.';
+    case 'sprint.editar': return `Sprint atualizada${s('status') ? ` (${rotulo(s('status')).toLowerCase()})` : ''}.`;
+    case 'sprint.item': return 'Entrega da sprint atualizada.';
+    // Academia (migração 16)
+    case 'academia.modulo': return 'Módulo da trilha concluído.';
+    case 'academia.conteudo': return 'Conteúdo de módulo editado.';
+    case 'academia.cenario': return 'Cenário sintético de roleplay criado.';
+    case 'rubrica.nova_versao': return 'Nova versão de rubrica criada em rascunho.';
+    case 'rubrica.salvar': return 'Rascunho de rubrica salvo.';
+    case 'rubrica.publicar': return 'Rubrica publicada.';
+    case 'avaliacao.salvar': return 'Avaliação em rascunho salva.';
+    case 'avaliacao.finalizar': return `Avaliação (${rotulo(s('tipo')).toLowerCase()}) finalizada.`;
+    case 'pdi.salvar': return `PDI salvo${s('status') ? ` (${rotulo(s('status')).toLowerCase()})` : ''}.`;
+    // Relacionamento (migração 17)
+    case 'vinculo.registrar': return `Vínculo ${rotulo(s('marco')).toLowerCase()} registrado como ${rotulo(s('situacao')).toLowerCase()}${s('anterior') ? ` (antes: ${rotulo(s('anterior')).toLowerCase()})` : ''}.`;
+    case 'onboarding.item': return `Onboarding: "${s('item')}" ${d.concluido ? 'concluído' : 'desmarcado'}.`;
+    case 'relacionamento.configurar': return 'Modelo de onboarding ou regras de embaixadores atualizados.';
+    case 'embaixador.salvar': return `Embaixador(a) ${rotulo(s('status')).toLowerCase()}.`;
+    case 'indicacao.criar': return 'Código de indicação criado.';
+    // Captação pública, portal e titulares (migração 18)
+    case 'formulario.salvar': return 'Formulário público de captação salvo.';
+    case 'formulario.evento': return 'Formulário vinculado a evento.';
+    case 'portal.gerar_acesso': return `Link do portal gerado para envio manual (válido por ${s('validade_dias')} dias).`;
+    case 'titular.solicitar': return `Titular solicitou ${rotulo(s('tipo')).toLowerCase()} pelo portal.`;
+    case 'titular.tratar': return `Solicitação de ${rotulo(s('tipo')).toLowerCase()} ${rotulo(s('status')).toLowerCase()}.`;
+    // Documentos (migração 19)
+    case 'documento.enviar': return `Documento enviado pelo ${s('origem') === 'candidato' ? 'candidato' : 'atendimento'} (${s('tipo')}).`;
+    case 'documento.baixar': return `Documento baixado (${s('tipo')}).`;
+    case 'documento.revisar': return `Documento ${s('tipo')} ${rotulo(s('status')).toLowerCase()}.`;
+    case 'documentos.configurar': return 'Checklist ou exigência de documentos atualizado.';
+    // Eventos e processo seletivo (migração 20)
+    case 'evento.salvar': return 'Evento salvo.';
+    case 'evento.inscrever': return 'Oportunidade inscrita em evento.';
+    case 'evento.checkin': return `Presença em evento registrada: ${rotulo(s('status')).toLowerCase()}.`;
+    case 'seletivo.salvar': return 'Processo seletivo salvo.';
+    case 'seletivo.candidatar': return `Inscrição no processo ${s('processo')} (${s('origem')}).`;
+    case 'seletivo.redacao': return 'Redação enviada pelo candidato.';
+    case 'seletivo.avaliar': return 'Candidatura avaliada (conferência, correção ou decisão).';
+    case 'seletivo.divulgar': return `Resultado do processo seletivo divulgado (${s('aprovados')} aprovado(s) de ${s('total')}).`;
+    // Matrícula online, comunicação e integrações (migração 21)
+    case 'contrato.publicar': return `Contrato de matrícula versão ${s('versao')} publicado.`;
+    case 'matricula.aceite': return `Matrícula aceita no portal (contrato versão ${s('contrato_versao')}).`;
+    case 'comunicacao.modelo': return 'Modelo de mensagem salvo.';
+    case 'comunicacao.regua': return `Régua executada em simulação: ${s('simuladas')} simulada(s), ${s('bloqueadas')} bloqueada(s).`;
+    case 'integracao.pedido': return `Pedido de ativação registrado: ${rotulo(s('tipo'))}.`;
+    case 'importacao.custos': return `Importação de custos: ${s('importadas')} importado(s), ${s('rejeitadas')} rejeitado(s).`;
+    case 'importacao.vinculos': return `Importação de vínculos: ${s('importadas')} importado(s), ${s('rejeitadas')} rejeitado(s).`;
+    case 'usuario.revogar': return 'Usuário revogado em todas as instituições.';
     default: return `${e.acao} (${e.entidade} ${e.entidade_id ?? ''})`;
   }
 }
