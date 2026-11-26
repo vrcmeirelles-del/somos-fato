@@ -125,6 +125,29 @@ try {
         await page.waitForSelector('text=tarefa(s) aberta(s)', { timeout: 15000 });
         registrar('gestor', disp, 'fila sem botão de disparo externo', (await page.getByRole('button', { name: 'Disparar' }).count()) === 0);
         await checar(page, 'gestor', disp, 'intervencoes', erros);
+        // Governança (migração 11): só verificada quando o banco já tem a migração.
+        await ir(page, 'Perfis e permissões');
+        await page.waitForFunction(() => document.querySelector('main table') || (document.querySelector('main')?.textContent || '').includes('migração 11'), null, { timeout: 15000 }).catch(() => null);
+        const perm = await page.textContent('main');
+        if (!perm.includes('migração 11')) {
+          registrar('gestor', disp, 'Governança: matriz de permissões e escopo com abrangência explícita',
+            perm.includes('Alterar parâmetros do MAIM') && perm.includes('Instituição') && perm.includes('permitido'));
+          await checar(page, 'gestor', disp, 'permissoes', erros);
+          await ir(page, 'Pipeline (CRM)');
+          await page.waitForSelector('.cartao');
+          const [arq] = await Promise.all([page.waitForEvent('download', { timeout: 20000 }), page.click('button:has-text("Exportar CSV")')]);
+          const csv = readFileSync(await arq.path(), 'utf8');
+          await page.waitForSelector('text=registrada na auditoria', { timeout: 15000 }).catch(() => null);
+          registrar('gestor', disp, 'Governança: exportação CSV do gestor com contato e registro na auditoria',
+            csv.split('\r\n')[0].includes('E-mail') && /@example|@exemplo/.test(csv) && (await page.textContent('main')).includes('registrada na auditoria'));
+        } else console.log('AVISO governança não verificada: banco sem a migração 11.');
+        // R09: trocar a instituição pela URL não expõe a outra IES (a interface volta à IES autorizada e o banco recusa a outra).
+        for (const rota of ['/ies/2/crm', '/ies/1/inteligencia?ies=2']) {
+          await page.goto(`${BASE}${rota}`);
+          await page.waitForSelector('.kpi, .cartao', { timeout: 20000 }).catch(() => null);
+          const corpo = await page.textContent('body');
+          registrar('gestor', disp, `R09: ${rota} não mostra dados da Beta`, !corpo.includes('Beta') && !corpo.includes('Psicologia'));
+        }
       }
       await ctx.close();
     }
@@ -245,6 +268,15 @@ try {
       await page.waitForSelector('text=Dados mascarados', { timeout: 15000 });
       registrar('coordenador', disp, 'contatos mascarados pelo banco', true);
       await page.click('#det-corpo button[aria-label="Fechar"]');
+      if (disp === 'desktop') {
+        const [arq] = await Promise.all([page.waitForEvent('download', { timeout: 20000 }).catch(() => null), page.click('button:has-text("Exportar CSV")')]);
+        if (arq) {
+          const csv = readFileSync(await arq.path(), 'utf8');
+          const linhas = csv.split('\r\n').slice(1).filter(Boolean);
+          registrar('coordenador', disp, 'Governança: exportação da coordenação só do seu curso e com contato mascarado',
+            linhas.length > 0 && linhas.every((l) => l.includes(';Direito;') && !/;[a-z0-9._-]+@/i.test(l.replace(/\*\*\*@/g, ''))), `${linhas.length} linhas`);
+        } else console.log('AVISO exportação da coordenação não verificada: banco sem a migração 11.');
+      }
       await checar(page, 'coordenador', disp, 'crm', erros);
       await ctx.close();
     }

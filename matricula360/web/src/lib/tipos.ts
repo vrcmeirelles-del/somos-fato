@@ -5,7 +5,9 @@ export type Dimensao = 'documental' | 'financeira' | 'academica';
 export type Canal = 'email' | 'whatsapp' | 'telefone';
 export type StatusProposta = 'pendente_aprovacao' | 'aprovada' | 'rejeitada' | 'aceita' | 'expirada' | 'substituida';
 
-export interface Escopo { id: number; ies_id: number; ies_nome: string; curso_id: number | null; curso_nome: string | null; papel: Papel }
+export type Abrangencia = 'ies' | 'campus' | 'curso';
+export interface Escopo { id: number; ies_id: number; ies_nome: string; curso_id: number | null; curso_nome: string | null; papel: Papel;
+  abrangencia?: Abrangencia; campus_id?: number | null; campus_nome?: string | null }
 export interface Eu { usuario: { id: string; nome: string; master: boolean; email?: string }; escopos: Escopo[] }
 
 export interface Curso { id: number; nome: string; turno: string; modalidade: string; mensalidade_centavos: number; desconto_max_pct: number; campus?: string }
@@ -66,8 +68,9 @@ export interface EventoAuditoria { id: number; acao: string; entidade: string; e
 
 export interface IesMaster { id: number; nome: string; plano: string; status: 'ativa' | 'suspensa'; criado_em: string; cursos: number; usuarios: number }
 export interface AcessosIes {
+  campi?: { id: number; nome: string }[];
   cursos: { id: number; nome: string; turno: string; modalidade: string; campus: string }[];
-  escopos: { id: number; papel: Papel; curso_id: number | null; curso_nome: string | null; concedido_em: string; revogado_em: string | null;
+  escopos: { id: number; papel: Papel; curso_id: number | null; curso_nome: string | null; abrangencia?: Abrangencia; campus_nome?: string | null; concedido_em: string; revogado_em: string | null;
     usuario_id: string; nome: string; email: string | null; usuario_revogado_em: string | null }[];
 }
 export interface ResultadoMaim { follow_ups: number; suprimidos_optout: number; limite_atingido: number; pendencias_validacao: number;
@@ -92,3 +95,9 @@ export interface Central {
   alertas: Alerta[] | null;
   filtros_disponiveis: { campi: { id: number; nome: string }[]; turnos: string[]; modalidades: string[] };
 }
+
+export interface OperacaoMatriz { operacao: string; modulo: string; descricao: string; papeis: Papel[]; abrangencia_minima: 'curso' | 'ies'; permitida: boolean }
+export interface Permissoes { escopos: { papel: Papel; abrangencia: Abrangencia; alvo: string }[]; matriz: OperacaoMatriz[] }
+export interface LinhaExportacao { id: number; nome: string; email: string | null; telefone: string | null; campus: string; curso: string; turno: string;
+  modalidade: string; coorte: string; etapa: Etapa; forma_ingresso: string; origem: string; base_legal: string; responsavel: string | null; criado_em: string }
+export interface Exportacao { linhas: LinhaExportacao[]; total: number; contato_completo: boolean; gerado_em: string }

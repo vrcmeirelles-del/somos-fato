@@ -38,8 +38,8 @@ begin
   (1, 1, 'Administração', 'ead', 'ead', 39900, 40),
   (2, 2, 'Psicologia', 'matutino', 'presencial', 115000, 25),
   (2, 2, 'Enfermagem', 'noturno', 'presencial', 98000, 25) $x$;
-  execute $x$ insert into public.escopos(usuario_id, ies_id, curso_id, papel)
-select u.id, x.ies, x.curso, x.papel from (values
+  execute $x$ insert into public.escopos(usuario_id, ies_id, abrangencia, curso_id, papel)
+select u.id, x.ies, case when x.curso is null then 'ies' else 'curso' end, x.curso, x.papel from (values
   ('gestor_a', 1, null::bigint, 'gestor'), ('reitoria_a', 1, null, 'reitoria'), ('coord_dir_a', 1, 1, 'coordenador'),
   ('comercial_a', 1, null, 'comercial'), ('com_dir_a', 1, 1, 'comercial'), ('secretaria_a', 1, null, 'secretaria'),
   ('financeiro_a', 1, null, 'financeiro'), ('gestor_b', 2, null, 'gestor'), ('comercial_b', 2, null, 'comercial'),
@@ -525,6 +525,119 @@ insert into teste.var select 't2', id from nova $x$;
   execute $x$ select teste.ok((public.rpc_detalhe((select v from teste.var where k='crm'))->'possiveis_duplicidades'->0->>'email') like '%***@%', 'possível duplicidade exibida com contato mascarado') $x$;
   execute $x$ reset role $x$;
   execute $x$ do $$ begin raise notice 'OK  fim da bateria do CRM'; end $$ $x$;
+  execute $x$ reset role $x$;
+  execute $x$ insert into public.campus(ies_id, nome) values (1, 'Sul') $x$;
+  execute $x$ insert into public.cursos(ies_id, campus_id, nome, turno, modalidade, mensalidade_centavos, desconto_max_pct)
+  values (1, (select id from public.campus where ies_id = 1 and nome = 'Sul'), 'Pedagogia', 'noturno', 'presencial', 89000, 30) $x$;
+  execute $x$ insert into teste.usuario values ('gestor_sul', '00000000-0000-0000-0000-0000000000d1'), ('com_sul', '00000000-0000-0000-0000-0000000000d2') $x$;
+  execute $x$ insert into auth.users(id, email) values ('00000000-0000-0000-0000-0000000000d1', 'gestor.sul@exemplo.invalid'), ('00000000-0000-0000-0000-0000000000d2', 'com.sul@exemplo.invalid') $x$;
+  execute $x$ insert into public.usuarios(id, nome) values ('00000000-0000-0000-0000-0000000000d1', 'gestor_sul'), ('00000000-0000-0000-0000-0000000000d2', 'com_sul') $x$;
+  execute $x$ insert into teste.var values ('sul', (select id from public.campus where ies_id = 1 and nome = 'Sul')) $x$;
+  execute $x$ insert into teste.var values ('ped', (select id from public.cursos where ies_id = 1 and nome = 'Pedagogia')) $x$;
+  execute $x$ create or replace function teste.tenta(p_sql text) returns text language plpgsql as $f$
+begin
+  begin
+    execute p_sql;
+    raise exception using errcode = 'T0001';
+  exception when others then
+    if sqlstate = 'T0001' then return 'ok'; end if;
+    if sqlstate = 'PGRST' then return sqlerrm::jsonb->>'code'; end if;
+    return sqlstate;
+  end;
+end $f$ $x$;
+  execute $x$ grant execute on function teste.tenta(text) to authenticated $x$;
+  execute $x$ select teste.erro('insert into public.escopos(usuario_id, ies_id, curso_id, papel) values (teste.id(''com_sul''), 1, null, ''comercial'')', '23502', 'escopo sem abrangência declarada é recusado (nulo não é curinga)') $x$;
+  execute $x$ select teste.erro('insert into public.escopos(usuario_id, ies_id, abrangencia, curso_id, papel) values (teste.id(''com_sul''), 1, ''ies'', 1, ''comercial'')', '23514', 'abrangência incoerente com o curso é recusada') $x$;
+  execute $x$ select teste.erro('insert into public.escopos(usuario_id, ies_id, abrangencia, campus_id, papel) values (teste.id(''com_sul''), 1, ''campus'', 2, ''comercial'')', '22023', 'campus de outra IES é recusado') $x$;
+  execute $x$ select teste.ok((select bool_and(abrangencia in ('ies','campus','curso')) from public.escopos), 'todos os escopos existentes têm abrangência explícita') $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('master')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_conceder_escopo(teste.id(''com_sul''), 1, 1, ''comercial'', 1)', '22023', 'curso e campus ao mesmo tempo: recusado') $x$;
+  execute $x$ select teste.erro('select public.rpc_conceder_escopo(teste.id(''com_sul''), 1, null, ''coordenador'')', '22023', 'coordenação com abrangência de instituição: recusada') $x$;
+  execute $x$ select teste.ok(public.rpc_conceder_escopo(teste.id('com_sul'), 1, null, 'comercial', (select v from teste.var where k = 'sul'))->>'abrangencia' = 'campus', 'Master concede comercial com abrangência de campus') $x$;
+  execute $x$ select teste.ok(public.rpc_conceder_escopo(teste.id('gestor_sul'), 1, null, 'gestor', (select v from teste.var where k = 'sul'))->>'abrangencia' = 'campus', 'Master concede gestor com abrangência de campus') $x$;
+  execute $x$ select teste.erro('select public.rpc_conceder_escopo(teste.id(''com_sul''), 1, null, ''comercial'', (select v from teste.var where k = ''sul''))', '23505', 'escopo repetido: conflito (409)') $x$;
+  execute $x$ select teste.ok((select count(*) = 1 from jsonb_array_elements(public.rpc_master_acessos(1)->'escopos') e where e->>'abrangencia' = 'campus' and e->>'nome' = 'com_sul'), 'painel do Master mostra a abrangência') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('com_sul')::text, false) $x$;
+  execute $x$ select teste.ok((select array_agg(x->>'nome') = array['Pedagogia'] from jsonb_array_elements(public.rpc_estrutura(1)->'cursos') x), 'comercial do campus Sul vê apenas o curso do campus') $x$;
+  execute $x$ select teste.ok((public.rpc_estrutura(1)->>'acesso_total')::boolean = false, 'escopo de campus não é acesso total') $x$;
+  execute $x$ insert into teste.var values ('op_ped', (public.rpc_criar_oportunidade(1, jsonb_build_object('nome', 'Cand Pedagogia', 'email', 'ped@exemplo.invalid', 'curso_id', (select v from teste.var where k = 'ped'),
+  'forma_ingresso', 'enem', 'coorte', '2027.1', 'base_legal', 'consentimento', 'origem', 'teste governança'), 'gov-ped-1')->>'id')::bigint) $x$;
+  execute $x$ select teste.ok((public.rpc_listar_oportunidades(1, null, null, 1, 100)->>'total')::int = 1, 'lista do campus contém só a oportunidade do campus') $x$;
+  execute $x$ select teste.erro('select public.rpc_detalhe((select min(id) from public.oportunidades where ies_id = 1 and curso_id = 1))', 'P0002', 'oportunidade de outro campus: não encontrada') $x$;
+  execute $x$ select teste.erro('select public.rpc_criar_oportunidade(1, jsonb_build_object(''nome'', ''X'', ''curso_id'', 1, ''forma_ingresso'', ''enem'', ''coorte'', ''2027.1'', ''base_legal'', ''consentimento'', ''origem'', ''t''), ''gov-fora-campus-1'')', '42501', 'não cadastra em curso fora do campus') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_sul')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_configurar(1, 24)', '42501', 'gestor de campus não altera parâmetros da instituição') $x$;
+  execute $x$ select teste.erro('select public.rpc_auditoria(1, 1)', '42501', 'gestor de campus não lê a auditoria da instituição') $x$;
+  execute $x$ select teste.ok((public.rpc_detalhe((select v from teste.var where k = 'op_ped'))->'pessoa'->>'email') = 'ped@exemplo.invalid', 'gestor de campus vê o contato no seu campus') $x$;
+  execute $x$ select teste.erro('select public.rpc_atendentes(1)', '42501', 'gestor de campus não lista atendentes da instituição inteira') $x$;
+  execute $x$ select teste.ok((select bool_or(x->>'nome' = 'com_sul') from jsonb_array_elements(public.rpc_atendentes(1, (select v from teste.var where k = 'ped'))) x), 'gestor de campus lista os atendentes do curso do seu campus') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.ok((select o.responsavel_id in (teste.id('com_sul'), teste.id('comercial_a')) from public.oportunidades o where o.id = (select v from teste.var where k = 'op_ped')), 'distribuição só escolhe atendente que cobre o curso') $x$;
+  execute $x$ select teste.ok((select bool_and(x->>'nome' <> 'com_sul') from jsonb_array_elements(public.rpc_atendentes(1, 1)) x), 'atendente do campus Sul não é elegível para curso de outro campus') $x$;
+  execute $x$ select teste.ok((select bool_or(x->>'nome' = 'com_sul') from jsonb_array_elements(public.rpc_atendentes(1, (select v from teste.var where k = 'ped'))) x), 'atendente do campus Sul é elegível no curso do campus') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ create temp table conformidade as
+select m.operacao, u.apelido, (e.papel = any (m.papeis)) as esperado, s.sql_teste
+  from public.matriz_permissoes m
+  join (values
+    ('config.alterar',  'select public.rpc_configurar(1, 24)'),
+    ('auditoria.ver',   'select public.rpc_auditoria(1, 1)'),
+    ('meta.definir',    'select public.rpc_definir_meta(1, 1, ''2027.1'', 10)'),
+    ('maim.executar',   'select public.rpc_ciclo_maim(1)'),
+    ('fila.ver',        'select public.rpc_fila(1)'),
+    ('crm.exportar',    'select public.rpc_exportar_oportunidades(1)'),
+    ('painel.ver',      'select public.rpc_central(1, ''2027.1'')')) as s(operacao, sql_teste) on s.operacao = m.operacao
+  cross join (values ('gestor_a'), ('reitoria_a'), ('comercial_a'), ('secretaria_a'), ('financeiro_a')) as u(apelido)
+  join public.escopos e on e.usuario_id = teste.id(u.apelido) and e.revogado_em is null $x$;
+  execute $x$ grant select on conformidade to authenticated $x$;
+  execute $x$ set role authenticated $x$;
+  execute $x$ do $$
+declare r record; got text; n int := 0;
+begin
+  for r in select * from conformidade loop
+    perform set_config('request.jwt.claim.sub', teste.id(r.apelido)::text, false);
+    got := teste.tenta(r.sql_teste);
+    if r.esperado and got = '42501' then raise exception 'FALHOU: matriz permite % para %, mas a RPC recusou', r.operacao, r.apelido; end if;
+    if not r.esperado and got <> '42501' then raise exception 'FALHOU: matriz nega % para %, mas a RPC devolveu %', r.operacao, r.apelido, got; end if;
+    n := n + 1;
+  end loop;
+  if n < 30 then raise exception 'FALHOU: poucas combinações verificadas (%)', n; end if;
+end $$ $x$;
+  execute $x$ select teste.ok(true, 'matriz de permissões confere com as RPCs (7 operações × 5 papéis)') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.ok((select bool_and(((x->>'permitida')::boolean) = (x->'papeis' ? 'comercial')) from jsonb_array_elements(public.rpc_permissoes(1)->'matriz') x
+                 where x->>'abrangencia_minima' = 'curso'), 'permissões efetivas do comercial batem com a matriz') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_sul')::text, false) $x$;
+  execute $x$ select teste.ok((select bool_and(not (x->>'permitida')::boolean) from jsonb_array_elements(public.rpc_permissoes(1)->'matriz') x where x->>'abrangencia_minima' = 'ies'),
+  'gestor de campus não recebe operações de instituição') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.ok((select (r->>'contato_completo')::boolean and (r->>'total')::int = jsonb_array_length(r->'linhas') and (r->>'total')::int > 0
+                 from (select public.rpc_exportar_oportunidades(1, '2027.1') r) x), 'gestor exporta a coorte com contato') $x$;
+  execute $x$ select teste.ok((select count(*) from public.auditoria where acao = 'exportacao.gerar' and not (dados ? 'linhas_exportadas') and dados ? 'linhas') >= 1, 'exportação auditada com volume e sem os dados') $x$;
+  execute $x$ select teste.erro('select public.rpc_exportar_oportunidades(1, ''2027'')', '22023', 'coorte inválida na exportação recusada') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('coord_dir_a')::text, false) $x$;
+  execute $x$ select teste.ok((select not (r->>'contato_completo')::boolean and bool_and(l->>'email' is null or l->>'email' like '%*%') and bool_and((l->>'curso') = 'Direito')
+                 from (select public.rpc_exportar_oportunidades(1) r) x, jsonb_array_elements(r->'linhas') l group by r), 'coordenação exporta só o seu curso e com contato mascarado') $x$;
+  execute $x$ select teste.erro('select public.rpc_exportar_oportunidades(1, null, 2)', 'P0002', 'coordenação não exporta curso fora do escopo') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_exportar_oportunidades(1)', '42501', 'comercial não exporta') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_b')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_exportar_oportunidades(1)', 'P0002', 'gestor de outra IES: exportação não encontrada') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_estrutura(2)', 'P0002', 'R09: estrutura da IES 2 recusada ao gestor da IES 1') $x$;
+  execute $x$ select teste.erro('select public.rpc_central(2, ''2027.1'')', 'P0002', 'R09: painel da IES 2 recusado') $x$;
+  execute $x$ select teste.erro('select public.rpc_permissoes(2)', 'P0002', 'R09: permissões da IES 2 recusadas') $x$;
+  execute $x$ select teste.erro('select public.rpc_agenda(2, now(), now() + interval ''1 day'')', 'P0002', 'R09: agenda da IES 2 recusada') $x$;
+  execute $x$ select teste.ok((public.rpc_listar_oportunidades(1, null, null, 1, 100)->'itens') @? '$[*] ? (@.curso == "Psicologia")' = false, 'R09: lista da IES 1 não contém curso da IES 2') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('coord_dir_a')::text, false) $x$;
+  execute $x$ select teste.ok((select count(*) from public.oportunidades where curso_id <> 1) = 0, 'R09: coordenação de curso não lê outros cursos nem por tabela direta') $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('master')::text, false) $x$;
+  execute $x$ select public.rpc_revogar_escopo((select id from public.escopos where usuario_id = teste.id('com_sul') and revogado_em is null)) $x$;
+  execute $x$ select set_config('request.jwt.claim.sub', teste.id('com_sul')::text, false) $x$;
+  execute $x$ select teste.erro('select public.rpc_estrutura(1)', 'P0002', 'escopo de campus revogado: instituição deixa de ser visível') $x$;
+  execute $x$ reset role $x$;
+  execute $x$ select teste.ok(true, 'fim da bateria de governança') $x$;
   execute $x$ reset role $x$;
   select count(*) into n from teste.resultado;
   raise exception 'RESULTADO: % verificações aprovadas, 0 falhas (tudo desfeito; nada ficou gravado)', n;

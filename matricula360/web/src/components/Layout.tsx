@@ -57,7 +57,7 @@ export function Layout({ eu, children }: { eu: Eu; children: ReactNode }) {
     navegar(`/ies/${v}/${rota}`);
   }
   async function sair() { await api.sair(); navegar('/login'); }
-  const meusPapeis = [...new Set(eu.escopos.filter((e) => e.ies_id === ies).map((e) => rotulo(e.papel) + (e.curso_nome ? ` · ${e.curso_nome}` : '')))];
+  const meusPapeis = [...new Set(eu.escopos.filter((e) => e.ies_id === ies).map((e) => rotulo(e.papel) + (e.curso_nome ? ` · ${e.curso_nome}` : e.campus_nome ? ` · campus ${e.campus_nome}` : '')))];
   const migalhas = trilha(local.pathname);
 
   const menu = (

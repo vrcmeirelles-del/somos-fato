@@ -28,3 +28,15 @@ describe('formato', () => {
       nome: 'Ana', curso_id: 2, forma_ingresso: 'enem', coorte: '2027.1', base_legal: 'consentimento', origem: 'feira', telefone: '0000123456' });
   });
 });
+
+import { paraCsv } from './formato';
+describe('paraCsv', () => {
+  it('separa por ponto e vírgula, escapa aspas e neutraliza fórmulas', () => {
+    const csv = paraCsv([{ a: 'x;y', b: '=HYPERLINK("m")', c: null }, { a: 'Ana "A"', b: '-1', c: 3 }], [['a', 'A'], ['b', 'B'], ['c', 'C']]);
+    const linhas = csv.replace('﻿', '').split('\r\n');
+    expect(linhas[0]).toBe('A;B;C');
+    expect(linhas[1]).toBe('"x;y";"\'=HYPERLINK(""m"")";');
+    expect(linhas[2]).toBe('"Ana ""A""";\'-1;3');
+    expect(csv.startsWith('﻿')).toBe(true);
+  });
+});

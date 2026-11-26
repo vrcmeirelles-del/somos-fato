@@ -15,6 +15,7 @@ import { Intervencoes } from './pages/Intervencoes';
 import { Login } from './pages/Login';
 import { Master } from './pages/Master';
 import { Matriculas } from './pages/Matriculas';
+import { Permissoes } from './pages/Permissoes';
 import { Propostas } from './pages/Propostas';
 
 export function App() {
@@ -75,6 +76,7 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
       <Route path="/ies/:ies/matriculas" element={<ExigeIes><Matriculas abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/propostas" element={<ExigeIes><Propostas /></ExigeIes>} />
       <Route path="/ies/:ies/configuracoes" element={<ExigeIes><Configuracoes /></ExigeIes>} />
+      <Route path="/ies/:ies/permissoes" element={<ExigeIes><Permissoes /></ExigeIes>} />
       <Route path="/ies/:ies/auditoria" element={<ExigeIes><Auditoria /></ExigeIes>} />
       <Route path="/master" element={eu.usuario.master ? <Master /> : <><Titulo titulo="Acesso restrito ao Master" /></>} />
       <Route path="/ies/:ies/dashboard" element={<Legado para="inteligencia" />} />

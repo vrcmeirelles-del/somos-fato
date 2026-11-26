@@ -1,10 +1,11 @@
-import { AlarmClock, GripVertical, Search } from 'lucide-react';
+import { AlarmClock, Download, GripVertical, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useSessao } from '../components/Layout';
 import { Campo, Chip, Detalhes, Estado, Mensagem, Titulo, Vazio } from '../components/ui';
 import { api, temCrmAvancado } from '../lib/api';
 import { ETAPAS_ARRASTAVEIS, faixaScore, relativo } from '../lib/crm';
-import { linhaImportacao, rotulo } from '../lib/formato';
+import { linhaImportacao, paraCsv, rotulo } from '../lib/formato';
+import type { ErroApi } from '../lib/supabase';
 import { useAcao, useCarregar } from '../lib/hooks';
 import type { Etapa, ItemOportunidade, Pagina } from '../lib/tipos';
 
@@ -54,7 +55,8 @@ export function Crm({ abrirDetalhe, versao }: { abrirDetalhe: (id: number) => vo
 
   return (
     <>
-      <Titulo titulo="Pipeline (CRM)" subtitulo={podeMover ? 'Arraste o cartão entre etapas ou abra a ficha. Toda transição é validada no servidor.' : 'Oportunidades por etapa do funil.'} />
+      <Titulo titulo="Pipeline (CRM)" subtitulo={podeMover ? 'Arraste o cartão entre etapas ou abra a ficha. Toda transição é validada no servidor.' : 'Oportunidades por etapa do funil.'}
+        acao={tem('gestor', 'reitoria', 'coordenador') ? <BotaoExportar coorte={coorte} curso={curso} aoResultado={acao.setMensagem} /> : undefined} />
       {podeMover && <><NovaOportunidade aoCriar={recarregar} /><Importar aoImportar={recarregar} /></>}
       <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-linha bg-white p-3 shadow-cartao" role="group" aria-label="Busca e filtros do CRM">
         {m10 && (
@@ -110,6 +112,32 @@ export function Crm({ abrirDetalhe, versao }: { abrirDetalhe: (id: number) => vo
       </div>
       {perda && <MotivoPerda nome={perda.nome} aoCancelar={() => setPerda(null)} aoConfirmar={(m) => { const a = perda; setPerda(null); void mover(a, 'perdido', m); }} />}
     </>
+  );
+}
+
+const COLUNAS_CSV: [string, string][] = [['id', 'ID'], ['nome', 'Nome'], ['email', 'E-mail'], ['telefone', 'Telefone'], ['campus', 'Campus'], ['curso', 'Curso'],
+  ['turno', 'Turno'], ['modalidade', 'Modalidade'], ['coorte', 'Coorte'], ['etapa', 'Etapa'], ['forma_ingresso', 'Forma de ingresso'], ['origem', 'Origem'],
+  ['base_legal', 'Base legal'], ['responsavel', 'Responsável'], ['criado_em', 'Criado em']];
+
+// Exportação: autorização, recorte e minimização no servidor; aqui só monta o arquivo. Cada exportação é auditada.
+function BotaoExportar({ coorte, curso, aoResultado }: { coorte: string; curso: string; aoResultado: (m: { tipo: 'ok' | 'erro'; texto: string } | null) => void }) {
+  const { ies } = useSessao();
+  const [enviando, setEnviando] = useState(false);
+  return (
+    <button className="btn btn-sec" disabled={enviando} onClick={async () => {
+      setEnviando(true); aoResultado(null);
+      try {
+        const r = await api.exportar(ies!, coorte || undefined, curso ? Number(curso) : undefined);
+        const csv = paraCsv(r.linhas.map((l) => ({ ...l, etapa: rotulo(l.etapa), forma_ingresso: rotulo(l.forma_ingresso), base_legal: rotulo(l.base_legal), turno: rotulo(l.turno), modalidade: rotulo(l.modalidade) })), COLUNAS_CSV);
+        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        const a = document.createElement('a'); a.href = url; a.download = `oportunidades-${coorte || 'todas'}-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        aoResultado({ tipo: 'ok', texto: `Exportadas ${r.total} oportunidades${r.contato_completo ? '' : ' (contatos mascarados para o seu perfil)'}. A exportação foi registrada na auditoria.` });
+      } catch (e) {
+        const er = e as ErroApi;
+        aoResultado({ tipo: 'erro', texto: er.codigo === 'PGRST202' ? 'Exportação disponível após a migração 11 do banco.' : er.message });
+      } finally { setEnviando(false); }
+    }}><Download className="h-4 w-4" aria-hidden />Exportar CSV</button>
   );
 }
 

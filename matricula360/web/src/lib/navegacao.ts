@@ -1,7 +1,7 @@
 // Mapa dos dez ambientes. Itens "planejado" aparecem desabilitados com a fase prevista:
 // não há página de lista fingindo módulo pronto (critério de aceite da Fase 2).
 import {
-  Activity, BarChart3, CalendarClock, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HeartHandshake, KanbanSquare,
+  Activity, BarChart3, CalendarClock, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HeartHandshake, KanbanSquare, KeyRound,
   LayoutDashboard, Megaphone, RefreshCcw, ScrollText, Settings, ShieldCheck, Target, Users, Workflow, type LucideIcon,
 } from 'lucide-react';
 import type { Papel } from './tipos';
@@ -43,6 +43,7 @@ export const AMBIENTES: Ambiente[] = [
   ] },
   { id: 'governanca', rotulo: 'Governança Institucional', icone: ShieldCheck, itens: [
     { rotulo: 'Configurações e metas', rota: (i) => `/ies/${i}/configuracoes`, icone: Settings, papeis: ['gestor'] },
+    { rotulo: 'Perfis e permissões', rota: (i) => `/ies/${i}/permissoes`, icone: KeyRound },
     { rotulo: 'Auditoria', rota: (i) => `/ies/${i}/auditoria`, icone: ScrollText, papeis: ['gestor'] },
     { rotulo: 'Painel Master', rota: () => '/master', icone: Building2, master: true },
   ] },

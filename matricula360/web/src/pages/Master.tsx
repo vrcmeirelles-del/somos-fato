@@ -57,7 +57,7 @@ export function Master() {
 function Acessos({ ies, aoMudar }: { ies: IesMaster; aoMudar: () => void }) {
   const a = useCarregar(() => api.master.acessos(ies.id), [ies.id]);
   const acao = useAcao();
-  const [email, setEmail] = useState(''); const [nome, setNome] = useState(''); const [papel, setPapel] = useState<Papel>('comercial'); const [curso, setCurso] = useState('');
+  const [email, setEmail] = useState(''); const [nome, setNome] = useState(''); const [papel, setPapel] = useState<Papel>('comercial'); const [alvo, setAlvo] = useState('');
   const fazer = (fn: () => Promise<string>) => acao.executar(async () => { const t = await fn(); await a.recarregar(); aoMudar(); return t; });
   return (
     <section className="mt-8">
@@ -67,9 +67,14 @@ function Acessos({ ies, aoMudar }: { ies: IesMaster; aoMudar: () => void }) {
         <Campo rotulo="E-mail"><input className="campo" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Campo>
         <Campo rotulo="Nome"><input className="campo" value={nome} onChange={(e) => setNome(e.target.value)} /></Campo>
         <Campo rotulo="Papel"><select className="campo" value={papel} onChange={(e) => setPapel(e.target.value as Papel)}>{PAPEIS.map((p) => <option key={p} value={p}>{rotulo(p)}</option>)}</select></Campo>
-        <Campo rotulo="Curso"><select className="campo" value={curso} onChange={(e) => setCurso(e.target.value)}><option value="">Toda a instituição</option>{a.dados?.cursos.map((c) => <option key={c.id} value={c.id}>{c.nome} · {c.turno}</option>)}</select></Campo>
+        <Campo rotulo="Abrangência"><select className="campo" value={alvo} onChange={(e) => setAlvo(e.target.value)}>
+          <option value="">Toda a instituição</option>
+          {a.dados?.campi?.length ? <optgroup label="Campus">{a.dados.campi.map((c) => <option key={c.id} value={`campus:${c.id}`}>Campus {c.nome}</option>)}</optgroup> : null}
+          <optgroup label="Curso">{a.dados?.cursos.map((c) => <option key={c.id} value={`curso:${c.id}`}>{c.nome} · {c.turno} ({c.campus})</option>)}</optgroup>
+        </select></Campo>
         <button className="btn" disabled={acao.enviando} onClick={() => void fazer(async () => {
-          const r = await api.master.conceder(email, nome || email, ies.id, curso ? Number(curso) : null, papel);
+          const [tipo, id] = alvo.split(':');
+          const r = await api.master.conceder(email, nome || email, ies.id, tipo === 'curso' ? Number(id) : null, papel, tipo === 'campus' ? Number(id) : null);
           return r.perfil_novo ? 'Escopo concedido e perfil de aplicação criado.' : 'Escopo concedido a usuário existente.';
         })}>Conceder escopo</button>
       </div>
@@ -77,9 +82,9 @@ function Acessos({ ies, aoMudar }: { ies: IesMaster; aoMudar: () => void }) {
       <Estado carregando={a.carregando && !a.dados} erro={a.erro} />
       <div className="tabela mt-3">
         <table>
-          <thead><tr>{['Usuário', 'Papel', 'Curso', 'Situação', ''].map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
+          <thead><tr>{['Usuário', 'Papel', 'Abrangência', 'Situação', ''].map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
           <tbody>{a.dados?.escopos.map((e) => (
-            <tr key={e.id}><td>{e.nome}{e.email ? ` (${e.email})` : ''}</td><td>{rotulo(e.papel)}</td><td>{e.curso_nome ?? 'toda a IES'}</td>
+            <tr key={e.id}><td>{e.nome}{e.email ? ` (${e.email})` : ''}</td><td>{rotulo(e.papel)}</td><td>{e.curso_nome ? `Curso ${e.curso_nome}` : e.campus_nome ? `Campus ${e.campus_nome}` : 'Toda a instituição'}</td>
               <td>{e.usuario_revogado_em ? 'usuário revogado' : e.revogado_em ? 'escopo revogado' : 'ativo'}</td>
               <td>{!e.revogado_em && !e.usuario_revogado_em && (
                 <div className="flex flex-wrap gap-1.5">

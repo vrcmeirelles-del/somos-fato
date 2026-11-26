@@ -25,8 +25,8 @@ insert into public.cursos(ies_id, campus_id, nome, turno, modalidade, mensalidad
   (2, 2, 'Psicologia', 'matutino', 'presencial', 115000, 25),
   (2, 2, 'Enfermagem', 'noturno', 'presencial', 98000, 25);
 
-insert into public.escopos(usuario_id, ies_id, curso_id, papel)
-select u.id, x.ies, x.curso, x.papel from (values
+insert into public.escopos(usuario_id, ies_id, abrangencia, curso_id, papel)
+select u.id, x.ies, case when x.curso is null then 'ies' else 'curso' end, x.curso, x.papel from (values
   ('gestor_a', 1, null::bigint, 'gestor'), ('reitoria_a', 1, null, 'reitoria'), ('coord_dir_a', 1, 1, 'coordenador'),
   ('comercial_a', 1, null, 'comercial'), ('com_dir_a', 1, 1, 'comercial'), ('secretaria_a', 1, null, 'secretaria'),
   ('financeiro_a', 1, null, 'financeiro'), ('gestor_b', 2, null, 'gestor'), ('comercial_b', 2, null, 'comercial'),

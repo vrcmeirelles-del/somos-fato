@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -81,6 +81,9 @@ export const api = {
   agenda: (ies: number, de: string, ate: string) => c().rpc<ItemAgenda[]>('rpc_agenda', { p_ies: ies, p_de: de, p_ate: ate }),
   reatribuir: (op: number, responsavel: string, motivo: string) => c().rpc<{ tarefas_transferidas: number }>('rpc_reatribuir', { p_op: op, p_responsavel: responsavel, p_motivo: motivo }),
   atendentes: (ies: number, curso?: number) => c().rpc<{ id: string; nome: string }[]>('rpc_atendentes', { p_ies: ies, p_curso: curso ?? null }),
+  permissoes: (ies: number) => c().rpc<Permissoes>('rpc_permissoes', { p_ies: ies }),
+  exportar: (ies: number, coorte?: string, curso?: number) =>
+    c().rpc<Exportacao>('rpc_exportar_oportunidades', { p_ies: ies, p_coorte: coorte || null, p_curso: curso ?? null }),
   pendencias: (ies: number) => c().rpc<Pendencia[]>('rpc_pendencias', { p_ies: ies }),
   configurar: (ies: number, v: { sla_horas?: number; max_followups?: number; dias_sem_contato?: number; capacidade_atendente?: number; amostra_minima_forecast?: number }) =>
     c().rpc<Record<string, number>>('rpc_configurar', { p_ies: ies, p_sla_horas: v.sla_horas ?? null, p_max_followups: v.max_followups ?? null,
@@ -94,8 +97,10 @@ export const api = {
     provisionar: (nome: string, plano: string, campus: string, cursos: unknown[]) =>
       c().rpc<{ id: number }>('rpc_provisionar_ies', { p_nome: nome, p_plano: plano, p_campus: campus, p_cursos: cursos }),
     status: (ies: number, status: 'ativa' | 'suspensa') => c().rpc('rpc_alterar_status_ies', { p_ies: ies, p_status: status }),
-    conceder: (email: string, nome: string, ies: number, curso: number | null, papel: Papel) =>
-      c().rpc<{ escopo_id: number; perfil_novo: boolean }>('rpc_conceder_escopo_email', { p_email: email, p_nome: nome, p_ies: ies, p_curso: curso, p_papel: papel }),
+    // p_campus só é enviado quando usado (compatível com o banco anterior à migração 11).
+    conceder: (email: string, nome: string, ies: number, curso: number | null, papel: Papel, campus?: number | null) =>
+      c().rpc<{ escopo_id: number; perfil_novo: boolean }>('rpc_conceder_escopo_email', { p_email: email, p_nome: nome, p_ies: ies, p_curso: curso, p_papel: papel,
+        ...(campus ? { p_campus: campus } : {}) }),
     revogarEscopo: (escopo: number) => c().rpc('rpc_revogar_escopo', { p_escopo: escopo }),
     revogarUsuario: (usuario: string) => c().rpc('rpc_revogar_usuario', { p_usuario: usuario }),
   },

@@ -21,6 +21,7 @@ const ROTULOS: Record<string, string> = {
   agendamento: 'Agendamento', ligacao: 'Ligação', whatsapp_manual: 'WhatsApp (manual)', email_manual: 'E-mail (manual)', visita: 'Visita', reuniao: 'Reunião', anotacao: 'Anotação',
   preco: 'Preço', horario: 'Horário', distancia: 'Distância', documentacao: 'Documentação', concorrencia: 'Concorrência', credibilidade: 'Credibilidade', tempo: 'Tempo', familia: 'Família', outra: 'Outra',
   aberta: 'Aberta', superada: 'Superada', nao_superada: 'Não superada',
+  ies: 'Instituição', campus: 'Campus',
   curso: 'Curso', turno: 'Turno', modalidade: 'Modalidade', forma_ingresso: 'Forma de ingresso', atendente: 'Atendente',
 };
 export const rotulo = (k: string | null | undefined) => (k == null ? '' : ROTULOS[k] ?? k);
@@ -40,4 +41,15 @@ export function linhaImportacao(l: string): Record<string, unknown> {
   if (email) o.email = email;
   if (telefone) o.telefone = telefone;
   return o;
+}
+
+// CSV para planilhas em pt-BR (separador ";", BOM UTF-8). Neutraliza injeção de fórmula (=, +, -, @, tab, CR).
+export function paraCsv(linhas: Record<string, unknown>[], colunas: [string, string][]): string {
+  const celula = (v: unknown) => {
+    let t = v == null ? '' : String(v);
+    if (/^[=+\-@\t\r]/.test(t)) t = `'${t}`;
+    return /[;"\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+  };
+  const cab = colunas.map(([, r]) => celula(r)).join(';');
+  return '﻿' + [cab, ...linhas.map((l) => colunas.map(([k]) => celula(l[k])).join(';'))].join('\r\n');
 }

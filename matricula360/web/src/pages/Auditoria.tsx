@@ -34,7 +34,8 @@ export function descreverEvento(e: Pick<EventoAuditoria, 'acao' | 'dados' | 'ent
     case 'ies.configurar': return 'Parâmetros do MAIM/SLA da instituição alterados.';
     case 'ies.provisionar': return `Instituição provisionada (plano ${s('plano')}).`;
     case 'ies.status': return `Status da instituição alterado para ${s('status')}.`;
-    case 'escopo.conceder': return `Escopo de ${rotulo(s('papel')).toLowerCase()} concedido${s('curso_id') ? ` no curso #${s('curso_id')}` : ''}.`;
+    case 'exportacao.gerar': return `Exportação de ${s('linhas')} oportunidade(s)${s('coorte') ? ` da coorte ${s('coorte')}` : ''}${d.contato_completo ? ', com contato' : ', com contato mascarado'}.`;
+    case 'escopo.conceder': if (s('abrangencia') === 'campus') return `Escopo de ${rotulo(s('papel')).toLowerCase()} concedido no campus #${s('campus_id')}.`; return `Escopo de ${rotulo(s('papel')).toLowerCase()} concedido${s('curso_id') ? ` no curso #${s('curso_id')}` : ''}.`;
     case 'escopo.revogar': return `Escopo #${e.entidade_id} revogado.`;
     case 'usuario.convidar': return 'Perfil de usuário criado.';
     case 'interacao.registrar': return `Interação registrada (${rotulo(s('tipo')).toLowerCase()}).`;
