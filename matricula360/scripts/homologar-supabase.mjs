@@ -57,7 +57,7 @@ const chamar = (page, rpc, args) => page.evaluate(async ([nome, a]) => {
   const r = await fetch(`${cfg.supabase_url}/rest/v1/rpc/${nome}`, { method: 'POST',
     headers: { apikey: cfg.supabase_chave_publicavel, authorization: `Bearer ${s?.access}`, 'content-type': 'application/json' }, body: JSON.stringify(a) });
   const d = await r.json().catch(() => ({}));
-  return { ok: r.ok, status: r.status, msg: d.message };
+  return { ok: r.ok, status: r.status, msg: d.message, dados: r.ok ? d : null };
 }, [rpc, args]);
 
 // Navega pelo menu lateral (no celular, abre a gaveta antes).
@@ -220,6 +220,12 @@ try {
           console.log('AVISO CRM avançado não verificado: banco sem a migração 10.');
           await page.click('#det-corpo button[aria-label="Fechar"]');
         }
+      }
+      // Visibilidade por atribuição (migração 11): o atendente só recebe oportunidades atribuídas a si.
+      if (disp === 'desktop' && (await chamar(page, 'rpc_permissoes', { p_ies: 1 })).ok) {
+        const lista = await chamar(page, 'rpc_listar_oportunidades', { p_ies: 1, p_pagina: 1, p_por_pagina: 100 });
+        const resp = [...new Set((lista.dados?.itens ?? []).map((i) => i.responsavel))];
+        registrar('comercial', disp, 'Governança: atendente vê só as oportunidades atribuídas a si', lista.ok && resp.length === 1, `responsáveis: ${resp.join(', ')}`);
       }
       const val = await chamar(page, 'rpc_validar', { p_op: 1, p_dimensao: 'documental', p_resultado: 'valida', p_evidencia: 'tentativa indevida', p_versao: 1 });
       registrar('comercial', disp, 'comercial não valida (403 do banco)', !val.ok && [403, 422].includes(val.status), `${val.status} ${val.msg}`);

@@ -128,6 +128,37 @@ select teste.ok((public.rpc_listar_oportunidades(1, null, null, 1, 100)->'itens'
 select set_config('request.jwt.claim.sub', teste.id('coord_dir_a')::text, false);
 select teste.ok((select count(*) from public.oportunidades where curso_id <> 1) = 0, 'R09: coordenação de curso não lê outros cursos nem por tabela direta');
 
+
+-- visibilidade por atribuição: atendente vê só as suas; chefe do setor (gestor) vê as da equipe
+reset role;
+insert into teste.var values ('total_a', (select count(*) from public.oportunidades where ies_id = 1));
+insert into teste.var values ('op_mov', (select min(id) from public.oportunidades where ies_id = 1 and curso_id = 1
+                                          and responsavel_id = teste.id('comercial_a')));
+set role authenticated;
+select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false);
+select public.rpc_reatribuir((select v from teste.var where k = 'op_mov'), teste.id('com_dir_a'), 'teste de visibilidade por atribuição');
+select teste.ok((public.rpc_listar_oportunidades(1, null, null, 1, 100)->>'total')::int = (select v from teste.var where k = 'total_a'), 'chefe do setor (gestor) vê todas as oportunidades da equipe');
+select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false);
+select teste.ok((select bool_and(x->>'responsavel' = 'comercial_a') from jsonb_array_elements(public.rpc_listar_oportunidades(1, null, null, 1, 100)->'itens') x), 'atendente lista só as oportunidades atribuídas a si');
+select teste.ok((select count(*) from public.oportunidades where responsavel_id is distinct from teste.id('comercial_a')) = 0, 'atendente não lê oportunidades de colegas nem por tabela direta');
+select teste.ok((select count(*) from public.pessoas p where not exists (select 1 from public.oportunidades o where o.pessoa_id = p.id)) = 0, 'atendente não lê dados pessoais de candidatos de colegas');
+select teste.erro('select public.rpc_detalhe((select v from teste.var where k = ''op_mov''))', 'P0002', 'após reatribuição, o atendente anterior perde o acesso (404)');
+select teste.erro('select public.rpc_mover_etapa((select v from teste.var where k = ''op_mov''), ''perdido'', 99, ''x'')', 'P0002', 'atendente não move oportunidade de colega');
+select teste.erro('select public.rpc_registrar_interacao((select v from teste.var where k = ''op_mov''), ''ligacao'', ''tentativa'')', 'P0002', 'atendente não registra contato em oportunidade de colega');
+select teste.ok((select count(*) from jsonb_array_elements(public.rpc_listar_propostas(1, 'pendente_aprovacao')) x
+                 where not exists (select 1 from public.oportunidades o where o.id = (x->>'oportunidade_id')::bigint)) = 0, 'atendente não vê propostas de oportunidades de colegas');
+insert into teste.var values ('op_propria', (public.rpc_criar_oportunidade(1, jsonb_build_object('nome', 'Lead do Atendente', 'email', 'lead.atendente@exemplo.invalid', 'curso_id', 1,
+  'forma_ingresso', 'vestibular', 'coorte', '2027.1', 'base_legal', 'consentimento', 'origem', 'indicação'), 'gov-lead-atendente-1')->>'id')::bigint);
+select teste.ok((select responsavel_id = teste.id('comercial_a') from public.oportunidades where id = (select v from teste.var where k = 'op_propria')), 'quem cadastra como atendente assume o lead');
+select set_config('request.jwt.claim.sub', teste.id('com_dir_a')::text, false);
+select teste.ok((public.rpc_detalhe((select v from teste.var where k = 'op_mov'))->'oportunidade'->>'id')::bigint = (select v from teste.var where k = 'op_mov'), 'novo responsável passa a ver a oportunidade');
+select set_config('request.jwt.claim.sub', teste.id('secretaria_a')::text, false);
+select teste.ok((public.rpc_listar_oportunidades(1, null, null, 1, 100)->>'total')::int > 1, 'secretaria mantém a visão do escopo (validações)');
+select set_config('request.jwt.claim.sub', teste.id('gestor_a')::text, false);
+select teste.ok((select (x->>'permitida')::boolean from jsonb_array_elements(public.rpc_permissoes(1)->'matriz') x where x->>'operacao' = 'crm.ver_equipe'), 'matriz: gestor tem crm.ver_equipe');
+select set_config('request.jwt.claim.sub', teste.id('comercial_a')::text, false);
+select teste.ok((select not (x->>'permitida')::boolean from jsonb_array_elements(public.rpc_permissoes(1)->'matriz') x where x->>'operacao' = 'crm.ver_equipe'), 'matriz: atendente não tem crm.ver_equipe');
+
 -- revogação do escopo de campus tem efeito imediato
 select set_config('request.jwt.claim.sub', teste.id('master')::text, false);
 select public.rpc_revogar_escopo((select id from public.escopos where usuario_id = teste.id('com_sul') and revogado_em is null));

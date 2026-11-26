@@ -96,7 +96,7 @@ insert into teste.var select 't2', id from nova;
 set role authenticated;
 select teste.ok((select v from teste.var where k='t2') is not null, 'cenário: existe tarefa aberta de Direito');
 select set_config('request.jwt.claim.sub', teste.id('com_dir_a')::text, false);
-select teste.erro('select public.rpc_concluir_tarefa((select v from teste.var where k=''t2''), ''tentativa'')', '42501', 'atendente não conclui tarefa de outro no mesmo curso');
+select teste.erro('select public.rpc_concluir_tarefa((select v from teste.var where k=''t2''), ''tentativa'')', 'P0002', 'atendente não vê nem conclui tarefa de oportunidade atribuída a outro');
 reset role;
 insert into teste.var values ('t3', (select t.id from public.tarefas t join public.oportunidades o on o.id = t.oportunidade_id
   where t.ies_id = 1 and t.status = 'aberta' and o.curso_id = 2 and t.tipo <> 'pendencia_validacao' order by t.id limit 1));

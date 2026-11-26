@@ -73,7 +73,7 @@ insert into auth.users(id, email) values ('00000000-0000-0000-0000-0000000000c1'
 set role authenticated;
 select teste.ok((public.rpc_conceder_escopo_email('NOVO.Atendente@exemplo.invalid', 'Novo Atendente', 1, 1, 'comercial')->>'perfil_novo')::boolean, 'Master concede escopo por e-mail e cria perfil');
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000c1', false);
-select teste.ok((select count(*) from public.oportunidades) = (select count(*) from public.oportunidades where curso_id = 1) and (select count(*) from public.oportunidades) > 0,
-  'novo atendente enxerga só o curso concedido');
+select teste.ok((select array_agg(x->>'id') = array['1'] from jsonb_array_elements(public.rpc_estrutura(1)->'cursos') x) and (select count(*) from public.oportunidades) = 0,
+  'novo atendente enxerga só o curso concedido e nenhuma oportunidade de colegas');
 reset role;
 do $$ begin raise notice 'OK  fim da bateria de leitura'; end $$;

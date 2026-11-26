@@ -82,7 +82,7 @@ export function Crm({ abrirDetalhe, versao }: { abrirDetalhe: (id: number) => vo
               <option value="">Todas</option>{estrutura?.formas_ingresso.map((x) => <option key={x} value={x}>{rotulo(x)}</option>)}
             </select>
           </label>
-          <label className="flex items-center gap-1.5 pb-2 text-sm"><input type="checkbox" checked={meus} onChange={(e) => setMeus(e.target.checked)} />Somente meus</label>
+          {tem('gestor') && <label className="flex items-center gap-1.5 pb-2 text-sm"><input type="checkbox" checked={meus} onChange={(e) => setMeus(e.target.checked)} />Somente meus</label>}
           <label className="flex items-center gap-1.5 pb-2 text-sm"><input type="checkbox" checked={sla} onChange={(e) => setSla(e.target.checked)} />SLA vencido</label>
         </>}
         {filtrosAtivos && <button className="btn btn-fantasma btn-peq mb-1" onClick={() => { setTermo(''); setBusca(''); setForma(''); setMeus(false); setSla(false); setCoorte(''); setCurso(''); }}>Limpar filtros</button>}
