@@ -115,6 +115,10 @@ export function descreverEvento(e: Pick<EventoAuditoria, 'acao' | 'dados' | 'ent
     // Matrícula online, comunicação e integrações (migração 21)
     case 'contrato.publicar': return `Contrato de matrícula versão ${s('versao')} publicado.`;
     case 'matricula.aceite': return `Matrícula aceita no portal (contrato versão ${s('contrato_versao')})${d.menor_de_18 ? ' com representante legal' : ''}${d.confirmacao === 'simulacao' ? '; código em modo simulação' : ''}.`;
+    // Banca e aproveitamento (migração 29)
+    case 'seletivo.banca': return `Banca configurada: ${s('criterios')} critério(s), ${s('avaliadores')} avaliador(es)${s('divergencia') ? `, divergência máxima ${s('divergencia')}` : ''}.`;
+    case 'seletivo.banca_avaliar': return `Avaliação da banca registrada (nota ${s('nota')}).`;
+    case 'aproveitamento.salvar': return `Aproveitamento de estudos ${d.concluida ? 'concluído' : 'salvo em rascunho'}: ${s('carga')} h em ${s('disciplinas')} disciplina(s).`;
     // Pesquisas (migração 28)
     case 'pesquisa.salvar': return d.status ? `Pesquisa ${s('status') === 'ativa' ? 'ativada' : 'encerrada'}.` : `Pesquisa ${d.novo ? 'criada' : 'editada'}${s('nome') ? `: ${s('nome')}` : ''}.`;
     // Captação em campo (migração 27)

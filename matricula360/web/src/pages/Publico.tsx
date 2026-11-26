@@ -102,6 +102,7 @@ export function Portal() {
       </Secao>
       <PortalDocumentos token={token} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
       <PortalSeletivo token={token} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
+      <PortalAproveitamento token={token} recarga={recarga} />
       <PortalPesquisas token={token} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
       <PortalRematricula token={token} nome={d.nome} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
       <PortalBolsas token={token} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
@@ -193,6 +194,23 @@ function PortalSeletivo({ token, fazer, enviando, recarga }: { token: string; fa
           </div>);
       })}
       {d.eventos.length > 0 && <ul className="mt-2 text-sm">{d.eventos.map((ev, i) => <li key={i}>{ev.titulo} · {rotulo(ev.tipo)} · {new Date(ev.inicio).toLocaleString('pt-BR')}{ev.local ? ` · ${ev.local}` : ''} <Chip>{rotulo(ev.status)}</Chip></li>)}</ul>}
+    </Secao>
+  );
+}
+
+function PortalAproveitamento({ token, recarga }: { token: string; recarga: number }) {
+  const r = useCarregar(() => publico.aproveitamento(token).catch(() => []), [token, recarga]);
+  if (!r.dados?.length) return null;
+  return (
+    <Secao titulo="Aproveitamento de estudos">
+      {r.dados.map((x, i) => (
+        <div key={i} className="text-sm">
+          <p className="font-medium">{x.curso}</p>
+          {x.status !== 'concluida' ? <p className="text-suave">Em análise pela coordenação.</p> : (<>
+            <p><strong>{x.carga_aproveitada} h</strong> aproveitadas · ingresso sugerido no {x.semestre_sugerido}º semestre</p>
+            <ul className="mt-1 text-xs">{x.disciplinas?.map((d, j) => <li key={j}>{d.nome} → {d.equivalente ?? '—'} · {rotulo(d.situacao)} ({d.carga_aproveitada} h)</li>)}</ul>
+            {x.parecer && <p className="mt-1 text-xs">{x.parecer}</p>}</>)}
+        </div>))}
     </Secao>
   );
 }

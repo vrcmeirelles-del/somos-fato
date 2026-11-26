@@ -1,5 +1,5 @@
 // Seções do CRM avançado na ficha da oportunidade (migração 10). Só aparecem quando o banco devolve os campos novos.
-import { AlertTriangle, CalendarClock, FileSignature, HandCoins, LifeBuoy, FileText, Gauge, Link2, MessageSquarePlus, ShieldQuestion, UserCog, Workflow } from 'lucide-react';
+import { AlertTriangle, ArrowRightLeft, CalendarClock, FileSignature, HandCoins, LifeBuoy, FileText, Gauge, Link2, MessageSquarePlus, ShieldQuestion, UserCog, Workflow } from 'lucide-react';
 import { baixarBase64, lerBase64 } from '../lib/arquivo';
 import { baixarTexto, comprovanteHtml, nomeComprovante } from '../lib/contrato';
 import { LinhaSolicitacao } from '../pages/Bolsas';
@@ -11,7 +11,7 @@ import { CATEGORIAS_OBJECAO, TIPOS_INTERACAO, linhaDoTempo, relativo } from '../
 import { dataHora, pct, rotulo } from '../lib/formato';
 import { useCarregar } from '../lib/hooks';
 import type { ErroApi } from '../lib/supabase';
-import type { ComprovanteAceite, Detalhe } from '../lib/tipos';
+import type { ComprovanteAceite, Detalhe, DisciplinaAproveitamento } from '../lib/tipos';
 import { useSessao } from './Layout';
 import { Campo, Chip } from './ui';
 
@@ -200,6 +200,54 @@ export function DocumentosNaFicha({ op, fazer, enviando }: { op: number; fazer: 
             <label className="btn btn-sec btn-peq cursor-pointer">Enviar<input type="file" className="sr-only" accept="application/pdf,image/jpeg,image/png" disabled={enviando} onChange={(e) => {
               const arq = e.target.files?.[0]; if (!arq) return; void f2(async () => { await api.enviarDocumento(op, i.tipo, arq.name, await lerBase64(arq)); return 'Documento enviado.'; }); }} /></label>)}
         </li>))}</ul>
+    </section>
+  );
+}
+
+// Aproveitamento de estudos (L19): transferência, segunda graduação e reingresso.
+export function AproveitamentoNaFicha({ op, fazer, enviando }: { op: number; fazer: Fazer; enviando: boolean }) {
+  const [recarga, setRecarga] = useState(0);
+  const r = useCarregar(() => api.aproveitamento(op).catch(() => null), [op, recarga]);
+  const a = r.dados?.analise;
+  const [f, setF] = useState<{ inst: string; curso: string; disc: DisciplinaAproveitamento[]; parecer: string; sem: string } | null>(null);
+  if (!r.dados?.aplicavel) return null;
+  const ed = f ?? { inst: a?.instituicao_origem ?? '', curso: a?.curso_origem ?? '', disc: a?.disciplinas ?? [], parecer: a?.parecer ?? '', sem: a?.semestre_sugerido ? String(a.semestre_sugerido) : '' };
+  const setD = (i: number, x: Partial<DisciplinaAproveitamento>) => setF({ ...ed, disc: ed.disc.map((d, j) => (j === i ? { ...d, ...x } : d)) });
+  const salvar = (concluir: boolean) => void fazer(async () => {
+    const res = await api.salvarAproveitamento(op, { instituicao_origem: ed.inst, curso_origem: ed.curso, disciplinas: ed.disc, parecer: ed.parecer, semestre_sugerido: ed.sem || null }, concluir);
+    setF(null); setRecarga((n) => n + 1); return concluir ? `Análise concluída: ${res.carga_aproveitada} h aproveitadas.` : `Rascunho salvo: ${res.carga_aproveitada} h aproveitadas até agora.`; });
+  const editavel = r.dados.pode_analisar && a?.status !== 'concluida';
+  return (
+    <section aria-label="Aproveitamento de estudos" className="mt-4 rounded-xl border border-linha p-3">
+      <H icone={ArrowRightLeft}>Aproveitamento de estudos</H>
+      {a && <p className="nota mb-1">{rotulo(a.status)} · {a.carga_aproveitada} h aproveitadas{a.semestre_sugerido ? ` · ingresso sugerido no ${a.semestre_sugerido}º semestre` : ''}{a.analisado_por ? ` · ${a.analisado_por}` : ''}</p>}
+      {!editavel ? (a ? <ul className="text-xs">{a.disciplinas.map((d, i) => <li key={i}>{d.nome} ({d.carga} h) → {d.equivalente ?? '—'} · {rotulo(d.situacao)} · {d.carga_aproveitada} h</li>)}</ul> : <p className="nota">Sem análise.</p>) : (
+        <div className="space-y-2 text-sm">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Campo rotulo="Instituição de origem"><input className="campo" value={ed.inst} onChange={(e) => setF({ ...ed, inst: e.target.value })} /></Campo>
+            <Campo rotulo="Curso de origem"><input className="campo" value={ed.curso} onChange={(e) => setF({ ...ed, curso: e.target.value })} /></Campo>
+          </div>
+          {ed.disc.map((d, i) => (
+            <div key={i} className="flex flex-wrap items-end gap-2 rounded border border-linha p-2">
+              <Campo rotulo="Disciplina cursada"><input className="campo" value={d.nome} onChange={(e) => setD(i, { nome: e.target.value })} /></Campo>
+              <Campo rotulo="Carga (h)"><input className="campo w-20" type="number" min={1} value={d.carga || ''} onChange={(e) => setD(i, { carga: Number(e.target.value) })} /></Campo>
+              <Campo rotulo="Nota"><input className="campo w-16" value={d.nota ?? ''} onChange={(e) => setD(i, { nota: e.target.value })} /></Campo>
+              <Campo rotulo="Situação"><select className="campo" value={d.situacao} onChange={(e) => setD(i, { situacao: e.target.value })}>
+                {['pendente', 'aproveitada', 'parcial', 'nao_aproveitada'].map((x) => <option key={x} value={x}>{rotulo(x)}</option>)}</select></Campo>
+              <Campo rotulo="Equivale a" className="grow"><input className="campo" value={d.equivalente ?? ''} onChange={(e) => setD(i, { equivalente: e.target.value })} /></Campo>
+              {d.situacao === 'parcial' && <Campo rotulo="Horas aproveitadas"><input className="campo w-20" type="number" min={0} value={d.carga_aproveitada || ''} onChange={(e) => setD(i, { carga_aproveitada: Number(e.target.value) })} /></Campo>}
+              <button className="btn btn-fantasma btn-peq" onClick={() => setF({ ...ed, disc: ed.disc.filter((_, j) => j !== i) })}>Remover</button>
+            </div>))}
+          <button className="btn btn-fantasma btn-peq" onClick={() => setF({ ...ed, disc: [...ed.disc, { nome: '', carga: 0, situacao: 'pendente', carga_aproveitada: 0 }] })}>+ Disciplina</button>
+          <div className="grid gap-2 sm:grid-cols-4">
+            <Campo rotulo="Parecer" className="sm:col-span-3"><textarea className="campo" value={ed.parecer} onChange={(e) => setF({ ...ed, parecer: e.target.value })} /></Campo>
+            <Campo rotulo="Semestre sugerido"><input className="campo" type="number" min={1} max={12} value={ed.sem} onChange={(e) => setF({ ...ed, sem: e.target.value })} /></Campo>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button className="btn btn-sec btn-peq" disabled={enviando} onClick={() => salvar(false)}>Salvar rascunho</button>
+            <button className="btn btn-ok btn-peq" disabled={enviando} onClick={() => { if (window.confirm('Concluir a análise? Depois não poderá ser alterada e o candidato verá o resultado no portal.')) salvar(true); }}>Concluir análise</button>
+          </div>
+        </div>)}
     </section>
   );
 }

@@ -275,3 +275,13 @@ export interface Pesquisa { id: number; nome: string; publico: string; introduca
   resultado: { respostas: number; elegiveis: number; taxa_pct: number | null; suficiente: boolean; motivo?: string; nps?: number | null; por_pergunta?: Record<string, Record<string, number> | string[]> } }
 export interface Pesquisas { pode_gerir: boolean; aviso: string; pesquisas: Pesquisa[] }
 export interface PortalPesquisa { pesquisa_id: number; oportunidade_id: number; curso: string; nome: string; introducao: string | null; perguntas: PerguntaPesquisa[] }
+
+// Banca e aproveitamento (migração 29)
+export interface CriterioBanca { id: string; texto: string; peso: number }
+export interface Banca { rubrica: CriterioBanca[] | null; ja_avaliei: boolean;
+  situacao: { minimos: number; avaliacoes: number; media: number | null; divergencia: number | null; exige_mais_um: boolean | null; completa: boolean };
+  avaliacoes: { avaliador: string; notas: Record<string, number>; nota_final: number; parecer: string; em: string }[] | null }
+export interface DisciplinaAproveitamento { nome: string; carga: number; nota?: string | null; equivalente?: string | null; situacao: string; carga_aproveitada: number }
+export interface Aproveitamento { aplicavel: boolean; pode_analisar: boolean;
+  analise: { instituicao_origem: string; curso_origem: string; disciplinas: DisciplinaAproveitamento[]; status: string; carga_aproveitada: number; semestre_sugerido: number | null;
+    parecer: string | null; analisado_por: string | null; concluida_em: string | null } | null }

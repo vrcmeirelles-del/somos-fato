@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula, Bolsas, PortalBolsas, Rematricula, PortalRematricula, Casos, Campo, LeadCampo, Pesquisas, PortalPesquisa, DadosAceite, CodigoAceite, ComprovanteAceite,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula, Bolsas, PortalBolsas, Rematricula, PortalRematricula, Casos, Campo, LeadCampo, Pesquisas, PortalPesquisa, CriterioBanca, Banca, Aproveitamento, DisciplinaAproveitamento, DadosAceite, CodigoAceite, ComprovanteAceite,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -185,6 +185,12 @@ export const api = {
   captarCampo: (visita: number, leads: LeadCampo[]) => c().rpc<{ recebidos: number; ja_sincronizados: number; contatos_existentes: number; rejeitados: { id_local: string; nome: string; motivo: string }[] }>('rpc_captar_campo', { p_visita: visita, p_leads: leads }),
   pesquisas: (ies: number) => c().rpc<Pesquisas>('rpc_pesquisas', { p_ies: ies }),
   salvarPesquisa: (ies: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number }>('rpc_salvar_pesquisa', { p_ies: ies, p_dados: dados, p_id: id ?? null }),
+  configurarBanca: (processo: number, rubrica: CriterioBanca[], minimos: number, divergencia?: number) =>
+    c().rpc('rpc_configurar_banca', { p_processo: processo, p_rubrica: rubrica, p_minimos: minimos, p_divergencia: divergencia ?? null }),
+  banca: (candidatura: number) => c().rpc<Banca>('rpc_banca', { p_candidatura: candidatura }),
+  avaliarBanca: (candidatura: number, notas: Record<string, number>, parecer: string) => c().rpc('rpc_avaliar_banca', { p_candidatura: candidatura, p_notas: notas, p_parecer: parecer }),
+  aproveitamento: (op: number) => c().rpc<Aproveitamento>('rpc_aproveitamento', { p_op: op }),
+  salvarAproveitamento: (op: number, dados: Record<string, unknown>, concluir = false) => c().rpc<{ carga_aproveitada: number; status: string }>('rpc_salvar_aproveitamento', { p_op: op, p_dados: dados, p_concluir: concluir }),
   comprovanteAceite: (op: number) => c().rpc<ComprovanteAceite>('rpc_comprovante_aceite', { p_op: op }),
   enviarDocumento: (op: number, tipo: string, nome: string, base64: string) => c().rpc('rpc_enviar_documento', { p_op: op, p_tipo: tipo, p_nome: nome, p_base64: base64 }),
   baixarDocumento: (doc: number) => c().rpc<{ nome_arquivo: string; mime: string; base64: string }>('rpc_baixar_documento', { p_documento: doc }),
@@ -257,6 +263,7 @@ export const publico = {
   pesquisas: (t: string) => c().rpcPublico<PortalPesquisa[]>('rpc_publico_portal_pesquisas', { p_token: t }),
   responderPesquisa: (t: string, pesquisa: number, op: number, respostas: Record<string, string>) =>
     c().rpcPublico<{ mensagem: string }>('rpc_publico_responder_pesquisa', { p_token: t, p_pesquisa: pesquisa, p_op: op, p_respostas: respostas }),
+  aproveitamento: (t: string) => c().rpcPublico<{ curso: string; status: string; carga_aproveitada: number | null; semestre_sugerido: number | null; disciplinas: DisciplinaAproveitamento[] | null; parecer: string | null }[]>('rpc_publico_portal_aproveitamento', { p_token: t }),
   codigoAceite: (t: string, op: number) => c().rpcPublico<CodigoAceite>('rpc_publico_codigo_aceite', { p_token: t, p_op: op }),
   aceitar: (t: string, op: number, dados: DadosAceite) =>
     c().rpcPublico<{ aceito: boolean; erro?: string; tentativas_restantes?: number; proximo_passo?: string; evidencia_hash?: string }>('rpc_publico_aceitar_matricula', { p_token: t, p_op: op, p_dados: dados }),

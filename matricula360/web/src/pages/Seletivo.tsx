@@ -50,6 +50,7 @@ export function Seletivo({ abrirDetalhe }: { abrirDetalhe: (id: number) => void 
               {p.tipo === 'prova_agendada' && (
                 <div className="mt-2 text-sm">Agenda: {p.agendas.length ? p.agendas.map((a) => `${new Date(a.inicio).toLocaleString('pt-BR')} · ${a.local} (${a.ocupadas}/${a.vagas})`).join(' | ') : 'nenhuma data'}
                   {d.pode_gerir && !p.resultado_divulgado_em && <NovaAgenda processo={p.id} fazer={fazer} enviando={acao.enviando} />}</div>)}
+              {d.pode_gerir && !p.resultado_divulgado_em && <ConfigBanca processo={p.id} fazer={fazer} enviando={acao.enviando} />}
               {p.candidaturas.length ? (
                 <div className="mt-3 space-y-2">{p.candidaturas.map((c) => <LinhaCandidatura key={c.id} c={c} tipo={p.tipo} divulgado={!!p.resultado_divulgado_em} fazer={fazer} enviando={acao.enviando} abrirDetalhe={abrirDetalhe} />)}</div>
               ) : <p className="nota mt-2">Nenhuma candidatura.</p>}
@@ -89,6 +90,7 @@ function LinhaCandidatura({ c, tipo, divulgado, fazer, enviando, abrirDetalhe }:
       {c.redacao && <details className="mt-1"><summary className="cursor-pointer text-xs">Ler redação</summary><p className="mt-1 whitespace-pre-line rounded bg-fundo p-2 text-xs">{c.redacao}</p></details>}
       {c.redacao_nota != null && <p className="text-xs">Redação: {c.redacao_nota} · {c.redacao_parecer} · {c.corrigida_por}</p>}
       {c.justificativa && <p className="text-xs">Decisão: {c.justificativa} · {c.resultado_por}</p>}
+      <PainelBanca candidatura={c.id} pendente={c.resultado === 'pendente' && !divulgado} fazer={fazer} enviando={enviando} />
       {!divulgado && (
         <div className="mt-2 flex flex-wrap items-end gap-2">
           {c.redacao_enviada && c.redacao_nota == null && <>
@@ -98,6 +100,48 @@ function LinhaCandidatura({ c, tipo, divulgado, fazer, enviando, abrirDetalhe }:
           <Campo rotulo="Justificativa da decisão" className="grow"><input className="campo" value={just} onChange={(e) => setJust(e.target.value)} /></Campo>
           {['aprovado', 'reprovado', 'ausente'].map((r) => <button key={r} className={`btn btn-peq ${r === 'aprovado' ? 'btn-ok' : 'btn-sec'}`} disabled={enviando || just.trim().length < 5}
             onClick={() => void fazer(async () => { await api.avaliarCandidatura(c.id, { resultado: r, justificativa: just }); return `Resultado registrado: ${rotulo(r)}.`; })}>{rotulo(r)}</button>)}
+        </div>)}
+    </div>
+  );
+}
+
+function ConfigBanca({ processo, fazer, enviando }: { processo: number; fazer: Fazer; enviando: boolean }) {
+  const [crit, setCrit] = useState('historico: Histórico escolar: 2\ncarta: Carta de intenção: 1');
+  const [min, setMin] = useState('2'); const [div, setDiv] = useState('150');
+  return (
+    <Detalhes titulo="Banca avaliadora (rubrica, avaliadores e divergência)">
+      <p className="nota">Um critério por linha: <code>identificador: texto: peso</code>. Notas de 0 a 10 por critério; a nota final vai de 0 a 1000. A rubrica não muda depois da primeira avaliação.</p>
+      <div className="mt-1 grid gap-2 sm:grid-cols-4">
+        <Campo rotulo="Critérios" className="sm:col-span-2"><textarea className="campo" value={crit} onChange={(e) => setCrit(e.target.value)} /></Campo>
+        <Campo rotulo="Avaliadores mínimos"><input className="campo" type="number" min={1} max={5} value={min} onChange={(e) => setMin(e.target.value)} /></Campo>
+        <Campo rotulo="Divergência máxima (pontos, vazio = sem limite)"><input className="campo" inputMode="decimal" value={div} onChange={(e) => setDiv(e.target.value)} /></Campo>
+      </div>
+      <button className="btn btn-sec btn-peq mt-2" disabled={enviando} onClick={() => void fazer(async () => {
+        const rubrica = crit.split('\n').map((l) => l.split(':').map((x) => x.trim())).filter((x) => x.length >= 3).map(([id, texto, peso]) => ({ id: id!, texto: texto!, peso: Number(peso) }));
+        await api.configurarBanca(processo, rubrica, Number(min), div ? Number(div.replace(',', '.')) : undefined); return 'Banca configurada.'; })}>Salvar banca</button>
+    </Detalhes>
+  );
+}
+
+function PainelBanca({ candidatura, pendente, fazer, enviando }: { candidatura: number; pendente: boolean; fazer: Fazer; enviando: boolean }) {
+  const [recarga, setRecarga] = useState(0);
+  const b = useCarregar(() => api.banca(candidatura).catch(() => null), [candidatura, recarga]);
+  const [notas, setNotas] = useState<Record<string, string>>({}); const [parecer, setParecer] = useState('');
+  const d = b.dados;
+  if (!d?.rubrica || d.situacao.minimos === 0) return null;
+  const s = d.situacao;
+  return (
+    <div className="mt-2 rounded bg-fundo p-2 text-xs">
+      <p className="font-medium">Banca: {s.avaliacoes} de {s.minimos} avaliação(ões){s.media != null && (d.avaliacoes ? ` · média ${s.media}` : '')}
+        {s.exige_mais_um && <Chip tipo="pend">divergência: falta mais um avaliador</Chip>}{s.completa && <Chip tipo="ok">completa</Chip>}</p>
+      {d.avaliacoes?.map((a, i) => <p key={i}>{a.avaliador}: {a.nota_final} · {a.parecer}</p>)}
+      {!d.avaliacoes && !d.ja_avaliei && <p className="nota">Avaliação às cegas: as notas dos outros aparecem depois que você registrar a sua.</p>}
+      {pendente && !d.ja_avaliei && (
+        <div className="mt-1 flex flex-wrap items-end gap-2">
+          {d.rubrica.map((r) => <Campo key={r.id} rotulo={`${r.texto} (peso ${r.peso})`}><input className="campo w-16" type="number" min={0} max={10} step="0.5" value={notas[r.id] ?? ''} onChange={(e) => setNotas({ ...notas, [r.id]: e.target.value })} /></Campo>)}
+          <Campo rotulo="Parecer" className="grow"><input className="campo" value={parecer} onChange={(e) => setParecer(e.target.value)} /></Campo>
+          <button className="btn btn-sec btn-peq" disabled={enviando || parecer.trim().length < 10 || d.rubrica.some((r) => notas[r.id] === undefined || notas[r.id] === '')} onClick={() => void fazer(async () => {
+            await api.avaliarBanca(candidatura, Object.fromEntries(Object.entries(notas).map(([k, v]) => [k, Number(v)])), parecer); setRecarga((n) => n + 1); return 'Avaliação da banca registrada.'; })}>Registrar minha avaliação</button>
         </div>)}
     </div>
   );
