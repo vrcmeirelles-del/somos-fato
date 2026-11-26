@@ -1,7 +1,7 @@
 {
-  "em": "2026-11-26T12:31:11.828Z",
+  "em": "2026-11-26T12:58:02.766Z",
   "projeto": "https://jbimijcvvekomovodfze.supabase.co",
-  "total": 104,
+  "total": 111,
   "falhas": 0,
   "resultados": [
     {
@@ -9,7 +9,7 @@
       "dispositivo": "desktop",
       "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
       "ok": true,
-      "detalhe": "Oportunidades35Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte5.7%Decididas: 50.0%"
+      "detalhe": "Oportunidades39Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte5.1%Decididas: 50.0%"
     },
     {
       "perfil": "gestor",
@@ -252,6 +252,48 @@
     {
       "perfil": "gestor",
       "dispositivo": "desktop",
+      "passo": "P1: funil padrão publicado replicando as etapas oficiais",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "funis: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "funis: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P1: Performance com etapas, denominadores, equipe e aviso de uso",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "performance: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "performance: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
       "passo": "R09: /ies/2/crm não mostra dados da Beta",
       "ok": true,
       "detalhe": ""
@@ -315,6 +357,13 @@
     {
       "perfil": "comercial",
       "dispositivo": "desktop",
+      "passo": "Funil: ficha mostra o funil e a versão fixada",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
       "passo": "CRM: score explicável com aviso de não decisão",
       "ok": true,
       "detalhe": ""
@@ -324,7 +373,7 @@
       "dispositivo": "desktop",
       "passo": "CRM: busca por nome filtra o quadro",
       "ok": true,
-      "detalhe": "12 cartões"
+      "detalhe": "16 cartões"
     },
     {
       "perfil": "comercial",
@@ -541,7 +590,7 @@
       "dispositivo": "celular",
       "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
       "ok": true,
-      "detalhe": "Oportunidades36Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte5.6%Decididas: 50.0%"
+      "detalhe": "Oportunidades40Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte5.0%Decididas: 50.0%"
     },
     {
       "perfil": "gestor",

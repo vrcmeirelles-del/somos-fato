@@ -129,7 +129,7 @@ try {
         await ir(page, 'Perfis e permissões');
         await page.waitForFunction(() => document.querySelector('main table') || (document.querySelector('main')?.textContent || '').includes('migração 11'), null, { timeout: 15000 }).catch(() => null);
         const perm = await page.textContent('main');
-        if (!perm.includes('migração 11')) {
+        if (!perm.includes('Disponível após a migração 11')) {
           registrar('gestor', disp, 'Governança: matriz de permissões e escopo com abrangência explícita',
             perm.includes('Alterar parâmetros do MAIM') && perm.includes('Instituição') && perm.includes('permitido'));
           await checar(page, 'gestor', disp, 'permissoes', erros);
@@ -144,7 +144,7 @@ try {
         // P1 (migração 12): planejamento e campanhas, só verificados quando o banco já tem a migração.
         await ir(page, 'Plano, objetivos e 5W2H');
         await page.waitForFunction(() => /migração 12|Novo plano|Nenhum plano|Objetivos e indicadores/.test(document.querySelector('main')?.textContent || ''), null, { timeout: 15000 }).catch(() => null);
-        if (!(await page.textContent('main')).includes('migração 12')) {
+        if (!(await page.textContent('main')).includes('Disponível após a migração 12')) {
           registrar('gestor', disp, 'P1: página de Planejamento com plano da coorte e concorrência com fonte', (await page.textContent('main')).includes('Concorrência (somente com fonte verificável)'));
           await checar(page, 'gestor', disp, 'planejamento', erros);
           await ir(page, 'Campanhas e custos');
@@ -156,7 +156,7 @@ try {
         // P1 (migração 13): funis configuráveis.
         await ir(page, 'Funis configuráveis');
         await page.waitForFunction(() => /migração 13|Funil padrão institucional/.test(document.querySelector('main')?.textContent || ''), null, { timeout: 15000 }).catch(() => null);
-        if (!(await page.textContent('main')).includes('migração 13')) {
+        if (!(await page.textContent('main')).includes('Disponível após a migração 13')) {
           const fun = await page.textContent('main');
           registrar('gestor', disp, 'P1: funil padrão publicado replicando as etapas oficiais', fun.includes('Funil padrão institucional') && fun.includes('v1 publicada') && fun.includes('Matrícula comercial'));
           await checar(page, 'gestor', disp, 'funis', erros);
@@ -164,7 +164,7 @@ try {
         // P1 (migração 14): MAIM Performance.
         await ir(page, 'Performance e gargalos (MAIM)');
         await page.waitForFunction(() => /migração 14|Etapas do funil/.test(document.querySelector('main')?.textContent || ''), null, { timeout: 15000 }).catch(() => null);
-        if (!(await page.textContent('main')).includes('migração 14')) {
+        if (!(await page.textContent('main')).includes('Disponível após a migração 14')) {
           const perf = await page.textContent('main');
           registrar('gestor', disp, 'P1: Performance com etapas, denominadores, equipe e aviso de uso', perf.includes('Etapas do funil') && perf.includes('Equipe comercial') && perf.includes('decisões laborais'));
           await checar(page, 'gestor', disp, 'performance', erros);

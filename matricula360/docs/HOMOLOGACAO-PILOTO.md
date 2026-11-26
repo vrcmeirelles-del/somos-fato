@@ -243,6 +243,22 @@ Verificações novas no navegador:
 
 Decisão do responsável do produto (26/11/2026): o atendente comercial vê apenas as oportunidades atribuídas a ele; o chefe do setor (gestor) vê as da equipe.
 
+## Funis Comerciais (migração 13) e MAIM Performance (migração 14) — 26/11/2026
+Aplicadas pelo usuário, nesta ordem. Conferido no banco real: `rpc_funis` e `rpc_performance` existem e recusam acesso anônimo (42501).
+
+| Teste | Resultado |
+|---|---|
+| Banco local (migrações 1–14) | 366/366 |
+| Bateria remota gerada | 371/371, tudo desfeito ao final |
+| Navegador no site publicado (build idêntica ao repositório) | **111/111** |
+
+Verificações novas no navegador:
+- funil padrão publicado replicando as etapas oficiais;
+- ficha mostra o funil e a versão fixada;
+- Performance com etapas, denominadores, equipe e aviso de uso.
+
+Falso negativo corrigido no roteiro de teste: a nota do funil padrão ("migração 13") era confundida com o aviso de módulo indisponível. A detecção passou a usar o texto exato "Disponível após a migração N".
+
 ## Critérios de aceite da Bíblia-Mestra
 
 | Critério | Onde está provado |
