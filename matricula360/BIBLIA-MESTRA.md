@@ -131,7 +131,7 @@ Estados conforme a seção 11: especificado → implementado → testado localme
 | E01 Central de Inteligência | **publicado (homologação), conforme §6 após a migração 9** | `rpc_central` (migração 8). Dashboard com filtros globais, funil por alcance, evolução semanal, origem, curso, turno, modalidade, atendente, receita, alertas e fila de intervenções. Navegador 83/83 no site publicado. **Divergência D1 em 13.4** |
 | E02 Planejamento Estratégico | especificado | Visível no menu como P1, desabilitado |
 | E03 Marketing e Captação | especificado | Idem; custo por lead e por matrícula N/D com motivo |
-| E04 CRM Educacional | **publicado (parcial)** | Kanban, ficha, importação deduplicada, histórico auditado, tarefas. **Pendentes (P0):** drag-and-drop validado, busca, timeline consolidada, objeções, agenda, score explicável, SLA no cartão, histórico de responsáveis, alerta de possível duplicidade |
+| E04 CRM Educacional | **publicado e homologado (migração 10)** | Kanban com arrastar validado no servidor (transição inválida recusada, cartão permanece; perda exige motivo), busca (nome; e-mail/telefone só para perfil pleno), filtros combinados (coorte, curso, forma, somente meus, SLA vencido), cartão com score/SLA/último contato, ficha com linha do tempo única (auditoria legível + interações + objeções), objeções com tratamento, agenda comercial, reatribuição pelo gestor com motivo e transferência de tarefas, alerta de possível duplicidade sem mesclagem. Banco 213/213; navegador 90/90 (build do repositório contra o banco real; site publicado em verificação). **Pendentes:** funis configuráveis (E05, P1), mesclagem assistida de duplicidades |
 | E05 Funis Comerciais | especificado | P1 |
 | E06 Conversão e Matrículas | **publicado** | Validações por papel, confirmação atômica, cancelamento auditado, proposta ativa única (migração 7), segregação. Pendente: memória de cálculo e moeda explícitas na proposta |
 | E07–E09 | especificado | P2/P3; no menu como planejados |
@@ -159,7 +159,8 @@ Estados conforme a seção 11: especificado → implementado → testado localme
 | Forecast | publicado, **com divergência D1** |
 | Pricing | publicado (limite, validade, aprovação por terceiro, proposta ativa única). Pendente: custo e memória de cálculo |
 | Quality | parcial (alertas de pendência de validação) |
-| Score, Performance, Strategy, Recovery, Learning, Retention | especificados |
+| Score | publicado: regra determinística `score-v1` (0–100) com razões ponto a ponto; nunca usada para decidir ingresso; visível só a comercial/gestor |
+| Performance, Strategy, Recovery, Learning, Retention | especificados |
 
 ### 13.4 Divergências — decididas em 25/11/2026; migração 9 aplicada, homologada e publicada (local 184/184; navegador no site publicado 83/83)
 - **D1:** indicador oficial pela §6 com aritmética exata (cenário R03 = 168). O método por pipeline aparece como "cenário complementar", identificado. Amostra mínima **configurável por IES, padrão 30**: abaixo dela, N/D com motivo.
