@@ -14,6 +14,9 @@ select teste.ok((select jsonb_array_length(r->'ies') = 1 and r->'ies'->0->>'nome
                  from (select public.rpc_bi_executivo('2027.1') r) x), 'reitoria vê só a sua IES, com captação, bolsas, inadimplência e métodos');
 select teste.ok((select (r->'ies'->0->'atual'->>'ingressantes')::int = (public.rpc_central(1, '2027.1')->'totais'->>'ingressantes')::int
                  from (select public.rpc_bi_executivo('2027.1') r) x), 'captação idêntica à da Central');
+select teste.ok((select (r->'ies'->0->'atual'->>'ingressantes')::int = 0 or (r->'ies'->0->'receita'->>'ticket_medio_centavos')::numeric
+                   = round((r->'ies'->0->'atual'->>'receita_mensal_ingressantes_centavos')::numeric / (r->'ies'->0->'atual'->>'ingressantes')::int)
+                 from (select public.rpc_bi_executivo('2027.1') r) x), 'ticket médio na mesma base da receita');
 select teste.ok((select r->'consolidado'->>'ingressantes' = r->'ies'->0->'atual'->>'ingressantes' from (select public.rpc_bi_executivo('2027.1') r) x), 'consolidado de uma IES = a própria IES');
 select teste.ok((select (r->'ies'->0->'inadimplencia'->>'inadimplentes')::int >= 1 and jsonb_typeof(r->'ies'->0->'alertas') = 'array'
                  from (select public.rpc_bi_executivo('2027.1') r) x), 'inadimplência conta a pendência vencida e há lista de alertas');

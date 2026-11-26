@@ -2133,6 +2133,9 @@ update public.oportunidades set etapa = 'perdido', motivo_perda = 'Escolheu outr
                  from (select public.rpc_bi_executivo('2027.1') r) x), 'reitoria vê só a sua IES, com captação, bolsas, inadimplência e métodos') $x$;
   execute $x$ select teste.ok((select (r->'ies'->0->'atual'->>'ingressantes')::int = (public.rpc_central(1, '2027.1')->'totais'->>'ingressantes')::int
                  from (select public.rpc_bi_executivo('2027.1') r) x), 'captação idêntica à da Central') $x$;
+  execute $x$ select teste.ok((select (r->'ies'->0->'atual'->>'ingressantes')::int = 0 or (r->'ies'->0->'receita'->>'ticket_medio_centavos')::numeric
+                   = round((r->'ies'->0->'atual'->>'receita_mensal_ingressantes_centavos')::numeric / (r->'ies'->0->'atual'->>'ingressantes')::int)
+                 from (select public.rpc_bi_executivo('2027.1') r) x), 'ticket médio na mesma base da receita') $x$;
   execute $x$ select teste.ok((select r->'consolidado'->>'ingressantes' = r->'ies'->0->'atual'->>'ingressantes' from (select public.rpc_bi_executivo('2027.1') r) x), 'consolidado de uma IES = a própria IES') $x$;
   execute $x$ select teste.ok((select (r->'ies'->0->'inadimplencia'->>'inadimplentes')::int >= 1 and jsonb_typeof(r->'ies'->0->'alertas') = 'array'
                  from (select public.rpc_bi_executivo('2027.1') r) x), 'inadimplência conta a pendência vencida e há lista de alertas') $x$;

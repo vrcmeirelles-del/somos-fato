@@ -24,9 +24,9 @@ function Delta({ atual, anterior }: { atual: number | null | undefined; anterior
 
 function Tile({ rotulo, valor, detalhe }: { rotulo: string; valor: string; detalhe?: React.ReactNode }) {
   return (
-    <div className="cartao-base flex flex-col gap-1">
+    <div className="cartao-base flex min-w-0 flex-col gap-1">
       <span className="text-xs font-medium text-suave">{rotulo}</span>
-      <strong className="text-2xl font-semibold tracking-tight text-marinho">{valor}</strong>
+      <strong className="break-words text-xl font-semibold tracking-tight text-marinho sm:text-2xl">{valor}</strong>
       {detalhe && <span className="text-xs">{detalhe}</span>}
     </div>
   );
@@ -101,7 +101,7 @@ export function BiExecutivo() {
       {d && t && (
         <div className="space-y-4">
           <p className="nota">Coorte {d.coorte}, comparada a {d.coorte_anterior} · {d.ies.length} instituição(ões): {d.ies.map((i) => i.nome).join(', ')}</p>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             <Tile rotulo="Ingressos efetivos" valor={fmtN(t.ingressantes)} detalhe={<>{t.meta != null ? `meta ${t.meta} · atingimento ${fmtPct(t.atingimento)} · ` : 'meta consolidada N/D · '}<Delta atual={t.ingressantes} anterior={t.anterior_ingressantes} /></>} />
             <Tile rotulo="Receita mensal dos ingressos" valor={fmtMoeda(t.receita_mensal_ingressantes_centavos)} detalhe={<Delta atual={t.receita_mensal_ingressantes_centavos} anterior={t.anterior_receita_mensal_ingressantes_centavos} />} />
             <Tile rotulo="Oportunidades (leads)" valor={fmtN(t.oportunidades)} detalhe={<>{fmtN(t.matriculas_comerciais)} matrículas comerciais · <Delta atual={t.oportunidades} anterior={t.anterior_oportunidades} /></>} />
@@ -122,7 +122,7 @@ export function BiExecutivo() {
                 <Ranking itens={d.ies.map((i) => ({ rotulo: i.nome, valor: i.atual.receita_mensal_ingressantes_centavos, texto: fmtMoeda(i.atual.receita_mensal_ingressantes_centavos) }))} />
               </Cartao>
             </div>)}
-          {d.ies.map((i) => <CartaoIes key={i.ies_id} i={i} />)}
+          {d.ies.map((i) => <CartaoIes key={i.ies_id} i={i} mostrarAlertas={d.ies.length > 1} />)}
           {d.ies.length > 1 && (
             <Cartao titulo="Comparativo da mantenedora" icone={Building2}>
               <div className="tabela" tabIndex={0} role="region" aria-label="Tabela com rolagem horizontal"><table>
@@ -144,7 +144,7 @@ export function BiExecutivo() {
   );
 }
 
-function CartaoIes({ i }: { i: BiIes }) {
+function CartaoIes({ i, mostrarAlertas }: { i: BiIes; mostrarAlertas: boolean }) {
   const a = i.atual; const p = i.anterior;
   const funil = [{ rotulo: 'Oportunidades', valor: a.oportunidades }, { rotulo: 'Matrículas comerciais', valor: a.matriculas_comerciais }, { rotulo: 'Ingressos efetivos', valor: a.ingressantes }];
   return (
@@ -166,7 +166,8 @@ function CartaoIes({ i }: { i: BiIes }) {
             <dt className="text-suave">Custo por lead</dt><dd className="tabular-nums">{fmtMoeda(a.custo_por_lead_centavos)}</dd>
             <dt className="text-suave">Custo por ingresso</dt><dd className="tabular-nums">{fmtMoeda(a.custo_por_matricula_centavos)}</dd>
             <dt className="text-suave">Payback</dt><dd className="tabular-nums">{i.payback_mensalidades == null ? ND : `${i.payback_mensalidades} mensalidade(s)`}</dd>
-            <dt className="text-suave">Bolsas</dt><dd className="tabular-nums">{i.bolsas.beneficios_aprovados} aprovada(s) · {fmtPct(i.bolsas.ingressos_com_beneficio_pct, true)} dos ingressos · renúncia {fmtMoeda(i.bolsas.renuncia_mensal_estimada_centavos)}/mês</dd>
+            <dt className="text-suave">Bolsas aprovadas</dt><dd className="tabular-nums">{i.bolsas.beneficios_aprovados} ({fmtPct(i.bolsas.ingressos_com_beneficio_pct, true)} dos ingressos)</dd>
+            <dt className="text-suave">Renúncia mensal</dt><dd className="tabular-nums">{fmtMoeda(i.bolsas.renuncia_mensal_estimada_centavos)}</dd>
           </dl>
           {a.custo_motivo && <p className="nota mt-1">{a.custo_motivo}</p>}
         </section>
@@ -181,7 +182,7 @@ function CartaoIes({ i }: { i: BiIes }) {
           <p className="text-sm">NPS: {i.nps ? <><strong>{i.nps.nps}</strong> <span className="nota">({i.nps.pesquisa}, {i.nps.respostas} respostas)</span></> : <span className="nota">N/D (sem pesquisa com respostas suficientes)</span>}</p>
         </section>
       </div>
-      {i.alertas.length > 0 && <div className="mt-3 border-t border-linha pt-2"><Alertas lista={i.alertas} /></div>}
+      {mostrarAlertas && i.alertas.length > 0 && <div className="mt-3 border-t border-linha pt-2"><Alertas lista={i.alertas} /></div>}
     </Cartao>
   );
 }

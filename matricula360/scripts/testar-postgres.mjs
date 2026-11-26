@@ -46,6 +46,7 @@ const arquivos = [
   'supabase/migrations/20261126000030_onda_c_interna.sql',
   'supabase/migrations/20261126000031_automacoes.sql',
   'supabase/migrations/20261126000032_bi_alta_gestao.sql',
+  'supabase/migrations/20261126000033_bi_ajustes.sql',
   'supabase/teste-local/10_semente.sql',
 ];
 for (const f of arquivos) {
