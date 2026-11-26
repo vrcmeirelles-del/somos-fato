@@ -14,6 +14,7 @@ export const AMBIENTES: Ambiente[] = [
   { id: 'inteligencia', rotulo: 'Central de Inteligência', icone: LayoutDashboard, itens: [
     { rotulo: 'Painel executivo', rota: (i) => `/ies/${i}/inteligencia`, icone: BarChart3 },
     { rotulo: 'Performance e gargalos (MAIM)', rota: (i) => `/ies/${i}/performance`, icone: Gauge, papeis: ['gestor', 'reitoria', 'coordenador', 'comercial'] },
+    { rotulo: 'Pesquisas e NPS', rota: (i) => `/ies/${i}/pesquisas`, icone: ClipboardList, papeis: ['gestor', 'reitoria', 'coordenador'] },
     { rotulo: 'Fila de intervenções (MAIM)', rota: (i) => `/ies/${i}/intervencoes`, icone: Activity, papeis: OPERACAO },
   ] },
   { id: 'planejamento', rotulo: 'Planejamento Estratégico', icone: Target, itens: [

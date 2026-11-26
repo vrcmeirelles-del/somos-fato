@@ -102,6 +102,7 @@ export function Portal() {
       </Secao>
       <PortalDocumentos token={token} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
       <PortalSeletivo token={token} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
+      <PortalPesquisas token={token} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
       <PortalRematricula token={token} nome={d.nome} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
       <PortalBolsas token={token} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
       <PortalMatricula token={token} nome={d.nome} fazer={fazer} enviando={acao.enviando} recarga={recarga} />
@@ -192,6 +193,37 @@ function PortalSeletivo({ token, fazer, enviando, recarga }: { token: string; fa
           </div>);
       })}
       {d.eventos.length > 0 && <ul className="mt-2 text-sm">{d.eventos.map((ev, i) => <li key={i}>{ev.titulo} · {rotulo(ev.tipo)} · {new Date(ev.inicio).toLocaleString('pt-BR')}{ev.local ? ` · ${ev.local}` : ''} <Chip>{rotulo(ev.status)}</Chip></li>)}</ul>}
+    </Secao>
+  );
+}
+
+function PortalPesquisas({ token, fazer, enviando, recarga }: { token: string; fazer: Fazer; enviando: boolean; recarga: number }) {
+  const r = useCarregar(() => publico.pesquisas(token).catch(() => []), [token, recarga]);
+  const [resp, setResp] = useState<Record<string, Record<string, string>>>({});
+  if (!r.dados?.length) return null;
+  return (
+    <Secao titulo="Sua opinião">
+      {r.dados.map((q) => {
+        const k = `${q.pesquisa_id}-${q.oportunidade_id}`; const v = resp[k] ?? {};
+        const set = (id: string, x: string) => setResp({ ...resp, [k]: { ...v, [id]: x } });
+        return (
+          <form key={k} className="mb-3 space-y-3 text-sm" onSubmit={(e) => { e.preventDefault(); void fazer(async () => (await publico.responderPesquisa(token, q.pesquisa_id, q.oportunidade_id, v)).mensagem); }}>
+            <p className="font-medium">{q.nome} · {q.curso}</p>
+            {q.introducao && <p className="text-xs">{q.introducao}</p>}
+            {q.perguntas.map((p) => (
+              <fieldset key={p.id}><legend className="mb-1">{p.texto}</legend>
+                {p.tipo === 'nps' || p.tipo === 'escala5' ? (
+                  <div className="flex flex-wrap gap-1">{(p.tipo === 'nps' ? Array.from({ length: 11 }, (_, i) => String(i)) : ['1', '2', '3', '4', '5']).map((n) => (
+                    <label key={n} className={`cursor-pointer rounded border px-2.5 py-1 ${v[p.id] === n ? 'border-tec bg-tec text-white' : 'border-linha'}`}>
+                      <input type="radio" className="sr-only" name={`${k}-${p.id}`} value={n} checked={v[p.id] === n} onChange={() => set(p.id, n)} />{n}</label>))}</div>
+                ) : p.tipo === 'opcao' ? (
+                  <div className="space-y-1">{p.opcoes?.map((o) => <label key={o} className="flex items-center gap-2"><input type="radio" name={`${k}-${p.id}`} checked={v[p.id] === o} onChange={() => set(p.id, o)} />{o}</label>)}</div>
+                ) : <textarea className="campo" maxLength={1000} value={v[p.id] ?? ''} onChange={(e) => set(p.id, e.target.value)} />}
+              </fieldset>))}
+            <button className="btn btn-sec btn-peq" disabled={enviando || !Object.values(v).some(Boolean)}>Enviar respostas</button>
+            <p className="nota">Suas respostas aparecem para a instituição só de forma agregada, sem seu nome.</p>
+          </form>);
+      })}
     </Secao>
   );
 }

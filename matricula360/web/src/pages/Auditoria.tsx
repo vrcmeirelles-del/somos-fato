@@ -115,6 +115,8 @@ export function descreverEvento(e: Pick<EventoAuditoria, 'acao' | 'dados' | 'ent
     // Matrícula online, comunicação e integrações (migração 21)
     case 'contrato.publicar': return `Contrato de matrícula versão ${s('versao')} publicado.`;
     case 'matricula.aceite': return `Matrícula aceita no portal (contrato versão ${s('contrato_versao')})${d.menor_de_18 ? ' com representante legal' : ''}${d.confirmacao === 'simulacao' ? '; código em modo simulação' : ''}.`;
+    // Pesquisas (migração 28)
+    case 'pesquisa.salvar': return d.status ? `Pesquisa ${s('status') === 'ativa' ? 'ativada' : 'encerrada'}.` : `Pesquisa ${d.novo ? 'criada' : 'editada'}${s('nome') ? `: ${s('nome')}` : ''}.`;
     // Captação em campo (migração 27)
     case 'campo.escola': return `Escola ${d.novo ? 'cadastrada' : 'atualizada'}${s('nome') ? `: ${s('nome')}` : ''}.`;
     case 'campo.visita': return `Visita ${d.novo ? 'agendada' : 'atualizada'}${s('titulo') ? `: ${s('titulo')}` : ''}${s('status') ? ` (${rotulo(s('status')).toLowerCase()})` : ''}.`;

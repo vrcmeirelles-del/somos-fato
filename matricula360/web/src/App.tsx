@@ -23,6 +23,7 @@ import { SucessoAluno } from './pages/SucessoAluno';
 import { Seguranca } from './pages/Seguranca';
 import { CampoCaptacao } from './pages/Campo';
 import { ModoFeira } from './pages/ModoFeira';
+import { Pesquisas } from './pages/Pesquisas';
 import { Funis } from './pages/Funis';
 import { Intervencoes } from './pages/Intervencoes';
 import { Login } from './pages/Login';
@@ -92,6 +93,7 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
     <Routes>
       <Route path="/ies/:ies/inteligencia" element={<ExigeIes><Central /></ExigeIes>} />
       <Route path="/ies/:ies/performance" element={<ExigeIes><Performance /></ExigeIes>} />
+      <Route path="/ies/:ies/pesquisas" element={<ExigeIes><Pesquisas /></ExigeIes>} />
       <Route path="/ies/:ies/intervencoes" element={<ExigeIes><Intervencoes abrirDetalhe={abrir} /></ExigeIes>} />
       <Route path="/ies/:ies/planejamento" element={<ExigeIes><Planejamento /></ExigeIes>} />
       <Route path="/ies/:ies/campanhas" element={<ExigeIes><Campanhas /></ExigeIes>} />

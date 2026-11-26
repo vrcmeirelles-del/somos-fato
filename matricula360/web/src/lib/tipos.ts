@@ -268,3 +268,10 @@ export interface Visita { id: number; titulo: string; tipo: string; data: string
   publico_estimado: number | null; campanha: string | null; leads: number; inscritos: number; ingressos: number; capturados: number }
 export interface Campo { pode_registrar: boolean; escolas: Escola[]; visitas: Visita[] }
 export interface LeadCampo { id_local: string; nome: string; email?: string; telefone?: string; curso_id: number; coorte: string; consentimento: boolean; consentimento_hash: string; capturado_em: string; motivo?: string }
+
+// Pesquisas (migração 28)
+export interface PerguntaPesquisa { id: string; tipo: 'nps' | 'escala5' | 'opcao' | 'texto'; texto: string; opcoes?: string[] }
+export interface Pesquisa { id: number; nome: string; publico: string; introducao: string | null; perguntas: PerguntaPesquisa[]; min_respostas: number; status: string; criado_em: string;
+  resultado: { respostas: number; elegiveis: number; taxa_pct: number | null; suficiente: boolean; motivo?: string; nps?: number | null; por_pergunta?: Record<string, Record<string, number> | string[]> } }
+export interface Pesquisas { pode_gerir: boolean; aviso: string; pesquisas: Pesquisa[] }
+export interface PortalPesquisa { pesquisa_id: number; oportunidade_id: number; curso: string; nome: string; introducao: string | null; perguntas: PerguntaPesquisa[] }
