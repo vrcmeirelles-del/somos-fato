@@ -1,7 +1,7 @@
 {
-  "em": "2026-11-26T12:58:02.766Z",
+  "em": "2026-11-26T13:18:18.807Z",
   "projeto": "https://jbimijcvvekomovodfze.supabase.co",
-  "total": 111,
+  "total": 117,
   "falhas": 0,
   "resultados": [
     {
@@ -9,7 +9,7 @@
       "dispositivo": "desktop",
       "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
       "ok": true,
-      "detalhe": "Oportunidades39Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte5.1%Decididas: 50.0%"
+      "detalhe": "Oportunidades41Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte4.9%Decididas: 50.0%"
     },
     {
       "perfil": "gestor",
@@ -294,6 +294,48 @@
     {
       "perfil": "gestor",
       "dispositivo": "desktop",
+      "passo": "P2: Recuperação com elegibilidade LGPD, protocolos e sprints",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "recuperacao: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "recuperacao: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P2: Academia com trilhas, rubrica publicada e aviso de avaliação humana",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "academia: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "academia: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
       "passo": "R09: /ies/2/crm não mostra dados da Beta",
       "ok": true,
       "detalhe": ""
@@ -373,7 +415,7 @@
       "dispositivo": "desktop",
       "passo": "CRM: busca por nome filtra o quadro",
       "ok": true,
-      "detalhe": "16 cartões"
+      "detalhe": "18 cartões"
     },
     {
       "perfil": "comercial",
@@ -590,7 +632,7 @@
       "dispositivo": "celular",
       "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
       "ok": true,
-      "detalhe": "Oportunidades40Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte5.0%Decididas: 50.0%"
+      "detalhe": "Oportunidades42Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte4.8%Decididas: 50.0%"
     },
     {
       "perfil": "gestor",

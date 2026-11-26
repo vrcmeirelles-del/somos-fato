@@ -259,6 +259,19 @@ Verificações novas no navegador:
 
 Falso negativo corrigido no roteiro de teste: a nota do funil padrão ("migração 13") era confundida com o aviso de módulo indisponível. A detecção passou a usar o texto exato "Disponível após a migração N".
 
+## Recuperação e Aceleração (migração 15) e Academia de Captação (migração 16) — 26/11/2026
+Aplicadas pelo usuário, nesta ordem. Conferido no banco real: `rpc_recuperacao` e `rpc_academia` existem e recusam acesso anônimo (42501).
+
+| Teste | Resultado |
+|---|---|
+| Banco local (migrações 1–16) | 430/430 |
+| Bateria remota gerada | 437/437, tudo desfeito ao final |
+| Navegador no site publicado (build idêntica ao repositório) | **117/117** |
+
+Verificações novas no navegador:
+- Recuperação com elegibilidade LGPD, protocolos e sprints;
+- Academia com trilhas iniciais, rubrica publicada e aviso de avaliação humana.
+
 ## Critérios de aceite da Bíblia-Mestra
 
 | Critério | Onde está provado |
