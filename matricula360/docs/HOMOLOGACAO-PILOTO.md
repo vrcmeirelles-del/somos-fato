@@ -285,6 +285,32 @@ Com esta migração, os dez ambientes da Bíblia v0.2 estão implementados e hom
 
 Domínio próprio: depois de um período fora do ar (falha de handshake TLS), `https://matricula360.somosfato.com.br` voltou a responder; homologação completa nele: **120/120**. Ficam pendentes apenas as integrações externas, que dependem de autorização.
 
+## Fase P4: captação digital ponta a ponta (migrações 18–21) — 26/11/2026
+Aplicadas pelo usuário na ordem 018 → 019 → 020 → 021. Conferido no banco real:
+- `rpc_publico_formulario` responde ao acesso anônimo ("Formulário não encontrado");
+- as funções da equipe recusam o acesso anônimo (42501).
+
+| Teste | Resultado |
+|---|---|
+| Banco local (migrações 1–21) | 567/567 |
+| Bateria remota gerada | 579/579, tudo desfeito ao final |
+| Unitários da interface | 18/18, incluindo o teste que impede evento de auditoria sem tradução |
+| Navegador no domínio próprio (build idêntica ao repositório) | **140/140** |
+
+**Fluxo público verificado no navegador**, em celular e sem login:
+1. o gestor publica um formulário;
+2. um visitante anônimo se inscreve e recebe o link pessoal;
+3. o portal mostra a inscrição, os documentos e a privacidade;
+4. o visitante envia um PDF;
+5. o portal fica sem rolagem horizontal e sem erros de console.
+
+Também foram verificadas as páginas novas da equipe: formulários, eventos, processo seletivo, comunicação e integrações.
+
+**Achados e correções desta rodada:**
+- **Auditoria:** eventos das migrações 12 a 21 apareciam em código técnico. Todos foram traduzidos, e um teste unitário passou a ler as migrações e falhar se algum código ficar sem tradução.
+- **Build de produção:** a primeira versão desse teste quebrou a build (tipos do Node). O Render manteve a versão anterior no ar, e a correção foi publicada em seguida. A partir de agora, a build completa roda antes de cada envio.
+- **Teste do portal:** a primeira falha nele era de tempo de carregamento; o roteiro passou a esperar a seção de documentos.
+
 ## Critérios de aceite da Bíblia-Mestra
 
 | Critério | Onde está provado |

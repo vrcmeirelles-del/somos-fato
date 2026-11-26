@@ -1,7 +1,7 @@
 {
-  "em": "2026-11-26T14:02:40.844Z",
+  "em": "2026-11-26T15:58:16.264Z",
   "projeto": "https://jbimijcvvekomovodfze.supabase.co",
-  "total": 120,
+  "total": 140,
   "falhas": 0,
   "resultados": [
     {
@@ -9,7 +9,7 @@
       "dispositivo": "desktop",
       "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
       "ok": true,
-      "detalhe": "Oportunidades44Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte4.5%Decididas: 50.0%"
+      "detalhe": "Oportunidades50Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte4.0%Decididas: 50.0%"
     },
     {
       "perfil": "gestor",
@@ -357,6 +357,146 @@
     {
       "perfil": "gestor",
       "dispositivo": "desktop",
+      "passo": "P4: página Formulários de captação",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "formularios: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "formularios: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P4: página Eventos e visitas",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "eventos: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "eventos: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P4: página Processo seletivo",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "seletivo: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "seletivo: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P4: página Comunicação e réguas",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "comunicacao: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "comunicacao: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "P4: página Integrações e dados",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "integracoes: sem rolagem horizontal",
+      "ok": true,
+      "detalhe": "excesso 0px"
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
+      "passo": "integracoes: sem erros de console/CSP",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "P4: formulário público abre sem login",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "P4: inscrição pública cria o lead e entrega o link pessoal",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "P4: portal do candidato mostra inscrição, documentos e privacidade",
+      "ok": true,
+      "detalhe": "{\"inscricao\":true,\"documentos\":true,\"lgpd\":true}"
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "P4: candidato envia documento pelo portal",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "publico",
+      "dispositivo": "celular",
+      "passo": "P4: portal sem rolagem horizontal e sem erros de console",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "gestor",
+      "dispositivo": "desktop",
       "passo": "R09: /ies/2/crm não mostra dados da Beta",
       "ok": true,
       "detalhe": ""
@@ -436,7 +576,7 @@
       "dispositivo": "desktop",
       "passo": "CRM: busca por nome filtra o quadro",
       "ok": true,
-      "detalhe": "21 cartões"
+      "detalhe": "25 cartões"
     },
     {
       "perfil": "comercial",
@@ -653,7 +793,7 @@
       "dispositivo": "celular",
       "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
       "ok": true,
-      "detalhe": "Oportunidades45Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte4.4%Decididas: 50.0%"
+      "detalhe": "Oportunidades52Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte3.9%Decididas: 50.0%"
     },
     {
       "perfil": "gestor",
