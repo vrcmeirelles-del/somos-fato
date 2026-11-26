@@ -181,10 +181,14 @@ try {
           const nomes = await page.locator('.cartao strong').allTextContents();
           registrar('comercial', disp, 'CRM: busca por nome filtra o quadro', nomes.length > 0 && nomes.every((n) => n.includes('Teste automatizado')), `${nomes.length} cartões`);
           const cartao = page.locator('.coluna[aria-label="Inscrito"] .cartao:has-text("Teste automatizado E2E")').first();
-          await cartao.dragTo(page.locator('.coluna[aria-label="Novo"]'));
+          // Arrasto com o mouse em passos (o atalho dragTo não dispara os eventos HTML5 de forma confiável).
+          const de = await cartao.boundingBox(); const para = await page.locator('.coluna[aria-label="Novo"]').boundingBox();
+          await page.mouse.move(de.x + de.width / 2, de.y + de.height / 2); await page.mouse.down();
+          await page.mouse.move(de.x + de.width / 2 + 10, de.y + de.height / 2 + 10, { steps: 5 });
+          await page.mouse.move(para.x + para.width / 2, para.y + 60, { steps: 15 }); await page.mouse.up();
           await page.waitForSelector('main [role=alert]', { timeout: 15000 }).catch(() => null);
           registrar('comercial', disp, 'CRM: arrastar para transição inválida é recusado pelo servidor',
-            (await page.locator('main [role=alert]').count()) > 0 && (await page.locator('.coluna[aria-label="Inscrito"] .cartao:has-text("Teste automatizado E2E")').count()) > 0);
+            (await page.locator('main [role=alert]:has-text("Transição inválida")').count()) > 0 && (await page.locator('.coluna[aria-label="Inscrito"] .cartao:has-text("Teste automatizado E2E")').count()) > 0);
           await ir(page, 'Agenda comercial');
           await page.waitForSelector('text=retornar sobre a proposta (E2E)', { timeout: 15000 }).catch(() => null);
           registrar('comercial', disp, 'CRM: agenda comercial lista o agendamento', (await page.textContent('main')).includes('retornar sobre a proposta (E2E)'));

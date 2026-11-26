@@ -32,7 +32,10 @@ export function Crm({ abrirDetalhe, versao }: { abrirDetalhe: (id: number) => vo
   const recarregar = () => setRecarga((n) => n + 1);
   const podeMover = tem('comercial', 'gestor');
   const acao = useAcao();
-  const [arrasto, setArrasto] = useState<Arrasto | null>(null);
+  // Referência síncrona: eventos de dragover podem chegar antes de o React aplicar o estado do dragstart.
+  const arrastoRef = useRef<Arrasto | null>(null);
+  const [arrasto, setArrastoEstado] = useState<Arrasto | null>(null);
+  const setArrasto = (a: Arrasto | null) => { arrastoRef.current = a; setArrastoEstado(a); };
   const [alvo, setAlvo] = useState<Etapa | null>(null);
   const [perda, setPerda] = useState<Arrasto | null>(null);
 
@@ -42,7 +45,7 @@ export function Crm({ abrirDetalhe, versao }: { abrirDetalhe: (id: number) => vo
     return `${a.nome}: ${rotulo(a.de)} → ${rotulo(r.etapa)}.`;
   });
   const soltar = (para: Etapa) => {
-    const a = arrasto; setArrasto(null); setAlvo(null);
+    const a = arrastoRef.current; setArrasto(null); setAlvo(null);
     if (!a || a.de === para) return;
     if (para === 'perdido') { setPerda(a); return; }
     void mover(a, para);
@@ -88,11 +91,12 @@ export function Crm({ abrirDetalhe, versao }: { abrirDetalhe: (id: number) => vo
       {colunas.dados && filtrosAtivos && colunas.dados.every(([, p]) => p.total === 0) && <Vazio texto="Nenhuma oportunidade com estes filtros." detalhe="Ajuste a busca ou limpe os filtros." />}
       <div role="list" className="grid auto-cols-[minmax(230px,1fr)] grid-flow-col gap-2.5 overflow-x-auto pb-2">
         {colunas.dados?.map(([etapa, pag]) => {
-          const aceita = podeMover && arrasto != null && arrasto.de !== etapa && ETAPAS_ARRASTAVEIS.includes(etapa);
+          const aceitaAgora = () => { const a = arrastoRef.current; return podeMover && a != null && a.de !== etapa && ETAPAS_ARRASTAVEIS.includes(etapa); };
+          const aceita = arrasto != null && aceitaAgora();
           return (
             <section key={etapa} role="listitem" aria-label={rotulo(etapa)}
               className={`coluna min-h-[120px] rounded-xl p-2.5 transition ${alvo === etapa && aceita ? 'bg-tec-100 ring-2 ring-tec-400' : 'bg-[#e8eef5]'}`}
-              onDragOver={(e) => { if (aceita) { e.preventDefault(); setAlvo(etapa); } }}
+              onDragOver={(e) => { if (aceitaAgora()) { e.preventDefault(); setAlvo(etapa); } }}
               onDragLeave={() => setAlvo((x) => (x === etapa ? null : x))}
               onDrop={(e) => { e.preventDefault(); soltar(etapa); }}>
               <h2 className="mb-2 flex justify-between text-sm font-semibold"><span>{rotulo(etapa)}</span><span>{pag.total}</span></h2>
