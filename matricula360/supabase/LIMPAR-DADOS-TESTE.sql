@@ -36,6 +36,25 @@ begin
     'oportunidades_que_permanecem', (select count(*) from public.oportunidades where not (id = any (ops_t))));
 
   -- dependências das oportunidades e pessoas de teste (ordem respeita as chaves estrangeiras)
+  -- tabelas das migrações 22 a 30 (só existem depois delas; to_regclass evita erro em banco anterior)
+  if to_regclass('public.codigos_aceite') is not null then delete from public.codigos_aceite where oportunidade_id = any (ops_t); end if;
+  if to_regclass('public.solicitacoes_bolsa') is not null then delete from public.solicitacoes_bolsa where oportunidade_id = any (ops_t); end if;
+  if to_regclass('public.casos') is not null then
+    delete from public.casos_eventos where caso_id in (select id from public.casos where oportunidade_id = any (ops_t));
+    delete from public.casos where oportunidade_id = any (ops_t);
+  end if;
+  if to_regclass('public.rematriculas') is not null then delete from public.rematriculas where oportunidade_id = any (ops_t); end if;
+  if to_regclass('public.captacoes_campo') is not null then delete from public.captacoes_campo where oportunidade_id = any (ops_t); end if;
+  if to_regclass('public.respostas_pesquisa') is not null then delete from public.respostas_pesquisa where oportunidade_id = any (ops_t); end if;
+  if to_regclass('public.avaliacoes_banca') is not null then
+    delete from public.avaliacoes_banca where candidatura_id in (select id from public.candidaturas where oportunidade_id = any (ops_t));
+    delete from public.aproveitamentos where oportunidade_id = any (ops_t);
+  end if;
+  if to_regclass('public.pendencias_financeiras') is not null then
+    delete from public.pendencias_financeiras where oportunidade_id = any (ops_t);
+    update public.oportunidades set egresso_origem_id = null where egresso_origem_id in (select id from public.egressos where oportunidade_id = any (ops_t));
+    delete from public.egressos where oportunidade_id = any (ops_t);
+  end if;
   delete from public.documentos_conteudo where documento_id in (select id from public.documentos where oportunidade_id = any (ops_t));
   delete from public.documentos where oportunidade_id = any (ops_t);
   delete from public.aceites_matricula where oportunidade_id = any (ops_t);
