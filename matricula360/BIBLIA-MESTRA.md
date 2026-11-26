@@ -228,6 +228,21 @@ Para gestor e reitoria com abrangência da instituição. Mostra o consolidado d
 - **Alertas executivos por regra fixa:** atingimento abaixo de 60% (crítico) ou de 80%; coorte sem meta; inadimplência acima de 10%; casos vencidos; rematrícula abaixo da meta; desconto médio acima de 25%; payback acima de 6 mensalidades; NPS negativo.
 - **Regras de cálculo:** só números agregados, sem dado pessoal. Taxas consolidadas são recalculadas sobre as somas, nunca como média de percentuais. Sem base de cálculo, o indicador aparece como N/D com o motivo.
 - **Saídas:** exportação em CSV e impressão (ou PDF).
+- **Gráficos (migração 34):**
+  - ingressos por coorte contra a meta (últimas 4 coortes);
+  - evolução semanal de matrículas e ingressos;
+  - leads por coorte e funil da coorte;
+  - leads por origem;
+  - ingressos por curso contra a meta;
+  - motivos de perda;
+  - inadimplência por faixa de atraso;
+  - casos do aluno por motivo;
+  - renúncia por programa de bolsa.
+- **Regras dos gráficos:**
+  - SVG próprio, sem biblioteca externa, desenhado na largura real da tela;
+  - cores validadas para daltonismo, uma escala por gráfico;
+  - legenda, valores escritos, leitura ao passar o mouse e tabela para leitores de tela;
+  - no consolidado, os dados das IES são somados.
 
 ### 13.7 Diretriz de automação e IA (decisão do responsável, 26/11/2026)
 > "Tudo que for feito pode ser feito por algoritmo, automações, você faz. Deixar a IA só para ajuste fino. É por isso que eu travei a IA na Bíblia."

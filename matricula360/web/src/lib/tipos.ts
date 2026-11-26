@@ -309,7 +309,12 @@ export interface BiIes { ies_id: number; nome: string; atual: CentralTotais; ant
   inadimplencia: { alunos: number; inadimplentes: number; pct: number | null };
   rematricula: { periodo: string; status: string; meta_pct: number | null; elegiveis: number; aceitas: number; recusadas: number; taxa_pct: number | null } | null;
   casos: { abertos: number; vencidos: number; resolvidos: number; horas_medias_resolucao: number | null } | null;
-  nps: { pesquisa: string; publico: string; nps: number; respostas: number } | null }
+  nps: { pesquisa: string; publico: string; nps: number; respostas: number } | null;
+  graficos?: BiGraficos }
+export interface BiGraficos { evolucao: Central['evolucao']; funil: Central['funil']; por_origem: Grupo[]; por_curso: Grupo[]; por_campanha?: Grupo[] | null;
+  serie_coortes: { coorte: string; oportunidades: number; ingressantes: number; meta: number | null }[];
+  perdas: { motivo: string; quantidade: number }[]; aging: { faixa: string; quantidade: number; valor_centavos: number }[];
+  casos_motivo: { motivo: string; quantidade: number }[]; bolsas_programa: { programa: string; tipo: string; aprovadas: number; renuncia_centavos: number }[] }
 export interface BiExecutivo { coorte: string; coorte_anterior: string; ies: BiIes[]; metodos: Record<string, string>;
   consolidado: { oportunidades: number; matriculas_comerciais: number; ingressantes: number; cancelamentos: number; meta: number | null; atingimento: number | null;
     receita_mensal_ingressantes_centavos: number; renuncia_mensal_estimada_centavos: number; anterior_oportunidades: number; anterior_ingressantes: number;

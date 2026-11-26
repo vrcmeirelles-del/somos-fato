@@ -7,7 +7,9 @@ import { baixarTexto } from '../lib/contrato';
 import { moeda } from '../lib/formato';
 import { useCarregar } from '../lib/hooks';
 import type { ErroApi } from '../lib/supabase';
-import type { BiIes } from '../lib/tipos';
+import { BarraSegmentada, GraficoColunas, GraficoLinhas } from '../components/GraficosBi';
+import { rotulo } from '../lib/formato';
+import type { BiGraficos, BiIes } from '../lib/tipos';
 
 const ND = 'N/D';
 const fmtPct = (x: number | null | undefined, ja100 = false) => (x == null ? ND : `${(ja100 ? x : x * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`);
@@ -39,21 +41,22 @@ function Medidor({ rotulo, valor, max, texto }: { rotulo: string; valor: number 
     <li className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-2 text-sm">
       <span className="truncate" title={rotulo}>{rotulo}</span>
       <span className="h-2.5 rounded-full bg-tec-100" role="img" aria-label={`${rotulo}: ${texto}`} title={`${rotulo}: ${texto}`}>
-        <span className="block h-2.5 rounded-full bg-tec" style={{ width: `${p}%` }} /></span>
+        <span className="block h-2.5 rounded-full bg-[#257de0]" style={{ width: `${p}%` }} /></span>
       <span className="tabular-nums">{texto}</span>
     </li>
   );
 }
 
 // Ranking em barras horizontais, uma cor (magnitude), maior primeiro, valor escrito ao lado.
-function Ranking({ itens }: { itens: { rotulo: string; valor: number; texto: string }[] }) {
+function Ranking({ itens, ordenar = true }: { itens: { rotulo: string; valor: number; texto: string }[]; ordenar?: boolean }) {
   const max = Math.max(1, ...itens.map((i) => i.valor));
   return (
-    <ul className="space-y-1.5">{[...itens].sort((a, b) => b.valor - a.valor).map((i) => (
-      <li key={i.rotulo} className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-2 text-sm">
+    <ul className="space-y-2 sm:space-y-1.5">{(ordenar ? [...itens].sort((a, b) => b.valor - a.valor) : itens).map((i) => (
+      <li key={i.rotulo} className="grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-0.5 text-sm sm:grid-cols-[minmax(0,11rem)_1fr_auto]">
         <span className="truncate" title={i.rotulo}>{i.rotulo}</span>
-        <span className="h-3" title={`${i.rotulo}: ${i.texto}`}><span className="block h-3 rounded-r bg-tec" style={{ width: `${(100 * i.valor) / max}%`, minWidth: i.valor ? 3 : 0 }} /></span>
-        <span className="tabular-nums">{i.texto}</span>
+        <span className="col-span-2 row-start-2 h-3 sm:col-span-1 sm:row-start-auto" title={`${i.rotulo}: ${i.texto}`}>
+          <span className="block h-3 rounded-r bg-[#257de0]" style={{ width: `${(100 * i.valor) / max}%`, minWidth: i.valor ? 3 : 0 }} /></span>
+        <span className="col-start-2 row-start-1 text-right tabular-nums sm:col-start-auto sm:row-start-auto">{i.texto}</span>
       </li>))}</ul>
   );
 }
@@ -79,6 +82,75 @@ function csv(ies: BiIes[], coorte: string): string {
     n(i.receita.ticket_medio_centavos, 0.01), n(i.receita.desconto_medio_pct), n(i.bolsas.renuncia_mensal_estimada_centavos, 0.01), n(i.bolsas.ingressos_com_beneficio_pct),
     n(i.inadimplencia.pct), n(i.rematricula?.taxa_pct), i.casos?.abertos ?? 0, i.casos?.vencidos ?? 0, i.nps?.nps ?? '', i.alertas.map((a) => a.texto).join(' | ')]);
   return '﻿' + [cab, ...linhas].map((l) => l.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+}
+
+// Soma os dados dos gráficos de várias IES (contagens e valores; nunca média de percentuais).
+function somar<T extends object>(listas: T[][], chave: keyof T, campos: (keyof T)[]): T[] {
+  const m = new Map<string, T>();
+  for (const l of listas) for (const it of l ?? []) {
+    const k = String(it[chave]); const atual = m.get(k);
+    if (!atual) { m.set(k, { ...it }); continue; }
+    for (const c of campos) (atual as Record<string, unknown>)[c as string] = (Number(atual[c]) || 0) + (Number(it[c]) || 0);
+  }
+  return [...m.values()];
+}
+function consolidarGraficos(ies: BiIes[]): BiGraficos | null {
+  const g = ies.map((i) => i.graficos).filter(Boolean) as BiGraficos[];
+  if (!g.length) return null;
+  if (g.length === 1) return g[0]!;
+  const serie = somar(g.map((x) => x.serie_coortes), 'coorte', ['oportunidades', 'ingressantes']).map((s) => ({
+    ...s, meta: g.every((x) => x.serie_coortes.find((y) => y.coorte === s.coorte)?.meta != null) ? g.reduce((a, x) => a + (x.serie_coortes.find((y) => y.coorte === s.coorte)?.meta ?? 0), 0) : null }));
+  return { serie_coortes: serie, evolucao: somar(g.map((x) => x.evolucao), 'semana', ['oportunidades', 'matriculas_comerciais', 'ingressantes']).sort((a, b) => a.semana.localeCompare(b.semana)),
+    funil: somar(g.map((x) => x.funil), 'etapa', ['quantidade']).map((f) => ({ ...f, conversao_da_anterior: null })),
+    por_origem: somar(g.map((x) => x.por_origem), 'chave', ['oportunidades', 'ingressantes']).map((o) => ({ ...o, conversao: null })),
+    por_curso: g.flatMap((x, i) => x.por_curso.map((c) => ({ ...c, chave: `${c.chave} (${ies[i]?.nome})` }))),
+    perdas: somar(g.map((x) => x.perdas), 'motivo', ['quantidade']).sort((a, b) => b.quantidade - a.quantidade),
+    aging: somar(g.map((x) => x.aging), 'faixa', ['quantidade', 'valor_centavos']),
+    casos_motivo: somar(g.map((x) => x.casos_motivo), 'motivo', ['quantidade']),
+    bolsas_programa: g.flatMap((x, i) => x.bolsas_programa.map((b) => ({ ...b, programa: `${b.programa} (${ies[i]?.nome})` }))) };
+}
+
+function PainelGraficos({ g }: { g: BiGraficos }) {
+  const sem = (s: string) => new Date(`${s}T12:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Cartao titulo="Ingressos por coorte, contra a meta">
+        <GraficoColunas titulo="Ingressos por coorte, contra a meta" nomeValor="Ingressos" nomeReferencia="Meta"
+          itens={g.serie_coortes.map((s) => ({ rotulo: s.coorte, valor: s.ingressantes, referencia: s.meta }))} />
+      </Cartao>
+      <Cartao titulo="Evolução semanal da coorte (12 semanas)">
+        {g.evolucao?.length ? <GraficoLinhas titulo="Evolução semanal: matrículas comerciais e ingressos" x={g.evolucao.map((e) => sem(e.semana))}
+          series={[{ nome: 'Matrículas', valores: g.evolucao.map((e) => e.matriculas_comerciais) }, { nome: 'Ingressos', valores: g.evolucao.map((e) => e.ingressantes) }]} />
+          : <p className="nota">Sem movimento nas últimas 12 semanas.</p>}
+      </Cartao>
+      <Cartao titulo="Leads por coorte">
+        <GraficoColunas titulo="Leads por coorte" nomeValor="Leads" itens={g.serie_coortes.map((s) => ({ rotulo: s.coorte, valor: s.oportunidades }))} />
+      </Cartao>
+      <Cartao titulo="Funil da coorte (alcance por etapa)">
+        <Ranking ordenar={false} itens={(g.funil ?? []).map((f) => ({ rotulo: rotulo(f.etapa), valor: f.quantidade, texto: `${fmtN(f.quantidade)}${f.conversao_da_anterior != null ? ` · ${fmtPct(f.conversao_da_anterior)} da etapa anterior` : ''}` }))} />
+      </Cartao>
+      <Cartao titulo="Leads por origem (e ingressos)">
+        {g.por_origem?.length ? <Ranking itens={g.por_origem.map((o) => ({ rotulo: rotulo(o.chave), valor: o.oportunidades, texto: `${fmtN(o.oportunidades)} leads · ${fmtN(o.ingressantes)} ingresso(s)` }))} /> : <p className="nota">Sem leads na coorte.</p>}
+      </Cartao>
+      <Cartao titulo="Ingressos por curso, contra a meta">
+        {g.por_curso?.length ? <ul className="space-y-2">{g.por_curso.map((c) => <Medidor key={c.chave} rotulo={c.chave} valor={c.meta ? c.ingressantes / c.meta : null} max={1}
+          texto={c.meta ? `${c.ingressantes}/${c.meta} (${fmtPct(c.ingressantes / c.meta)})` : `${c.ingressantes} · sem meta`} />)}</ul> : <p className="nota">Sem cursos com movimento.</p>}
+      </Cartao>
+      <Cartao titulo="Por que perdemos (motivos registrados na coorte)">
+        {g.perdas?.length ? <Ranking itens={g.perdas.map((p) => ({ rotulo: p.motivo, valor: p.quantidade, texto: fmtN(p.quantidade) }))} /> : <p className="nota">Nenhuma perda registrada na coorte.</p>}
+      </Cartao>
+      <Cartao titulo="Inadimplência por faixa de atraso">
+        <BarraSegmentada titulo="Pendências vencidas por faixa de atraso" partes={(g.aging ?? []).map((a) => ({ rotulo: a.faixa, valor: a.quantidade, detalhe: fmtMoeda(a.valor_centavos) }))} />
+      </Cartao>
+      <Cartao titulo="Casos do aluno abertos, por motivo">
+        {g.casos_motivo?.length ? <Ranking itens={g.casos_motivo.map((c) => ({ rotulo: rotulo(c.motivo), valor: c.quantidade, texto: fmtN(c.quantidade) }))} /> : <p className="nota">Nenhum caso aberto.</p>}
+      </Cartao>
+      <Cartao titulo="Bolsas aprovadas na coorte: renúncia mensal por programa">
+        {g.bolsas_programa?.length ? <Ranking itens={g.bolsas_programa.map((b) => ({ rotulo: b.programa, valor: b.renuncia_centavos, texto: `${fmtMoeda(b.renuncia_centavos)} · ${b.aprovadas} bolsa(s)` }))} />
+          : <p className="nota">Nenhuma bolsa aprovada para ingressos da coorte.</p>}
+      </Cartao>
+    </div>
+  );
 }
 
 // BI da alta gestão: consolidado da mantenedora e ciclo completo por IES, só com números agregados.
@@ -112,6 +184,7 @@ export function BiExecutivo() {
             <Tile rotulo="Alertas executivos" valor={fmtN(t.alertas)} />
           </div>
           <Cartao titulo="Alertas executivos (regras fixas)"><Alertas lista={alertas} /></Cartao>
+          {(() => { const g = consolidarGraficos(d.ies); return g ? <><h2 className="pt-2 text-lg font-semibold text-marinho">{d.ies.length > 1 ? 'Gráficos consolidados' : 'Gráficos'}</h2><PainelGraficos g={g} /></> : null; })()}
           {d.ies.length > 1 && (
             <div className="grid gap-4 lg:grid-cols-2">
               <Cartao titulo="Atingimento da meta por instituição">

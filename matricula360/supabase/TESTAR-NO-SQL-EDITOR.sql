@@ -2139,6 +2139,12 @@ update public.oportunidades set etapa = 'perdido', motivo_perda = 'Escolheu outr
   execute $x$ select teste.ok((select r->'consolidado'->>'ingressantes' = r->'ies'->0->'atual'->>'ingressantes' from (select public.rpc_bi_executivo('2027.1') r) x), 'consolidado de uma IES = a própria IES') $x$;
   execute $x$ select teste.ok((select (r->'ies'->0->'inadimplencia'->>'inadimplentes')::int >= 1 and jsonb_typeof(r->'ies'->0->'alertas') = 'array'
                  from (select public.rpc_bi_executivo('2027.1') r) x), 'inadimplência conta a pendência vencida e há lista de alertas') $x$;
+  execute $x$ select teste.ok((select jsonb_array_length(g->'serie_coortes') = 4 and g->'serie_coortes'->3->>'coorte' = '2027.1' and g->'serie_coortes'->0->>'coorte' = '2025.2'
+                   and (g->'serie_coortes'->3->>'meta')::int = 16 and jsonb_array_length(g->'aging') = 4 and jsonb_typeof(g->'evolucao') = 'array'
+                   and jsonb_typeof(g->'perdas') = 'array' and jsonb_typeof(g->'funil') = 'array'
+                 from (select public.rpc_bi_executivo('2027.1')->'ies'->0->'graficos' g) x), 'gráficos: 4 coortes com meta, faixas de atraso, evolução, perdas e funil') $x$;
+  execute $x$ select teste.ok((select (select sum((a->>'quantidade')::int) from jsonb_array_elements(g->'aging') a) >= 1
+                 from (select public.rpc_bi_executivo('2027.1')->'ies'->0->'graficos' g) x), 'faixas de atraso contam as pendências vencidas') $x$;
   execute $x$ reset role $x$;
   execute $x$ insert into public.escopos(usuario_id, ies_id, abrangencia, papel) values (teste.id('gestor_a'), 2, 'ies', 'gestor') $x$;
   execute $x$ set role authenticated $x$;
