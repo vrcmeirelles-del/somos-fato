@@ -331,6 +331,22 @@ Também foram verificadas as páginas novas da equipe: formulários, eventos, pr
 | Ausência de envio externo | `servico.test` › disparo sempre bloqueado e auditado; `api.test` › código sem rede de saída nem SDK de IA |
 | Pessoa contada uma vez no consolidado | `servico.test` › BI com duas matrículas da mesma pessoa = 1 ingressante |
 
+## Limpeza dos dados de teste (26/11/2026)
+
+Script: `supabase/LIMPAR-DADOS-TESTE.sql`. O usuário rodou a prévia e depois a execução no projeto `jbimijcvvekomovodfze`. A conferência foi feita depois, só com leitura, pelo login gestor.alfa:
+
+| Item | Resultado |
+|---|---|
+| Pessoas e oportunidades de teste apagadas | 36 / 36 |
+| Formulários de teste (`e2e-*`) apagados | 3 |
+| Propostas de teste em leads da semente | 3 apagadas |
+| Validações de teste em leads da semente | 66 apagadas; indicadores recalculados |
+| Oportunidades da semente preservadas | 24, das quais 16 são da Faculdade Alfa |
+| Buscas "Teste automatizado", "Homologação Supabase", "Público E2E" | 0 resultado |
+| Auditoria | 1 evento `manutencao.limpeza_testes` por IES |
+
+Cada nova homologação automática (`homologar-supabase.mjs`) recria dados de teste. Antes de uma demonstração, rode o script de limpeza de novo. Ele é idempotente.
+
 ## Riscos e limitações conhecidas
 
 1. **Peças do pacote v0.1 não chegaram.** Faltavam `server.mjs`, `src/motor.mjs`, os 16 testes, `db/schema-proposto.sql` e `docs/REFERENCIA-COMERCIAL360.md`. O motor foi reconstruído a partir do contrato que a demo usa; o esquema SQL foi feito do zero. Antes de qualquer atribuição específica a esses originais, é preciso conferi-los.
