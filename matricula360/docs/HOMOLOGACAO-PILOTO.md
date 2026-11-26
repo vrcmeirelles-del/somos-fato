@@ -351,7 +351,7 @@ Testes: banco local 603 aprovadas, com 45 novas em `106_testes_aceite_reforcado.
 
 ## Ondas A, B e C (migrações 23 a 30) — 26/11/2026
 
-Arquivo para o SQL Editor: `supabase/APLICAR-023-A-030-NO-SQL-EDITOR.sql`, que reúne as oito migrações numa transação. Os arquivos individuais 023 a 030 também estão disponíveis. **Aplicação pendente.**
+Arquivos para o SQL Editor: `supabase/APLICAR-023-NO-SQL-EDITOR.sql` a `APLICAR-030-...`, um por migração. O arquivo único de 148 KB chegou cortado ao SQL Editor (`language "p" does not exist`) e, por rodar numa transação só, não alterou nada. **Aplicadas em 26/11/2026, uma a uma.** Conferência no remoto: todas as RPCs novas respondem.
 
 | Verificação | Resultado |
 |---|---|
@@ -362,7 +362,9 @@ Arquivo para o SQL Editor: `supabase/APLICAR-023-A-030-NO-SQL-EDITOR.sql`, que r
 | Consolidado 1–30 aplicado do zero | sem erro |
 | Testes unitários da interface | 24/24 |
 | Build de produção (`tsc -b && vite build`) | sem erro |
-| Acessibilidade (axe-core, WCAG 2.1 AA, 54 telas, computador e celular) | 1 regra violada (tabelas roláveis sem teclado), corrigida em todas as tabelas. As telas novas serão auditadas depois da aplicação |
+| Acessibilidade (axe-core, WCAG 2.1 AA, 54 telas, computador e celular) | 1 regra violada (tabelas roláveis sem teclado), corrigida em todas as tabelas |
+| Depois da aplicação, no domínio próprio: 66 telas (31 rotas, computador e celular), incluindo as novas | 0 regra violada; nenhuma tela pede migração, mostra erro ou registra erro no console |
+| Homologação ponta a ponta no domínio próprio, depois das migrações 23–30 | 140/140 (regressão do que já existia) |
 
 Ficam desligados (custo, fornecedor ou contrato): WhatsApp e SMS reais, cobrança, consulta a MEC ou bancos e cálculo de repasse a parceiros.
 

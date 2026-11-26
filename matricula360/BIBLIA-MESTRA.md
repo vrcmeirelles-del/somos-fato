@@ -215,7 +215,7 @@ Detalhe e fontes em `docs/ANALISE-CONCORRENCIA.md` §4. Decisão do responsável
 | L18 Polos e parceiros | C (parte interna) | migração 30 | Sede, polo próprio e polo parceiro; meta; funil e receita mensal por unidade; acesso do parceiro pelo escopo de campus. **Repasse: só a regra em texto, sem cálculo de pagamento** |
 | L20 Egressos | C (parte interna) | migração 30 | Conclusão com consentimento e interesses; oferta de pós-graduação ou segunda graduação que cria oportunidade sem duplicar |
 
-**Aplicação:** `supabase/APLICAR-023-A-030-NO-SQL-EDITOR.sql`, aplicação pendente pelo responsável.
+**Aplicação:** migrações 23 a 30 aplicadas pelo responsável em 26/11/2026, um arquivo por migração. Depois disso: 140/140 na homologação ponta a ponta e 66 telas sem violação de acessibilidade nem erro.
 
 Integrações registradas (todas desligadas, com pedido de ativação auditado): e-mail, SMS, WhatsApp, cobrança, assinatura certificada, Meta Ads, Google Ads, TikTok Ads, sistema acadêmico e marketplaces de bolsas.
 

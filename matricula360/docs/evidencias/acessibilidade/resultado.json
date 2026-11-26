@@ -1,18 +1,8 @@
 {
-  "quando": "2026-11-26T17:11:51.907Z",
-  "base": "http://localhost:4197",
-  "telas": 54,
-  "regras_violadas": {
-    "scrollable-region-focusable": {
-      "impacto": "serious",
-      "ajuda": "Scrollable region must have keyboard access",
-      "telas": [
-        "celular:funis(1)",
-        "celular:academia(1)"
-      ],
-      "exemplo": ".tabela :: <div class=\"tabela my-3\">"
-    }
-  },
+  "quando": "2026-11-26T17:40:02.468Z",
+  "base": "https://matricula360.somosfato.com.br",
+  "telas": 66,
+  "regras_violadas": {},
   "por_tela": {
     "desktop:login": [],
     "desktop:inteligencia": [],
@@ -40,6 +30,12 @@
     "desktop:seguranca": [],
     "desktop:integracoes": [],
     "desktop:auditoria": [],
+    "desktop:pesquisas": [],
+    "desktop:campo": [],
+    "desktop:conversas": [],
+    "desktop:financeiro": [],
+    "desktop:polos": [],
+    "desktop:egressos": [],
     "desktop:portal-invalido": [],
     "celular:login": [],
     "celular:inteligencia": [],
@@ -52,29 +48,13 @@
     "celular:campanhas": [],
     "celular:crm": [],
     "celular:agenda": [],
-    "celular:funis": [
-      {
-        "id": "scrollable-region-focusable",
-        "impacto": "serious",
-        "ajuda": "Scrollable region must have keyboard access",
-        "nos": 1,
-        "exemplo": ".tabela :: <div class=\"tabela my-3\">"
-      }
-    ],
+    "celular:funis": [],
     "celular:seletivo": [],
     "celular:matriculas": [],
     "celular:propostas": [],
     "celular:bolsas": [],
     "celular:recuperacao": [],
-    "celular:academia": [
-      {
-        "id": "scrollable-region-focusable",
-        "impacto": "serious",
-        "ajuda": "Scrollable region must have keyboard access",
-        "nos": 1,
-        "exemplo": ".tabela.mt-1 :: <div class=\"tabela mt-1\">"
-      }
-    ],
+    "celular:academia": [],
     "celular:relacionamento": [],
     "celular:sucesso": [],
     "celular:rematricula": [],
@@ -83,6 +63,12 @@
     "celular:seguranca": [],
     "celular:integracoes": [],
     "celular:auditoria": [],
+    "celular:pesquisas": [],
+    "celular:campo": [],
+    "celular:conversas": [],
+    "celular:financeiro": [],
+    "celular:polos": [],
+    "celular:egressos": [],
     "celular:portal-invalido": []
   }
 }
