@@ -120,6 +120,7 @@ export function descreverEvento(e: Pick<EventoAuditoria, 'acao' | 'dados' | 'ent
     case 'integracao.pedido': return `Pedido de ativação registrado: ${rotulo(s('tipo'))}.`;
     case 'importacao.custos': return `Importação de custos: ${s('importadas')} importado(s), ${s('rejeitadas')} rejeitado(s).`;
     case 'importacao.vinculos': return `Importação de vínculos: ${s('importadas')} importado(s), ${s('rejeitadas')} rejeitado(s).`;
+    case 'manutencao.limpeza_testes': return `Limpeza dos dados de teste: ${s('oportunidades_apagadas')} oportunidade(s) e ${s('pessoas_apagadas')} pessoa(s) de teste removidas; ${s('propostas_de_teste_em_leads_da_semente')} proposta(s) e ${s('validacoes_de_teste_em_leads_da_semente')} validação(ões) de teste retiradas de leads da semente.`;
     case 'usuario.revogar': return 'Usuário revogado em todas as instituições.';
     default: return `${e.acao} (${e.entidade} ${e.entidade_id ?? ''})`;
   }
