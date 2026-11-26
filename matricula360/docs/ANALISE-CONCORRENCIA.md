@@ -50,3 +50,50 @@ Ordenada por impacto e por dependência de autorização. Itens sem serviço ext
 - Anthology Reach: [capabilities](https://www.anthology.com/products/lifecycle-engagement/enrollment-and-retention/anthology-reach/capabilities), [release jul/2025](https://www.businesswire.com/news/home/20250716388523/en/Anthology-Reach-Redefines-Student-Success-with-Real-Time-Alerts-Intelligent-Outreach-and-Personalized-Communications), [datasheet](https://backstage.anthology.com/sites/default/files/2025-11/Reach-Datasheet_11-25.pdf)
 - Ellucian CRM Recruit: [solução](https://Ellucian.com/solutions/ellucian-crm-recruit), [solution sheet](https://www.ellucian.com/assets/en/solution-sheet/ellucian-crm-recruit.pdf), [G2](https://www.g2.com/products/ellucian-crm-recruit), [G2 vs Slate](https://g2.com/compare/ellucian-crm-recruit-vs-slate-by-technolutions), [TrustRadius](https://www.trustradius.com/products/ellucian-crm-recruit)
 - Brasil: [RD Station — caso UCDB](https://www.rdstation.com/historias-de-sucesso/ucdb/), [ActiveCampaign — Cognita](https://www.activecampaign.com/br/customers/cognita-schools-brasil), [TOTVS — CRM educacional](https://www.totvs.com/blog/instituicao-de-ensino/crm-educacional/), [Pipedrive — ensino superior](https://www.pipedrive.com/pt/industries/higher-education-crm), [RD Station — integração CRM Rubeus](https://www.rdstation.com/integracoes/crm-rubeus), [Infobip — Rubeus](https://www.infobip.com/pt/cliente/rubeus), [Fundacred — vestibular digital](https://www.baguete.com.br/noticias/fundacred-cria-plataforma-de-vestibular-digital), [ABMES — Quero Educação](https://www.abmes.org.br/blog/detalhe/18346/quero-educacao-ajuda-na-expansao-do-ead)
+
+## 4. Segunda rodada (26/11/2026, depois da P4 e da migração 22)
+
+**Situação.** As lacunas L1 a L9 estão implementadas. L5 foi reforçada pela migração 22. L6, L8 e L9 funcionam por simulação ou planilha e esperam fornecedor e autorização. L10 é uma exclusão deliberada, e L11 depende da L8. Esta rodada compara o produto com o **ciclo de vida completo**: candidato, ingressante, aluno, rematrícula e egresso. Esse é o recorte que Salesforce, Anthology e EAB usam ao vender "360".
+
+**Ressalva.** A pesquisa usou fontes públicas, na maior parte material dos próprios fornecedores e avaliações de usuários. Não verifiquei preço, versão nem funcionamento real dos produtos. A Rubeus não publica detalhes de rematrícula. Não achei produto de CRM específico para polos de EAD; o item L18 se apoia em páginas de parceiros e na regulação.
+
+| # | Lacuna | Onde aparece | Situação no Matrícula 360° | Impacto | Depende de serviço externo? |
+|---|---|---|---|---|---|
+| L12 | **Bolsas, descontos e financiamento**: ProUni, FIES, financiamento próprio ou privado, convênios com empresas; política por curso, elegibilidade, documentos e efeito no tíquete | Slate (gestão de bolsas e de pedidos de bolsa); regras do ProUni (bolsa integral ou parcial de 50%) e do FIES (seguro prestamista, contrato com o banco) | Só o desconto da proposta, com aprovação por limite | **Alto.** No Brasil, financiamento e bolsa decidem boa parte das matrículas | Não para a gestão. Consulta a sistemas do MEC ou de bancos: sim |
+| L13 | **Financeiro do ingresso e inadimplência**: 1ª mensalidade, situação de pagamento, renegociação, bloqueio de rematrícula de inadimplente | TOTVS (Meu eduCONNECT: renegociação pelo aluno; parâmetro "bloquear matrícula para inadimplentes") | Integração de cobrança registrada, mas desligada | **Alto** para receita | Cobrança real: sim, paga. Conciliação por planilha: não |
+| L14 | **Rematrícula ativa**: campanha semestral, aceite de rematrícula pelo portal, pendências e meta por curso | TOTVS (matrícula e rematrícula online pelo portal do aluno) | Só o marco "rematrícula" do vínculo (migração 17) e o alerta retention-v1 | **Alto.** É a receita recorrente | Não. Reaproveita o aceite reforçado |
+| L15 | **Sucesso do aluno**: casos com triagem e roteamento, trilhas de intervenção por tipo de alerta, agendamento de atendimento, lista de acompanhamento, plano de ação do aluno | Salesforce Student Success (casos, roteamento, lista de observação, agendamento, plano de ação); EAB Navigate (alertas, casos, relatórios de progresso, trilhas de intervenção) | Alertas sem fluxo de tratamento | **Alto** para permanência | Não. Dados do ambiente virtual: L11 |
+| L16 | **Pesquisas de pulso e de satisfação**: atendimento, ingressante, quem desistiu ou se perdeu ("por que não escolheu") | Salesforce (pesquisas de pulso periódicas) | Não existe | **Médio.** Qualifica a análise de perdas e de permanência | Não, se respondida no portal. Envio: L6 |
+| L17 | **Captação em campo**: feiras, visitas a escolas de ensino médio, cadastro de escolas, QR code do representante, captura sem internet com sincronização | Slate (viagens, visitas a escolas, feiras, check-in por QR, acompanhamento automático); Gecko e Handshake (captura offline por QR) | Eventos e formulário público só online; sem cadastro de escolas | **Médio-alto.** Visita a escola é canal forte no Brasil | Não. PWA offline não tem custo |
+| L18 | **Canal de parceiros e polos EAD**: acesso restrito do parceiro, metas, funil e repasse | Modelo de polos parceiros (ex.: Uninter); regulação de polos pelo MEC, com limite por conceito institucional | Escopo por campus serve de base, mas não há parceiro externo | **Médio** (alto se houver EAD com polos) | Não para a gestão. Cálculo de repasse depende de regra contratual e jurídica |
+| L19 | **Banca e análise acadêmica**: vários avaliadores, rubrica calibrada, comitê; aproveitamento de estudos para transferência e segunda graduação | Slate Reader (formulários de avaliação, rubricas, comitês, distribuição para avaliadores; avaliações de usuários apontam usabilidade fraca) | Decisão humana única, com justificativa (migração 20) | **Médio** | Não |
+| L20 | **Egressos e ciclo de vida**: portal do egresso, pós-graduação e segunda graduação para ex-alunos, indicações | Salesforce (portal de egressos), Anthology Raise (módulo pago de egressos) | Não existe | **Médio-baixo** no piloto. Alto para pós-graduação | Não |
+| L21 | **Caixa de entrada conversacional humana**: WhatsApp e SMS dentro do CRM, com histórico na ficha; não é robô | Rubeus com Infobip (WhatsApp e SMS em toda a jornada, conversas antes feitas fora do CRM) | Interações registradas à mão; texto para envio manual | **Crítico na operação brasileira** | Sim: API oficial do WhatsApp e provedor, pagos |
+| L22 | **Plataforma**: 2FA da equipe, auditoria de acessibilidade (WCAG), API e webhooks, campos personalizados, construtor de relatórios, app instalável | [Inferência] padrão de mercado; não conferido produto a produto nesta rodada | 2FA, WCAG e API ausentes; exportação existe | **Médio.** 2FA é alto para segurança | 2FA: [Não verificado] se o plano gratuito do Supabase Auth inclui TOTP. API própria: não |
+
+### Sequência recomendada
+- **Onda A (sem custo externo e de maior impacto):**
+  - L12 bolsas e financiamento;
+  - L14 rematrícula ativa;
+  - L15 sucesso do aluno (casos e trilhas);
+  - L22, só a parte de segurança e acessibilidade: 2FA e WCAG.
+- **Onda B:**
+  - L17 captação em campo (escolas, QR, offline);
+  - L16 pesquisas;
+  - L19 banca e aproveitamento.
+- **Onda C (depende de decisão, contrato ou custo):**
+  - L21 WhatsApp no CRM;
+  - L13 cobrança;
+  - L18 polos com repasse;
+  - L20 egressos;
+  - L11.
+
+### Fontes da segunda rodada
+- Salesforce: [student success software](https://www.salesforce.com/education/student-success-software/), [Education Cloud](https://salesforce.com/education/cloud)
+- EAB Navigate: [produto](https://eab.com/navigate), [guia de alertas, casos e relatórios de progresso](https://www.wisconsin.edu/ss-eab-project/download/EAB-Guide-to-Alerts-Cases-and-Progress-Reports-12-04-18.pdf), [módulo de recrutamento](https://eab.com/about/newsroom/press/eabs-navigate-platform-now-supports-student-recruitment-and-retention/)
+- Slate: [solutions](https://technolutions.com/solutions), [application management](https://technolutions.com/admissions/application-management), [G2 reviews](https://g2.com/products/slate-by-technolutions/reviews), [TrustRadius](https://www.trustradius.com/products/technolutions-slate)
+- Anthology: [Reach capabilities](https://www.anthology.com/products/lifecycle-engagement/enrollment-and-retention/anthology-reach/capabilities), [Reach](https://anthology.com/solutions/enterprise-applications/reach)
+- Rubeus: [caso Infobip](https://www.infobip.com/pt/cliente/rubeus), [integração RD Station](https://www.rdstation.com/integracoes/crm-rubeus)
+- TOTVS: [Meu eduCONNECT](https://www.totvs.com/educacional/meu-educonnect/), [CRM educacional](https://www.totvs.com/blog/instituicao-de-ensino/crm-educacional/), [rematrícula (TDN)](https://tdn.totvs.com.br/download/attachments/4814795/Como%20Fazer%20TOTVS%20-%2010%20-%20Cadastros%20e%20processo%20de%20Rematricula.pdf?api=v2)
+- Captação em campo: [Gecko Event Inquiry Capture](https://geckoengage.com/platform/inquiry-capture), [Handshake](https://support.joinhandshake.com/hc/en-us/articles/17156393056407), [StriveScan](https://apps.apple.com/us/app/strivescan/id1149041297)
+- Regulação e polos: [ABMES FAQ (FIES)](https://abmes.org.br/index.php/faq), [MEC — acesso à educação superior](https://www.gov.br/mec/pt-br/centrais-de-conteudo/publicacoes/acesso-educacao-superior), [ABMES — regulamentação EAD](https://abmes.org.br/blog/detalhe/13406), [gov.br — inserção de polo EAD](https://www.gov.br/pt-br/servicos/informar-criacao-de-polo-ead), [Uninter — seja parceiro](https://www.uninter.com/seja-parceiro/)

@@ -333,7 +333,7 @@ Também foram verificadas as páginas novas da equipe: formulários, eventos, pr
 
 ## Aceite eletrônico reforçado (migração 22) — 26/11/2026
 
-Revisão do aceite da migração 21 a partir da análise jurídica. Arquivo para o SQL Editor: `supabase/APLICAR-022-NO-SQL-EDITOR.sql` (**aplicação pendente**).
+Revisão do aceite da migração 21 a partir da análise jurídica. Arquivo para o SQL Editor: `supabase/APLICAR-022-NO-SQL-EDITOR.sql`. **Aplicada em 26/11/2026**: as funções novas respondem no projeto remoto.
 
 | Ponto | Implementação |
 |---|---|
