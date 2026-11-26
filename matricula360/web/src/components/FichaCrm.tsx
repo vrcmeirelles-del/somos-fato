@@ -1,5 +1,6 @@
 // Seções do CRM avançado na ficha da oportunidade (migração 10). Só aparecem quando o banco devolve os campos novos.
-import { AlertTriangle, CalendarClock, Gauge, MessageSquarePlus, ShieldQuestion, UserCog, Workflow } from 'lucide-react';
+import { AlertTriangle, CalendarClock, FileText, Gauge, Link2, MessageSquarePlus, ShieldQuestion, UserCog, Workflow } from 'lucide-react';
+import { baixarBase64, lerBase64 } from '../lib/arquivo';
 import { useState } from 'react';
 import { descreverEvento } from '../pages/Auditoria';
 import { api } from '../lib/api';
@@ -168,6 +169,54 @@ export function FunilNaFicha({ op, versaoOp, podeEditar, fazer, enviando }: { op
           {(d.cadencia?.length ?? 0) > 0 && <p className="nota mt-1">Cadência é guia de trabalho: registre cada contato em "Registrar contato"; nada é enviado automaticamente.</p>}
         </>
       ) : <p className="nota">Etapa encerrada: sem subetapa.</p>}
+    </section>
+  );
+}
+
+// P4 na ficha: documentos (checklist, envio, download auditado, revisão), link do portal e mensagem para envio manual.
+export function DocumentosNaFicha({ op, fazer, enviando }: { op: number; fazer: Fazer; enviando: boolean }) {
+  const [recarga, setRecarga] = useState(0);
+  const d = useCarregar(() => api.documentos(op).catch(() => null), [op, recarga]);
+  if (!d.dados) return null;
+  const f2: Fazer = (fn) => fazer(async () => { const t = await fn(); setRecarga((n) => n + 1); return t; });
+  return (
+    <section aria-label="Documentos" className="mt-4 rounded-xl border border-linha p-3">
+      <H icone={FileText}>Documentos</H>
+      <p className="nota mb-1">{d.dados.completo ? 'Checklist obrigatório aprovado.' : 'Checklist obrigatório incompleto.'}{d.dados.exigido_para_validar ? ' A validação documental exige o checklist aprovado.' : ''}</p>
+      <ul className="space-y-1 text-sm">{d.dados.checklist.map((i) => (
+        <li key={i.tipo} className="flex flex-wrap items-center gap-2">
+          <span>{i.descricao}{i.obrigatorio ? '' : ' (opcional)'}</span>
+          {i.documento ? <Chip tipo={i.documento.status === 'aprovado' ? 'ok' : i.documento.status === 'recusado' ? 'erro' : 'pend'}>{rotulo(i.documento.status)} · {i.documento.enviado_por_tipo}</Chip> : <Chip>não enviado</Chip>}
+          {i.documento && d.dados!.pode_revisar && <>
+            <button className="btn btn-fantasma btn-peq" disabled={enviando} onClick={() => void f2(async () => { const r = await api.baixarDocumento(i.documento!.id); baixarBase64(r.nome_arquivo, r.mime, r.base64); return 'Download registrado na auditoria.'; })}>Baixar</button>
+            {i.documento.status === 'enviado' && <>
+              <button className="btn btn-ok btn-peq" disabled={enviando} onClick={() => void f2(async () => { await api.revisarDocumento(i.documento!.id, 'aprovado'); return 'Documento aprovado.'; })}>Aprovar</button>
+              <button className="btn btn-sec btn-peq" disabled={enviando} onClick={() => { const m = window.prompt('Motivo da recusa (o candidato verá):'); if (m) void f2(async () => { await api.revisarDocumento(i.documento!.id, 'recusado', m); return 'Documento recusado.'; }); }}>Recusar</button></>}</>}
+          {i.documento?.status !== 'aprovado' && (
+            <label className="btn btn-sec btn-peq cursor-pointer">Enviar<input type="file" className="sr-only" accept="application/pdf,image/jpeg,image/png" disabled={enviando} onChange={(e) => {
+              const arq = e.target.files?.[0]; if (!arq) return; void f2(async () => { await api.enviarDocumento(op, i.tipo, arq.name, await lerBase64(arq)); return 'Documento enviado.'; }); }} /></label>)}
+        </li>))}</ul>
+    </section>
+  );
+}
+
+export function AcoesCandidato({ op, ies, fazer, enviando }: { op: number; ies: number; fazer: Fazer; enviando: boolean }) {
+  const [link, setLink] = useState<string | null>(null);
+  const [texto, setTexto] = useState<string | null>(null);
+  const modelos = useCarregar(() => api.comunicacao(ies).then((c) => c.modelos.filter((m) => m.ativo)).catch(() => []), [ies]);
+  return (
+    <section aria-label="Contato com o candidato" className="mt-4 rounded-xl border border-linha p-3">
+      <H icone={Link2}>Portal e mensagens</H>
+      <div className="flex flex-wrap items-end gap-2">
+        <button className="btn btn-sec btn-peq" disabled={enviando} onClick={() => { if (window.confirm('Gerar novo link do portal? O link anterior deixa de funcionar.'))
+          void fazer(async () => { const r = await api.gerarAcessoPortal(op); setLink(`${location.origin}/portal#${r.token}`); return `Link gerado (válido por ${r.validade_dias} dias). Envie você mesmo ao candidato.`; }); }}>Gerar link do portal</button>
+        {(modelos.dados?.length ?? 0) > 0 && <Campo rotulo="Mensagem para envio manual"><select className="campo" defaultValue="" onChange={(e) => { const id = Number(e.target.value); if (!id) return;
+          void fazer(async () => { const r = await api.mensagemManual(op, id); setTexto(`${r.assunto ? `${r.assunto}\n\n` : ''}${r.texto}`); return `Texto pronto para ${rotulo(r.canal)} (envio manual).`; }); }}>
+          <option value="">Escolher modelo…</option>{modelos.dados!.map((m) => <option key={m.id} value={m.id}>{m.nome} · {rotulo(m.canal)}</option>)}</select></Campo>}
+      </div>
+      {link && <p className="mt-2 break-all rounded bg-fundo p-2 text-xs">{link} <button className="btn btn-fantasma btn-peq" onClick={() => void navigator.clipboard?.writeText(link)}>Copiar</button></p>}
+      {texto && <p className="mt-2 whitespace-pre-line rounded bg-fundo p-2 text-xs">{texto} <button className="btn btn-fantasma btn-peq" onClick={() => void navigator.clipboard?.writeText(texto)}>Copiar</button></p>}
+      <p className="nota mt-1">O sistema não envia mensagens: o link e o texto são copiados e enviados pela equipe pelo canal autorizado pelo titular.</p>
     </section>
   );
 }

@@ -184,3 +184,38 @@ export interface Relacionamento { coorte: string; regra: string; pode_registrar:
   alertas: { regra: string; prioridade: number; titulo: string; quantidade: number; proposta: string }[]; ingressantes: Ingressante[];
   embaixadores: { id: number; nome: string; curso: string; status: string; aceite_regras_em: string; regras_atuais: boolean; indicacoes: number; ingressantes_indicados: number }[];
   indicacoes: { id: number; codigo: string; indicador_tipo: string; indicador_nome: string; leads: number; ingressantes: number }[]; metodos: Record<string, string> }
+
+// P4 (migrações 18–21)
+export interface Formulario { id: number; slug: string; titulo: string; descricao: string | null; cursos: number[]; coorte: string; forma_ingresso: string; campanha_id: number | null;
+  texto_consentimento: string; versao_consentimento: number; pede_telefone: boolean; ativo: boolean; resultados: Record<string, number> | null }
+export interface FormularioPublico { titulo: string; descricao: string | null; instituicao: string; pede_telefone: boolean; texto_consentimento: string; versao_consentimento: number;
+  cursos: { id: number; nome: string; turno: string; modalidade: string; campus: string }[] }
+export interface PortalDados { nome: string; email: string | null; telefone: string | null; instituicao: string; optout: Record<'email' | 'whatsapp' | 'telefone', boolean>;
+  consentimento: { versao: number | null; em: string | null; base_legal: string };
+  inscricoes: { id: number; curso: string; turno: string; modalidade: string; coorte: string; situacao: string; etapa: string; validacoes: Record<string, boolean> | null;
+    proposta: { valor_final_centavos: number; validade: string; status: string } | null }[];
+  solicitacoes: { tipo: string; status: string; resposta: string | null; criado_em: string }[] }
+export interface ItemChecklist { tipo: string; descricao: string; obrigatorio: boolean;
+  documento: { id: number; nome_arquivo: string; mime: string; tamanho: number; status: string; motivo_recusa: string | null; enviado_em: string; enviado_por_tipo: string } | null }
+export interface DocumentosOp { checklist: ItemChecklist[]; completo: boolean; exigido_para_validar: boolean; pode_revisar: boolean;
+  historico: { id: number; tipo: string; nome_arquivo: string; status: string; enviado_em: string; enviado_por: string; revisado_por: string | null; motivo_recusa: string | null; sha256: string }[] }
+export interface PortalSeletivo {
+  processos_abertos: { id: number; nome: string; tipo: string; coorte: string; inscricoes_ate: string; instrucoes: string | null; agendas: { id: number; inicio: string; local: string; vagas_restantes: number }[] }[];
+  candidaturas: { id: number; processo: string; tipo: string; curso: string; oportunidade_id: number; agenda: { inicio: string; local: string } | null; tema_redacao: string | null;
+    redacao_enviada: boolean; resultado: string | null; resultado_divulgado: boolean }[];
+  eventos: { titulo: string; tipo: string; inicio: string; local: string | null; online: boolean; status: string }[] }
+export interface PortalMatricula { oportunidade_id: number; curso: string; coorte: string; etapa: string;
+  proposta: { id: number; mensalidade_centavos: number; desconto_pct: number; valor_final_centavos: number; validade: string; status: string } | null;
+  contrato: { versao: number; texto: string } | null; aceite: { aceito_em: string; contrato_versao: number } | null; pagamento: string }
+export interface SolicitacaoTitular { id: number; tipo: string; detalhe: string | null; status: string; resposta: string | null; criado_em: string; nome: string; pessoa_id: number; prazo: string; oportunidade_id: number | null }
+export interface Evento { id: number; titulo: string; tipo: string; inicio: string; fim: string; local: string | null; online: boolean; vagas: number | null; status: string; campanha_id: number | null;
+  inscritos: number; presentes: number; ingressantes_presentes: number; inscricoes: { id: number; nome: string; status: string; oportunidade_id: number | null; checkin_em: string | null }[] }
+export interface Candidatura { id: number; oportunidade_id: number; nome: string; curso: string; agenda: string | null; nota_enem: number | null; enem_conferido: boolean; nota_objetiva: number | null;
+  redacao_enviada: boolean; redacao: string | null; redacao_nota: number | null; redacao_parecer: string | null; corrigida_por: string | null; resultado: string; justificativa: string | null;
+  resultado_por: string | null; sugestao: string | null }
+export interface Seletivo { pode_gerir: boolean; pode_divulgar: boolean; aviso: string;
+  processos: { id: number; nome: string; tipo: string; coorte: string; inscricoes_ate: string; nota_minima: number | null; instrucoes: string | null; tema_redacao: string | null; status: string;
+    resultado_divulgado_em: string | null; agendas: { id: number; inicio: string; local: string; vagas: number; ocupadas: number }[]; candidaturas: Candidatura[] }[] }
+export interface Comunicacao { modo: string; pode_gerir: boolean; aviso: string;
+  modelos: { id: number; nome: string; canal: string; gatilho: string; assunto: string | null; corpo: string; ativo: boolean; simuladas: number; bloqueadas: number; copiadas: number; abertura: null; clique: null }[];
+  recentes: { id: number; canal: string; destino: string | null; status: string; motivo: string | null; em: string; nome: string; corpo: string }[] | null }

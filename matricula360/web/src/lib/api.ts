@@ -2,7 +2,7 @@
 import { criarCliente, type Cliente, type Config, ErroApi } from './supabase';
 import type {
   AcessosIes, Bi, Detalhe, Estrutura, Eu, EventoAuditoria, Fila, IesMaster, ItemOportunidade, Pagina, Pendencia, PropostaLista,
-  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento,
+  ResultadoMaim, StatusProposta, Etapa, Dimensao, Canal, Papel, Central, ItemAgenda, Permissoes, Exportacao, Planejamento, RegistroConcorrencia, Campanhas, Funis, FunilOportunidade, VersaoFunil, Performance, Recuperacao, Recuperavel, Academia, Relacionamento, Formulario, SolicitacaoTitular, DocumentosOp, Evento, Seletivo, Comunicacao, FormularioPublico, PortalDados, ItemChecklist, PortalSeletivo, PortalMatricula,
 } from './tipos';
 
 let cliente: Cliente | null = null;
@@ -135,6 +135,38 @@ export const api = {
   salvarEmbaixador: (op: number, aceite: string, status = 'ativo') => c().rpc<{ id: number }>('rpc_salvar_embaixador', { p_op: op, p_aceite_em: aceite, p_status: status }),
   criarIndicacao: (ies: number, dados: Record<string, unknown>) => c().rpc<{ codigo: string }>('rpc_criar_indicacao', { p_ies: ies, p_dados: dados }),
   indicacoes: (ies: number) => c().rpc<{ id: number; codigo: string; indicador_tipo: string; indicador_nome: string; leads: number }[]>('rpc_indicacoes', { p_ies: ies }),
+  // P4: captação digital, portal, documentos, eventos, seletivo, matrícula online, comunicação e integrações
+  formularios: (ies: number) => c().rpc<Formulario[]>('rpc_formularios', { p_ies: ies }),
+  salvarFormulario: (ies: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number }>('rpc_salvar_formulario', { p_ies: ies, p_dados: dados, p_id: id ?? null }),
+  vincularEventoFormulario: (form: number, evento: number | null) => c().rpc('rpc_vincular_evento_formulario', { p_formulario: form, p_evento: evento }),
+  gerarAcessoPortal: (op: number) => c().rpc<{ token: string; validade_dias: number }>('rpc_gerar_acesso_portal', { p_op: op }),
+  solicitacoesTitular: (ies: number) => c().rpc<SolicitacaoTitular[]>('rpc_solicitacoes_titular', { p_ies: ies }),
+  tratarSolicitacao: (id: number, status: string, resposta: string) => c().rpc('rpc_tratar_solicitacao', { p_id: id, p_status: status, p_resposta: resposta }),
+  documentos: (op: number) => c().rpc<DocumentosOp>('rpc_documentos', { p_op: op }),
+  enviarDocumento: (op: number, tipo: string, nome: string, base64: string) => c().rpc('rpc_enviar_documento', { p_op: op, p_tipo: tipo, p_nome: nome, p_base64: base64 }),
+  baixarDocumento: (doc: number) => c().rpc<{ nome_arquivo: string; mime: string; base64: string }>('rpc_baixar_documento', { p_documento: doc }),
+  revisarDocumento: (doc: number, status: string, motivo?: string) => c().rpc('rpc_revisar_documento', { p_documento: doc, p_status: status, p_motivo: motivo ?? null }),
+  configurarDocumentos: (ies: number, exigir: boolean | null, item?: Record<string, unknown>) =>
+    c().rpc<{ exigir_documentos: boolean; itens: { tipo: string; forma_ingresso: string | null; descricao: string; obrigatorio: boolean; ativo: boolean }[] }>('rpc_configurar_documentos', { p_ies: ies, p_exigir: exigir, p_item: item ?? null }),
+  eventos: (ies: number) => c().rpc<Evento[]>('rpc_eventos', { p_ies: ies }),
+  salvarEvento: (ies: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number }>('rpc_salvar_evento', { p_ies: ies, p_dados: dados, p_id: id ?? null }),
+  inscreverEvento: (evento: number, op: number) => c().rpc('rpc_inscrever_evento', { p_evento: evento, p_op: op }),
+  checkin: (inscricao: number, status: string) => c().rpc('rpc_checkin', { p_inscricao: inscricao, p_status: status }),
+  seletivo: (ies: number) => c().rpc<Seletivo>('rpc_seletivo', { p_ies: ies }),
+  salvarProcesso: (ies: number, dados: Record<string, unknown>, id?: number) => c().rpc<{ id: number }>('rpc_salvar_processo', { p_ies: ies, p_dados: dados, p_id: id ?? null }),
+  candidatar: (processo: number, op: number, agenda?: number, enem?: number) => c().rpc('rpc_candidatar', { p_processo: processo, p_op: op, p_agenda: agenda ?? null, p_nota_enem: enem ?? null }),
+  avaliarCandidatura: (id: number, dados: Record<string, unknown>) => c().rpc('rpc_avaliar_candidatura', { p_candidatura: id, p_dados: dados }),
+  divulgarResultado: (processo: number) => c().rpc('rpc_divulgar_resultado', { p_processo: processo }),
+  contratos: (ies: number) => c().rpc<{ aviso: string; versoes: { id: number; versao: number; ativo: boolean; criado_em: string; texto: string; aceites: number }[] }>('rpc_contratos', { p_ies: ies }),
+  salvarContrato: (ies: number, texto: string) => c().rpc<{ versao: number }>('rpc_salvar_contrato', { p_ies: ies, p_texto: texto }),
+  comunicacao: (ies: number) => c().rpc<Comunicacao>('rpc_comunicacao', { p_ies: ies }),
+  salvarModeloMensagem: (ies: number, dados: Record<string, unknown>, id?: number) => c().rpc('rpc_salvar_modelo_mensagem', { p_ies: ies, p_dados: dados, p_id: id ?? null }),
+  executarRegua: (ies: number) => c().rpc<{ simuladas: number; bloqueadas: number; enviadas: number }>('rpc_executar_regua', { p_ies: ies }),
+  mensagemManual: (op: number, modelo: number) => c().rpc<{ canal: string; assunto: string | null; texto: string }>('rpc_mensagem_manual', { p_op: op, p_modelo: modelo }),
+  integracoes: (ies: number, tipo?: string, observacao?: string) =>
+    c().rpc<{ aviso: string; itens: { tipo: string; status: string; pedido_por: string | null; pedido_em: string | null; observacao: string | null }[] }>('rpc_integracoes', { p_ies: ies, p_tipo: tipo ?? null, p_observacao: observacao ?? null }),
+  importarCustos: (ies: number, linhas: unknown[]) => c().rpc<{ importadas: number; repetidas: number; rejeitadas: { linha: number; motivo: string }[] }>('rpc_importar_custos', { p_ies: ies, p_linhas: linhas }),
+  importarVinculos: (ies: number, linhas: unknown[]) => c().rpc<{ importadas: number; rejeitadas: { linha: number; motivo: string }[] }>('rpc_importar_vinculos', { p_ies: ies, p_linhas: linhas }),
   pendencias: (ies: number) => c().rpc<Pendencia[]>('rpc_pendencias', { p_ies: ies }),
   configurar: (ies: number, v: { sla_horas?: number; max_followups?: number; dias_sem_contato?: number; capacidade_atendente?: number; amostra_minima_forecast?: number }) =>
     c().rpc<Record<string, number>>('rpc_configurar', { p_ies: ies, p_sla_horas: v.sla_horas ?? null, p_max_followups: v.max_followups ?? null,
@@ -155,4 +187,24 @@ export const api = {
     revogarEscopo: (escopo: number) => c().rpc('rpc_revogar_escopo', { p_escopo: escopo }),
     revogarUsuario: (usuario: string) => c().rpc('rpc_revogar_usuario', { p_usuario: usuario }),
   },
+};
+
+// Área pública (sem login): formulário de captação e portal do candidato.
+export const publico = {
+  iniciar,
+  formulario: (slug: string) => c().rpcPublico<FormularioPublico>('rpc_publico_formulario', { p_slug: slug }),
+  inscrever: (slug: string, dados: Record<string, unknown>) => c().rpcPublico<{ status: string; mensagem: string; portal?: string }>('rpc_publico_inscrever', { p_slug: slug, p_dados: dados }),
+  portal: (t: string) => c().rpcPublico<PortalDados>('rpc_publico_portal', { p_token: t }),
+  optout: (t: string, canal: string) => c().rpcPublico('rpc_publico_portal_optout', { p_token: t, p_canal: canal }),
+  solicitar: (t: string, tipo: string, detalhe?: string) => c().rpcPublico('rpc_publico_portal_solicitar', { p_token: t, p_tipo: tipo, p_detalhe: detalhe ?? null }),
+  documentos: (t: string) => c().rpcPublico<{ oportunidade_id: number; curso: string; coorte: string; checklist: ItemChecklist[] }[]>('rpc_publico_portal_documentos', { p_token: t }),
+  enviarDocumento: (t: string, op: number, tipo: string, nome: string, base64: string) =>
+    c().rpcPublico('rpc_publico_enviar_documento', { p_token: t, p_op: op, p_tipo: tipo, p_nome: nome, p_base64: base64 }),
+  seletivo: (t: string) => c().rpcPublico<PortalSeletivo>('rpc_publico_portal_seletivo', { p_token: t }),
+  candidatar: (t: string, processo: number, op: number, agenda?: number, enem?: number) =>
+    c().rpcPublico('rpc_publico_candidatar', { p_token: t, p_processo: processo, p_op: op, p_agenda: agenda ?? null, p_nota_enem: enem ?? null }),
+  enviarRedacao: (t: string, candidatura: number, texto: string) => c().rpcPublico('rpc_publico_enviar_redacao', { p_token: t, p_candidatura: candidatura, p_texto: texto }),
+  matricula: (t: string) => c().rpcPublico<PortalMatricula[]>('rpc_publico_portal_matricula', { p_token: t }),
+  aceitar: (t: string, op: number, versao: number, nome: string) =>
+    c().rpcPublico<{ aceito: boolean; proximo_passo: string }>('rpc_publico_aceitar_matricula', { p_token: t, p_op: op, p_contrato_versao: versao, p_nome: nome }),
 };

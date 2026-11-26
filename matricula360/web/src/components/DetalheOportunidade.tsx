@@ -4,14 +4,14 @@ import { dataHora, moeda, rotulo } from '../lib/formato';
 import { useAcao, useCarregar } from '../lib/hooks';
 import type { Canal, Dimensao } from '../lib/tipos';
 import { useSessao } from './Layout';
-import { AlertaDuplicidade, FunilNaFicha, LinhaDoTempo, PainelScore, Reatribuir, Relacionamento } from './FichaCrm';
+import { AcoesCandidato, AlertaDuplicidade, DocumentosNaFicha, FunilNaFicha, LinhaDoTempo, PainelScore, Reatribuir, Relacionamento } from './FichaCrm';
 import { Campo, Chip, Estado, Mensagem } from './ui';
 
 const CANAIS: Canal[] = ['email', 'whatsapp', 'telefone'];
 const DIMENSOES: Dimensao[] = ['documental', 'financeira', 'academica'];
 
 export function DetalheOportunidade({ id, aoFechar, aoMudar }: { id: number; aoFechar: () => void; aoMudar?: () => void }) {
-  const { tem } = useSessao();
+  const { tem, ies } = useSessao();
   const dlg = useRef<HTMLDialogElement>(null);
   const d = useCarregar(() => api.detalhe(id), [id]);
   const acao = useAcao();
@@ -95,6 +95,8 @@ export function DetalheOportunidade({ id, aoFechar, aoMudar }: { id: number; aoF
                 <ul className="mt-1 text-sm">{d.dados.validacoes.map((v) => <li key={v.id} className="border-l-[3px] border-linha pl-2.5">{rotulo(v.dimensao)} · {rotulo(v.resultado)} · {v.por} · {dataHora(v.em)} — {v.evidencia}</li>)}</ul>
               </section>
             </div>
+            <DocumentosNaFicha op={id} fazer={fazer} enviando={acao.enviando} />
+            {tem('gestor', 'comercial') && !p.anonimizada && ies && <AcoesCandidato op={id} ies={ies} fazer={fazer} enviando={acao.enviando} />}
             <FunilNaFicha op={id} versaoOp={o.versao} podeEditar={podeFunil && !p.anonimizada} fazer={fazer} enviando={acao.enviando} />
             {m10 && <div className="mt-4 border-t border-linha pt-4"><Relacionamento d={d.dados} fazer={fazer} enviando={acao.enviando} podeEditar={podeFunil && !p.anonimizada} /></div>}
             {m10 && tem('gestor') && <Reatribuir d={d.dados} fazer={fazer} enviando={acao.enviando} />}

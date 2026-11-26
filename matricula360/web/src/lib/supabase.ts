@@ -62,6 +62,14 @@ export function criarCliente(url: string, chave: string, http: typeof fetch = (.
     if (!r.ok) throw new ErroApi(d?.message || `Erro ${r.status}`, (d?.code && STATUS_POR_CODIGO[d.code]) || r.status, d?.code, d?.details);
     return d as T;
   }
-  return { entrar, sair, rpc };
+  // Chamada pública (formulário e portal do candidato): só a chave publicável, sem sessão. O banco libera apenas rpc_publico_*.
+  async function rpcPublico<T>(nome: string, args: Record<string, unknown> = {}): Promise<T> {
+    if (!nome.startsWith('rpc_publico_')) throw new ErroApi('Chamada pública não permitida', 403);
+    const r = await http(`${url}/rest/v1/rpc/${nome}`, { method: 'POST', headers: { apikey: chave, 'content-type': 'application/json' }, body: JSON.stringify(args) });
+    const d = (await r.json().catch(() => null)) as { code?: string; message?: string; details?: string | null } | null;
+    if (!r.ok) throw new ErroApi(d?.message || `Erro ${r.status}`, (d?.code && STATUS_POR_CODIGO[d.code]) || r.status, d?.code, d?.details);
+    return d as T;
+  }
+  return { entrar, sair, rpc, rpcPublico };
 }
 export type Cliente = ReturnType<typeof criarCliente>;

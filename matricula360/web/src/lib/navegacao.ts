@@ -1,7 +1,7 @@
 // Mapa dos dez ambientes. Itens "planejado" aparecem desabilitados com a fase prevista:
 // não há página de lista fingindo módulo pronto (critério de aceite da Fase 2).
 import {
-  Activity, BarChart3, CalendarClock, Gauge, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HeartHandshake, KanbanSquare, KeyRound,
+  Activity, BarChart3, CalendarClock, CalendarDays, ClipboardList, FileCheck2, Gauge, MessagesSquare, PlugZap, BookOpen, Building2, ClipboardCheck, FileText, GraduationCap, HeartHandshake, KanbanSquare, KeyRound,
   LayoutDashboard, Megaphone, RefreshCcw, ScrollText, Settings, ShieldCheck, Target, Users, Workflow, type LucideIcon,
 } from 'lucide-react';
 import type { Papel } from './tipos';
@@ -20,6 +20,9 @@ export const AMBIENTES: Ambiente[] = [
     { rotulo: 'Plano, objetivos e 5W2H', rota: (i) => `/ies/${i}/planejamento`, icone: Target, papeis: ['gestor', 'reitoria', 'coordenador'] },
   ] },
   { id: 'marketing', rotulo: 'Marketing e Captação', icone: Megaphone, itens: [
+    { rotulo: 'Formulários de captação', rota: (i) => `/ies/${i}/formularios`, icone: ClipboardList, papeis: ['gestor'] },
+    { rotulo: 'Eventos e visitas', rota: (i) => `/ies/${i}/eventos`, icone: CalendarDays, papeis: ['gestor', 'comercial', 'secretaria'] },
+    { rotulo: 'Comunicação e réguas', rota: (i) => `/ies/${i}/comunicacao`, icone: MessagesSquare, papeis: ['gestor', 'comercial'] },
     { rotulo: 'Campanhas e custos', rota: (i) => `/ies/${i}/campanhas`, icone: Megaphone, papeis: ['gestor', 'reitoria', 'coordenador', 'comercial', 'financeiro'] },
   ] },
   { id: 'crm', rotulo: 'CRM Educacional', icone: Users, itens: [
@@ -30,6 +33,7 @@ export const AMBIENTES: Ambiente[] = [
     { rotulo: 'Funis configuráveis', rota: (i) => `/ies/${i}/funis`, icone: Workflow, papeis: ['gestor', 'reitoria', 'coordenador', 'comercial'] },
   ] },
   { id: 'conversao', rotulo: 'Conversão e Matrículas', icone: ClipboardCheck, itens: [
+    { rotulo: 'Processo seletivo', rota: (i) => `/ies/${i}/seletivo`, icone: FileCheck2, papeis: ['gestor', 'secretaria', 'coordenador', 'comercial'] },
     { rotulo: 'Matrículas', rota: (i) => `/ies/${i}/matriculas`, icone: ClipboardCheck },
     { rotulo: 'Propostas e bolsas', rota: (i) => `/ies/${i}/propostas`, icone: FileText, papeis: ['gestor', 'comercial'] },
   ] },
@@ -45,6 +49,7 @@ export const AMBIENTES: Ambiente[] = [
   { id: 'governanca', rotulo: 'Governança Institucional', icone: ShieldCheck, itens: [
     { rotulo: 'Configurações e metas', rota: (i) => `/ies/${i}/configuracoes`, icone: Settings, papeis: ['gestor'] },
     { rotulo: 'Perfis e permissões', rota: (i) => `/ies/${i}/permissoes`, icone: KeyRound },
+    { rotulo: 'Integrações e dados', rota: (i) => `/ies/${i}/integracoes`, icone: PlugZap, papeis: ['gestor', 'secretaria', 'financeiro'] },
     { rotulo: 'Auditoria', rota: (i) => `/ies/${i}/auditoria`, icone: ScrollText, papeis: ['gestor'] },
     { rotulo: 'Painel Master', rota: () => '/master', icone: Building2, master: true },
   ] },

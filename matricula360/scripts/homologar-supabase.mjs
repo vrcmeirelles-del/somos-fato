@@ -192,6 +192,51 @@ try {
           registrar('gestor', disp, 'P3: Relacionamento sem presumir evasão, com permanência por marco e indicações', rel.includes('não presume evasão') && rel.includes('Permanência · 30 dias') && rel.includes('Indicações rastreáveis'));
           await checar(page, 'gestor', disp, 'relacionamento', erros);
         } else console.log('AVISO relacionamento não verificado: banco sem a migração 17.');
+        // P4 (migrações 18–21): páginas da equipe e fluxo público ponta a ponta (formulário → portal → documento).
+        const form = await chamar(page, 'rpc_formularios', { p_ies: 1 });
+        if (form.ok) {
+          for (const [link, texto, nome] of [['Formulários de captação', 'Novo formulário', 'formularios'], ['Eventos e visitas', 'Novo evento', 'eventos'],
+            ['Processo seletivo', 'Novo processo seletivo', 'seletivo'], ['Comunicação e réguas', 'modo simulação', 'comunicacao'], ['Integrações e dados', 'Integrações externas', 'integracoes']]) {
+            await ir(page, link);
+            await page.waitForSelector(`text=${texto}`, { timeout: 15000 }).catch(() => null);
+            registrar('gestor', disp, `P4: página ${link}`, (await page.textContent('main')).includes(texto));
+            await checar(page, 'gestor', disp, nome, erros);
+          }
+          const slug = `e2e-${Date.now()}`;
+          const cursos = (await chamar(page, 'rpc_estrutura', { p_ies: 1 })).dados?.cursos?.map((c) => c.id) ?? [];
+          const novo = await chamar(page, 'rpc_salvar_formulario', { p_ies: 1, p_dados: { slug, titulo: 'Inscrição E2E', cursos, coorte: '2027.1',
+            texto_consentimento: 'Autorizo o uso dos meus dados para contato sobre o processo seletivo (teste automatizado de homologação).' } });
+          const pub = await navegador.newContext({ viewport: { width: 390, height: 844 } });
+          const pp = await pub.newPage();
+          const errosPub = [];
+          pp.on('console', (m) => { if (m.type() === 'error' && !/status of 4\d\d/.test(m.text())) errosPub.push(m.text()); });
+          await pp.goto(`${BASE}/f/${slug}`);
+          await pp.waitForSelector('text=Inscrição E2E', { timeout: 20000 }).catch(() => null);
+          registrar('publico', 'celular', 'P4: formulário público abre sem login', novo.ok && (await pp.textContent('body')).includes('Consentimento'));
+          await pp.fill('label:has-text("Nome completo") input', 'Candidato Público E2E');
+          await pp.fill('label:has-text("E-mail") input', `publico.${Date.now()}@example.com`);
+          await pp.selectOption('label:has-text("Curso de interesse") select', { index: 1 });
+          await pp.check('text=Li e aceito o termo acima.');
+          await pp.waitForTimeout(3500);
+          await pp.click('button:has-text("Enviar inscrição")');
+          await pp.waitForSelector('text=Inscrição recebida', { timeout: 20000 }).catch(() => null);
+          const linkPortal = await pp.locator('a[href*="/portal#"]').first().getAttribute('href').catch(() => null);
+          registrar('publico', 'celular', 'P4: inscrição pública cria o lead e entrega o link pessoal', !!linkPortal);
+          if (linkPortal) {
+            await pp.goto(linkPortal);
+            await pp.waitForSelector('text=Minhas inscrições', { timeout: 20000 }).catch(() => null);
+            const portal = await pp.textContent('body');
+            registrar('publico', 'celular', 'P4: portal do candidato mostra inscrição, documentos e privacidade', portal.includes('Inscrição recebida') && portal.includes('Documentos') && portal.includes('LGPD'));
+            await pp.locator('input[type=file]').first().setInputFiles({ name: 'documento.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 documento sintetico de teste E2E') });
+            await pp.waitForSelector('text=Documento enviado para análise', { timeout: 20000 }).catch(() => null);
+            registrar('publico', 'celular', 'P4: candidato envia documento pelo portal', (await pp.textContent('body')).includes('Documento enviado para análise'));
+            const rolagem = await pp.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+            registrar('publico', 'celular', 'P4: portal sem rolagem horizontal e sem erros de console', rolagem <= 1 && errosPub.length === 0, errosPub.join(' | ').slice(0, 200));
+            await pp.screenshot({ path: `${OUT}/celular-publico-portal.png`, fullPage: true });
+          }
+          await chamar(page, 'rpc_salvar_formulario', { p_ies: 1, p_dados: { ativo: false }, p_id: novo.dados?.id });
+          await pub.close();
+        } else console.log('AVISO P4 não verificado: banco sem as migrações 18–21.');
         // R09: trocar a instituição pela URL não expõe a outra IES (a interface volta à IES autorizada e o banco recusa a outra).
         for (const rota of ['/ies/2/crm', '/ies/1/inteligencia?ies=2']) {
           await page.goto(`${BASE}${rota}`);

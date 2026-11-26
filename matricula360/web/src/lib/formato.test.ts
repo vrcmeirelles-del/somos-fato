@@ -40,3 +40,10 @@ describe('paraCsv', () => {
     expect(csv.startsWith('﻿')).toBe(true);
   });
 });
+
+import { lerCsv } from './arquivo';
+describe('lerCsv', () => {
+  it('lê CSV com ponto e vírgula e BOM pelo cabeçalho', () => {
+    expect(lerCsv('﻿campanha;data;valor_centavos\r\nverao-2027;2026-11-20;45000\n')).toEqual([{ campanha: 'verao-2027', data: '2026-11-20', valor_centavos: '45000' }]);
+  });
+});

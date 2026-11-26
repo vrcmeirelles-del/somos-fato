@@ -14,6 +14,9 @@ import { Planejamento } from './pages/Planejamento';
 import { Central } from './pages/Central';
 import { Configuracoes } from './pages/Configuracoes';
 import { Crm } from './pages/Crm';
+import { Eventos, Formularios } from './pages/Captacao';
+import { Comunicacao, Integracoes } from './pages/Comunicacao';
+import { Seletivo } from './pages/Seletivo';
 import { Funis } from './pages/Funis';
 import { Intervencoes } from './pages/Intervencoes';
 import { Login } from './pages/Login';
@@ -22,6 +25,7 @@ import { Matriculas } from './pages/Matriculas';
 import { Performance } from './pages/Performance';
 import { Permissoes } from './pages/Permissoes';
 import { Propostas } from './pages/Propostas';
+import { FormularioPublico, Portal } from './pages/Publico';
 import { Recuperacao } from './pages/Recuperacao';
 import { Relacionamento } from './pages/Relacionamento';
 
@@ -37,6 +41,10 @@ export function App() {
     iniciar().then(carregarEu).catch((e: Error) => setErroInicio(e.message)).finally(() => setPronto(true));
   }, [carregarEu]);
 
+  // Área pública (formulário de captação e portal do candidato) não depende de login nem de rpc_me.
+  if (location.pathname.startsWith('/f/') || location.pathname === '/portal') {
+    return <Routes><Route path="/f/:slug" element={<FormularioPublico />} /><Route path="/portal" element={<Portal />} /></Routes>;
+  }
   if (erroInicio) return <p role="alert" className="p-6 text-erro">{erroInicio}</p>;
   if (!pronto) return <div className="p-6"><Carregando /></div>;
   return (
@@ -82,6 +90,11 @@ function Rotas({ eu, abrir, versao }: { eu: Eu; abrir: (id: number) => void; ver
       <Route path="/ies/:ies/planejamento" element={<ExigeIes><Planejamento /></ExigeIes>} />
       <Route path="/ies/:ies/campanhas" element={<ExigeIes><Campanhas /></ExigeIes>} />
       <Route path="/ies/:ies/funis" element={<ExigeIes><Funis /></ExigeIes>} />
+      <Route path="/ies/:ies/formularios" element={<ExigeIes><Formularios /></ExigeIes>} />
+      <Route path="/ies/:ies/eventos" element={<ExigeIes><Eventos abrirDetalhe={abrir} /></ExigeIes>} />
+      <Route path="/ies/:ies/comunicacao" element={<ExigeIes><Comunicacao /></ExigeIes>} />
+      <Route path="/ies/:ies/seletivo" element={<ExigeIes><Seletivo abrirDetalhe={abrir} /></ExigeIes>} />
+      <Route path="/ies/:ies/integracoes" element={<ExigeIes><Integracoes /></ExigeIes>} />
       <Route path="/ies/:ies/crm" element={<ExigeIes><Crm abrirDetalhe={abrir} versao={versao} /></ExigeIes>} />
       <Route path="/ies/:ies/agenda" element={<ExigeIes><Agenda abrirDetalhe={abrir} versao={versao} /></ExigeIes>} />
       <Route path="/ies/:ies/recuperacao" element={<ExigeIes><Recuperacao abrirDetalhe={abrir} /></ExigeIes>} />
