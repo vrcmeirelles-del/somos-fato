@@ -272,6 +272,17 @@ Verificações novas no navegador:
 - Recuperação com elegibilidade LGPD, protocolos e sprints;
 - Academia com trilhas iniciais, rubrica publicada e aviso de avaliação humana.
 
+## Relacionamento Estudantil (migração 17) — 26/11/2026
+Aplicada pelo usuário. Conferido no banco real: `rpc_relacionamento` existe e recusa acesso anônimo (42501).
+
+| Teste | Resultado |
+|---|---|
+| Banco local (migrações 1–17) | 458/458 |
+| Bateria remota gerada | 466/466, tudo desfeito ao final |
+| Navegador no site publicado (build idêntica ao repositório) | **120/120** |
+
+Com esta migração, os dez ambientes da Bíblia v0.2 estão implementados e homologados. Ficam pendentes apenas as integrações externas, que dependem de autorização.
+
 ## Critérios de aceite da Bíblia-Mestra
 
 | Critério | Onde está provado |
