@@ -281,7 +281,9 @@ Aplicada pelo usuário. Conferido no banco real: `rpc_relacionamento` existe e r
 | Bateria remota gerada | 466/466, tudo desfeito ao final |
 | Navegador no site publicado (build idêntica ao repositório) | **120/120** |
 
-Com esta migração, os dez ambientes da Bíblia v0.2 estão implementados e homologados. Ficam pendentes apenas as integrações externas, que dependem de autorização.
+Com esta migração, os dez ambientes da Bíblia v0.2 estão implementados e homologados.
+
+Domínio próprio: depois de um período fora do ar (falha de handshake TLS), `https://matricula360.somosfato.com.br` voltou a responder; homologação completa nele: **120/120**. Ficam pendentes apenas as integrações externas, que dependem de autorização.
 
 ## Critérios de aceite da Bíblia-Mestra
 
