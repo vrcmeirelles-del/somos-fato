@@ -188,6 +188,40 @@ Comercial tentando alterar a amostra mínima: 403. Cenário R03 reproduzido loca
 
 Navegador no site publicado: 83/83. O build publicado é idêntico ao do repositório.
 
+## CRM avançado — migração 10 (26/11/2026)
+Aplicada pelo usuário no projeto de homologação. Conferido no banco real: `rpc_agenda` existe e recusa o acesso anônimo (42501).
+
+**O que entrou**
+- Interações e objeções, com tratamento registrado.
+- Agenda comercial.
+- Reatribuição pelo gestor, com motivo obrigatório; as tarefas abertas acompanham o novo responsável.
+- Score explicável `score-v1`, que não decide ingresso.
+- Busca por nome (e-mail e telefone só para perfil pleno) e filtros combinados.
+- Alerta de possível duplicidade, sem mesclagem automática.
+- Linha do tempo única na ficha.
+
+**Testes**
+
+| Onde | Resultado |
+|---|---|
+| Banco local (migrações 1–10) | 213/213; RLS e `search_path` em 100% |
+| Bateria remota gerada | 213/213 localmente, tudo desfeito ao final |
+| Arquivo de aplicação | aplicado duas vezes seguidas sem erro |
+| Navegador no site publicado (`matricula360-homologacao.onrender.com`, mesma publicação do domínio próprio) | **90/90** |
+
+As 7 verificações novas do navegador:
+- interação registrada aparece na linha do tempo;
+- objeção registrada como aberta;
+- agendamento aparece na ficha;
+- score com o aviso de não decisão;
+- busca filtra o quadro;
+- arrastar para transição inválida: o servidor recusa ("Transição inválida: inscrito → novo") e o cartão permanece na coluna;
+- agenda comercial lista o agendamento.
+
+**Falha encontrada e corrigida:** o atalho de arrasto do Playwright (`dragTo`) não disparava os eventos HTML5. O teste passou a arrastar com o mouse em passos. A interface também passou a guardar o arrasto numa referência síncrona, o que evita a perda do drop num arrasto muito rápido.
+
+**Observação de rede:** nesta rodada, o domínio `matricula360.somosfato.com.br` falhou no handshake TLS a partir do ambiente de testes, enquanto o endereço do Render respondeu normalmente. Precisa ser conferido num navegador comum.
+
 ## Critérios de aceite da Bíblia-Mestra
 
 | Critério | Onde está provado |

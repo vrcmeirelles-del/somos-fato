@@ -1,7 +1,7 @@
 {
-  "em": "2026-11-25T22:44:03.616Z",
+  "em": "2026-11-26T11:23:05.601Z",
   "projeto": "https://jbimijcvvekomovodfze.supabase.co",
-  "total": 83,
+  "total": 90,
   "falhas": 0,
   "resultados": [
     {
@@ -9,7 +9,7 @@
       "dispositivo": "desktop",
       "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
       "ok": true,
-      "detalhe": "Oportunidades27Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte7.4%Decididas: 50.0%"
+      "detalhe": "Oportunidades32Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte6.3%Decididas: 50.0%"
     },
     {
       "perfil": "gestor",
@@ -210,6 +210,55 @@
     {
       "perfil": "comercial",
       "dispositivo": "desktop",
+      "passo": "CRM: interação registrada aparece na linha do tempo",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "CRM: objeção registrada como aberta",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "CRM: agendamento aparece na agenda da ficha",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "CRM: score explicável com aviso de não decisão",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "CRM: busca por nome filtra o quadro",
+      "ok": true,
+      "detalhe": "9 cartões"
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "CRM: arrastar para transição inválida é recusado pelo servidor",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
+      "passo": "CRM: agenda comercial lista o agendamento",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "perfil": "comercial",
+      "dispositivo": "desktop",
       "passo": "comercial não valida (403 do banco)",
       "ok": true,
       "detalhe": "403 Seu perfil não tem permissão para esta operação"
@@ -394,7 +443,7 @@
       "dispositivo": "celular",
       "passo": "painel com dados do Supabase (16 da semente + as criadas na homologação)",
       "ok": true,
-      "detalhe": "Oportunidades28Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte7.1%Decididas: 50.0%"
+      "detalhe": "Oportunidades33Matrículas comerciais6Ingressantes efetivos2Meta16Atingimento12.5%Conversão da coorte6.1%Decididas: 50.0%"
     },
     {
       "perfil": "gestor",
